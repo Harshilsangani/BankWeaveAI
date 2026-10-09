@@ -1,0 +1,36 @@
+node_modules/
+.next/
+out/
+.npm-cache/
+.env*
+!.env.example
+*.tsbuildinfo
+test-results/
+playwright-report/
+.preview.log
+.preview-error.log
+backend/.venv/
+backend/.venv-clean/
+backend/storage/
+artifacts/import-browser/
+__pycache__/
+*.pyc
+
+# Local tooling, runtime state and private credentials
+.code-review-graph/
+backend/.venv*/
+*.log
+*.sqlite*
+*.db
+*.db-*
+*.pem
+*.key
+
+# Generated previews, screenshots and test snapshots stay local.
+# Keep the documented source-data audit and aggregate integrity evidence.
+artifacts/*
+!artifacts/bankshield-review/
+!artifacts/customer-integrity.json
+artifacts/bankshield-review/*
+!artifacts/bankshield-review/REVIEW.md
+!artifacts/bankshield-review/audit.json

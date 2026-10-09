@@ -1,0 +1,2 @@
+CREATE TABLE maintenance_operations(id TEXT PRIMARY KEY,owner TEXT,request_id TEXT,customer_id TEXT,fingerprint TEXT,kind TEXT,entity_id TEXT,before_record TEXT,after_record TEXT,status TEXT,receipt TEXT,created_at TEXT,UNIQUE(owner,request_id));
+CREATE TABLE maintenance_events(id TEXT PRIMARY KEY,operation_id TEXT,action TEXT,actor TEXT,reason TEXT,before_record TEXT,after_record TEXT,created_at TEXT);

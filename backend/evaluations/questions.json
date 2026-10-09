@@ -1,0 +1,14 @@
+[
+  {"id":"fraud-growth","query":"Why did fraud increase this month?","context":{"datasetId":"meridian","domain":"fraud","period":"2026-09"},"count":"1,091","summary":"833 → 1091"},
+  {"id":"region-follow-up","query":"Only Ahmedabad","context":{"datasetId":"meridian","domain":"fraud","period":"2026-09"},"count":"650","region":"Ahmedabad"},
+  {"id":"comparison-follow-up","query":"Compare it to Surat","context":{"datasetId":"meridian","domain":"fraud","period":"2026-09","region":"Ahmedabad"},"count":"858","comparison":"Surat"},
+  {"id":"reset-region","query":"Show all regions","context":{"datasetId":"meridian","domain":"fraud","period":"2026-09","region":"Ahmedabad"},"count":"1,091"},
+  {"id":"historical-fraud","query":"Show fraud in August 2026","context":{"datasetId":"meridian","domain":"fraud"},"count":"833","period":"2026-08"},
+  {"id":"loan-growth","query":"Why did loan defaults increase?","context":{"datasetId":"meridian","domain":"fraud","period":"2026-09"},"count":"765","summary":"648 → 765","domain":"loans"},
+  {"id":"historical-loans","query":"Compare defaults in August 2026","context":{"datasetId":"meridian","domain":"loans"},"count":"648","period":"2026-08"},
+  {"id":"empty-scope","query":"Show transactions over 1000000000","context":{"datasetId":"meridian","domain":"fraud","period":"2026-09"},"count":"0"},
+  {"id":"sample-device-refusal","query":"Investigate shared device clusters","context":{"datasetId":"bankshield","domain":"fraud"},"title":"Available data coverage","noKpi":true},
+  {"id":"sample-loan-refusal","query":"Show loan defaults","context":{"datasetId":"bankshield","domain":"fraud"},"title":"Available data coverage","noKpi":true},
+  {"id":"chat-write-refusal","query":"Hello, add a customer for me","context":{"datasetId":"meridian","domain":"fraud"},"title":"Your banking assistant","text":"A chat instruction alone cannot create a customer","noKpi":true},
+  {"id":"invalid-region","query":"Show fraud","context":{"datasetId":"meridian","domain":"fraud","region":"' OR 1=1 --"},"status":400}
+]

@@ -1,0 +1,1 @@
+export interface RelationshipGraph {available:boolean;reason?:string;version:string;sourceVersion:string;snapshotHash?:string;sampledTransactions:number;totalFlaggedTransactions?:number;nodes:{id:string;kind:'customer'|'account'|'transaction'|'device';label:string}[];edges:{id:string;source:string;target:string;relation:string;references:string[]}[];limitations:string[]}

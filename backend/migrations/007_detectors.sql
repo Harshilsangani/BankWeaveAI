@@ -1,0 +1,1 @@
+CREATE TABLE detector_runs(id TEXT PRIMARY KEY,dataset TEXT,period TEXT,rules_version TEXT,input_hash TEXT,source_version TEXT,source_counts TEXT,thresholds TEXT,events TEXT,created_at TEXT,actor TEXT,UNIQUE(dataset,period,rules_version,input_hash));

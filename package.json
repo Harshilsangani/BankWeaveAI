@@ -1,0 +1,41 @@
+{
+  "name": "bankweave-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "next build",
+    "start": "node scripts/dev.mjs start",
+    "backend:seed": "tsx scripts/export-demo.ts && node scripts/python.mjs -m backend.import_data",
+    "backend:migrate": "node scripts/python.mjs -m backend.migrate",
+    "test:backend": "node scripts/python.mjs -m unittest discover -s backend/tests -v",
+    "evaluate": "node scripts/python.mjs -m backend.evaluate",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "format": "prettier --write app components features services data types hooks lib tests *.ts *.json *.md"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.0.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prettier": "^3.9.9",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

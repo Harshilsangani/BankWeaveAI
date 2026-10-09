@@ -1,0 +1,2 @@
+export type CustomerNeed='health_cover'|'repayment_support'|'renewal_reminder';
+export interface Recommendations {customerId:string;runId:string;inputHash:string;rulesVersion:string;preferences:{revision:number;consent:boolean;needs:CustomerNeed[];minimumCover:number;provenance:string};suggestions:{id:string;title:string;reason:string;sourceFacts:Record<string,unknown>;ruleVersion:string;status:string;revision:number;reviewNote?:string;reviewActor?:string}[];limitations:string[]}

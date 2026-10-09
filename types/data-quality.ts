@@ -1,0 +1,2 @@
+export interface DataQuality {datasetId:string;datasetName:string;version:string;currency:string;counts:Record<string,number>;checks:Record<string,number>;completeCustomerChains:number;duplicatePrimaryKeys:number;duplicateNote:string;limitations:string[];csvColumns:string[]}
+export interface ImportPreview {id:string;sourceHash:string;datasetId:string;currency:string;rows:number;validRows:number;canImport:boolean;errors:{row:number;reasons:string[]}[];sample:Record<string,string>[]}

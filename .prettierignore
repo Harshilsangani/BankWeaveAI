@@ -1,0 +1,8 @@
+.next
+node_modules
+.npm-cache
+package-lock.json
+artifacts
+test-results
+AGENTS.md
+CLAUDE.md

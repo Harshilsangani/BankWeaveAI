@@ -1,0 +1,350 @@
+{
+  "revision": "e9a38a97f05536cf300bff05d6b6dc833f3a0a8e",
+  "raw_directory": "C:\\Users\\HARSHIL\\AppData\\Local\\Temp\\risklens-bankshield-klfdq2rh",
+  "tables": {
+    "accounts": {
+      "rows": 3750,
+      "bytes": 567483,
+      "columns": [
+        "account_id",
+        "customer_id",
+        "account_type",
+        "account_number",
+        "iban",
+        "currency",
+        "opened_date",
+        "balance",
+        "credit_limit",
+        "status",
+        "is_flagged"
+      ],
+      "duplicate_primary_keys": 0,
+      "null_counts": {
+        "account_id": 0,
+        "customer_id": 0,
+        "account_type": 0,
+        "account_number": 0,
+        "iban": 0,
+        "currency": 0,
+        "opened_date": 0,
+        "balance": 0,
+        "credit_limit": 2991,
+        "status": 0,
+        "is_flagged": 0
+      }
+    },
+    "customers": {
+      "rows": 2500,
+      "bytes": 472340,
+      "columns": [
+        "customer_id",
+        "full_name",
+        "date_of_birth",
+        "gender",
+        "national_id",
+        "email",
+        "phone",
+        "address",
+        "city",
+        "zip",
+        "country",
+        "credit_score",
+        "income_annual_usd",
+        "customer_since",
+        "risk_tier",
+        "is_fraud_suspect"
+      ],
+      "duplicate_primary_keys": 0,
+      "null_counts": {
+        "customer_id": 0,
+        "full_name": 0,
+        "date_of_birth": 0,
+        "gender": 0,
+        "national_id": 0,
+        "email": 0,
+        "phone": 0,
+        "address": 0,
+        "city": 0,
+        "zip": 0,
+        "country": 0,
+        "credit_score": 0,
+        "income_annual_usd": 0,
+        "customer_since": 0,
+        "risk_tier": 0,
+        "is_fraud_suspect": 0
+      }
+    },
+    "devices": {
+      "rows": 1750,
+      "bytes": 266876,
+      "columns": [
+        "device_id",
+        "customer_id",
+        "device_fingerprint",
+        "device_type",
+        "os",
+        "browser",
+        "first_seen",
+        "last_seen",
+        "is_trusted",
+        "is_fraud_device"
+      ],
+      "duplicate_primary_keys": 0,
+      "null_counts": {
+        "device_id": 0,
+        "customer_id": 0,
+        "device_fingerprint": 0,
+        "device_type": 0,
+        "os": 0,
+        "browser": 0,
+        "first_seen": 0,
+        "last_seen": 0,
+        "is_trusted": 0,
+        "is_fraud_device": 0
+      }
+    },
+    "fraud_alerts": {
+      "rows": 1100,
+      "bytes": 214544,
+      "columns": [
+        "alert_id",
+        "transaction_id",
+        "alert_timestamp",
+        "alert_type",
+        "risk_score",
+        "alert_status",
+        "analyst_notes",
+        "resolution_timestamp",
+        "confirmed_fraud"
+      ],
+      "duplicate_primary_keys": 0,
+      "null_counts": {
+        "alert_id": 0,
+        "transaction_id": 0,
+        "alert_timestamp": 0,
+        "alert_type": 0,
+        "risk_score": 0,
+        "alert_status": 0,
+        "analyst_notes": 0,
+        "resolution_timestamp": 270,
+        "confirmed_fraud": 0
+      }
+    },
+    "transactions": {
+      "rows": 5000,
+      "bytes": 855451,
+      "columns": [
+        "transaction_id",
+        "account_id",
+        "transaction_date",
+        "merchant_name",
+        "merchant_category",
+        "amount_usd",
+        "transaction_type",
+        "location_city",
+        "location_country",
+        "device_type",
+        "ip_address",
+        "is_fraud"
+      ],
+      "duplicate_primary_keys": 0,
+      "null_counts": {
+        "transaction_id": 0,
+        "account_id": 0,
+        "transaction_date": 19,
+        "merchant_name": 0,
+        "merchant_category": 0,
+        "amount_usd": 0,
+        "transaction_type": 0,
+        "location_city": 0,
+        "location_country": 0,
+        "device_type": 0,
+        "ip_address": 0,
+        "is_fraud": 0
+      }
+    }
+  },
+  "foreign_keys": [
+    {
+      "relationship": "accounts.customer_id -> customers.customer_id",
+      "missing_rows": 3548,
+      "total_rows": 3750,
+      "missing_distinct_ids": 3479
+    },
+    {
+      "relationship": "devices.customer_id -> customers.customer_id",
+      "missing_rows": 1673,
+      "total_rows": 1750,
+      "missing_distinct_ids": 1673
+    },
+    {
+      "relationship": "transactions.account_id -> accounts.account_id",
+      "missing_rows": 4740,
+      "total_rows": 5000,
+      "missing_distinct_ids": 4543
+    },
+    {
+      "relationship": "fraud_alerts.transaction_id -> transactions.transaction_id",
+      "missing_rows": 1096,
+      "total_rows": 1100,
+      "missing_distinct_ids": 1089
+    }
+  ],
+  "distributions": {
+    "transactions": {
+      "is_fraud": {
+        "0": 4945,
+        "1": 41,
+        "False": 13,
+        "True": 1
+      },
+      "transaction_type": {
+        "DEBIT": 3489,
+        "REVERSAL": 151,
+        "CREDIT": 681,
+        "TRANSFER": 679
+      },
+      "device_type": {
+        "MOBILE_APP": 2064,
+        "WEB_BROWSER": 1037,
+        "POS_TERMINAL": 1490,
+        "ATM": 356,
+        "PHONE": 53
+      },
+      "location_country": {
+        "FR": 164,
+        "GB": 921,
+        "ES": 198,
+        "US": 1774,
+        "DE": 747,
+        "IT": 183,
+        "CH": 154,
+        "NL": 179,
+        "AE": 495,
+        "SE": 185
+      }
+    },
+    "accounts": {
+      "currency": {
+        "GBP": 777,
+        "EUR": 915,
+        "USD": 1491,
+        "AED": 387,
+        "SEK": 85,
+        "CHF": 95
+      },
+      "status": {
+        "ACTIVE": 3293,
+        "CLOSED": 201,
+        "SUSPENDED": 256
+      }
+    },
+    "fraud_alerts": {
+      "confirmed_fraud": {
+        "1": 851,
+        "0": 249
+      },
+      "alert_status": {
+        "CONFIRMED_FRAUD": 467,
+        "RESOLVED": 227,
+        "NEW": 112,
+        "INVESTIGATING": 158,
+        "FALSE_POSITIVE": 136
+      },
+      "alert_type": {
+        "AMOUNT_ANOMALY": 194,
+        "GEO_ANOMALY": 326,
+        "VELOCITY_CHECK": 162,
+        "ML_MODEL_FLAG": 204,
+        "BEHAVIORAL_ANOMALY": 126,
+        "DEVICE_FINGERPRINT": 88
+      }
+    },
+    "devices": {
+      "is_trusted": {
+        "1": 1324,
+        "0": 426
+      },
+      "is_fraud_device": {
+        "0": 1683,
+        "1": 67
+      }
+    }
+  },
+  "transaction_date_min": "2021-01-01T15:52:19.759Z",
+  "transaction_date_max": "2024-06-30T20:25:57.981Z",
+  "transaction_month_counts": {
+    "2021-01": 120,
+    "2021-02": 102,
+    "2021-03": 108,
+    "2021-04": 125,
+    "2021-05": 117,
+    "2021-06": 110,
+    "2021-07": 141,
+    "2021-08": 102,
+    "2021-09": 122,
+    "2021-10": 106,
+    "2021-11": 139,
+    "2021-12": 135,
+    "2022-01": 129,
+    "2022-02": 130,
+    "2022-03": 112,
+    "2022-04": 123,
+    "2022-05": 125,
+    "2022-06": 128,
+    "2022-07": 111,
+    "2022-08": 109,
+    "2022-09": 99,
+    "2022-10": 128,
+    "2022-11": 132,
+    "2022-12": 149,
+    "2023-01": 115,
+    "2023-02": 91,
+    "2023-03": 118,
+    "2023-04": 115,
+    "2023-05": 97,
+    "2023-06": 103,
+    "2023-07": 117,
+    "2023-08": 117,
+    "2023-09": 112,
+    "2023-10": 106,
+    "2023-11": 157,
+    "2023-12": 150,
+    "2024-01": 102,
+    "2024-02": 110,
+    "2024-03": 130,
+    "2024-04": 113,
+    "2024-05": 106,
+    "2024-06": 120
+  },
+  "additional_checks": {
+    "complete_transaction_account_customer_chains": 10,
+    "complete_alert_transaction_account_customer_chains": 0,
+    "confirmed_fraud_by_alert_status": {
+      "CONFIRMED_FRAUD": {
+        "1": 467
+      },
+      "FALSE_POSITIVE": {
+        "0": 136
+      },
+      "INVESTIGATING": {
+        "1": 128,
+        "0": 30
+      },
+      "NEW": {
+        "1": 88,
+        "0": 24
+      },
+      "RESOLVED": {
+        "1": 168,
+        "0": 59
+      }
+    },
+    "matched_transactions_before_account_opening": 98,
+    "matched_accounts_opened_before_customer_since": 0,
+    "unique_device_fingerprints": 1750,
+    "unique_transaction_ips": 5000,
+    "transaction_has_device_id": false,
+    "repository_has_license_file": false
+  }
+}
