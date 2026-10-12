@@ -23,7 +23,7 @@ class StructuredImportTests(unittest.TestCase):
             db.execute('INSERT INTO customers VALUES(?,?)',('meridian','CUS-BASE'))
             db.execute('INSERT INTO accounts VALUES(?,?,?,?)',('meridian','ACC-BASE','CUS-BASE','2026-01-01'))
             db.execute('INSERT INTO customer_master VALUES(?,?,?,?,?,?,?,?)',('meridian','CUS-BASE','BR-AHM','Ahmedabad','Ahmedabad','30-39','Professional',700))
-        cls.client=TestClient(app)
+        cls.client=TestClient(app,headers={'x-risklens-role':'admin'})
 
     @classmethod
     def tearDownClass(cls):

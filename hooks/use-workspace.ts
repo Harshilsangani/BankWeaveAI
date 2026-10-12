@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getDashboard,
+  getStaffIdentity,
+  type StaffIdentity,
   getDatasets,
   startInvestigation,
   generateReport,
@@ -38,6 +40,23 @@ import type {
 const slug = (page: Page) => page.toLowerCase().replaceAll(" ", "-");
 export function useWorkspace() {
   const [page, setPage] = useState<Page>("Command Center");
+  const [identity, setIdentity] = useState<StaffIdentity>();
+  const canAnalyze = identity?.permissions.includes("analyze") ?? false;
+  const canReadForms = identity?.permissions.includes("form_read") ?? false;
+  useEffect(() => {
+    let active = true;
+    void getStaffIdentity()
+      .then((value) => {
+        if (active) setIdentity(value);
+      })
+      .catch(() => {
+        if (active)
+          setError("Staff permissions could not be loaded. Reload before starting a task.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const [dashboard, setDashboard] = useState<Dashboard>();
   const [error, setError] = useState("");
   const [messages, setMessages] = useState<AnalystResponse[]>([]);
@@ -129,6 +148,10 @@ export function useWorkspace() {
     requestId = crypto.randomUUID()
   ) {
     if (lock.current || !sessionRestored.current) return;
+    if (!(kind === "form" ? canReadForms : canAnalyze)) {
+      setError("Your role can view results. An Analyst or Admin is required to start this task.");
+      return;
+    }
     lock.current = true;
     setBusy(type);
     setError("");
@@ -371,6 +394,10 @@ export function useWorkspace() {
     );
   }
   async function report(id?: string, scope?: QueryContext) {
+    if (!canAnalyze) {
+      setError("An Analyst or Admin is required to create a report.");
+      return;
+    }
     if (lock.current) return;
     lock.current = true;
     setBusy("report");
@@ -400,6 +427,10 @@ export function useWorkspace() {
     riskId: string,
     scope?: QueryContext
   ) {
+    if (!canAnalyze) {
+      setError("An Analyst or Admin is required to start this task.");
+      return;
+    }
     if (type === "investigate") void investigate(riskId, scope);
     else if (type === "report") void report(riskId, scope);
     else {
@@ -445,6 +476,10 @@ export function useWorkspace() {
   }
   const dispositionQueue = useRef(Promise.resolve());
   function setRiskState(action: "dismiss" | "restore", id?: string) {
+    if (!canAnalyze) {
+      setError("An Analyst or Admin is required to change risk status.");
+      return;
+    }
     setDismissed((current) => (action === "dismiss" && id ? [...new Set([...current, id])] : []));
     dispositionQueue.current = dispositionQueue.current.then(async () => {
       try {
@@ -461,6 +496,9 @@ export function useWorkspace() {
     });
   }
   return {
+    identity,
+    canAnalyze,
+    canReadForms,
     conversations,
     activeConversationId,
     historyError,

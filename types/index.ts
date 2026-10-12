@@ -21,6 +21,7 @@ export interface CustomerFields {
   postalCode: string;
 }
 export interface FormDraft {
+  approval?: import("./approvals").ApprovalRequest | null;
   revision?: number;
   provenance?: Record<keyof CustomerFields,{page:number|null;method:string;status:string;reason:string}>;
   possibleDuplicates?: {customerId:string;name:string;reasons:string[]}[];

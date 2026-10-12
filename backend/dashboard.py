@@ -1,6 +1,6 @@
 """Command Center uses the same tools and source snapshots as the analyst."""
 import json
-from .analytics import aggregate, build, risk, period_label
+from .analytics import aggregate, build, period_label
 from .database import connect, metadata
 
 

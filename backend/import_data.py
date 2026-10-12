@@ -4,10 +4,8 @@ import hashlib
 import io
 import json
 import urllib.request
-from collections import Counter
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
-from pathlib import Path
 
 from .database import STORAGE, connect, initialize
 

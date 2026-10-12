@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 test('declared needs create explainable suggestions and persist staff review',async({page})=>{
+  await page.addInitScript(() => localStorage.setItem('risklens-role','admin'));
   await page.goto('/#data-workspace');
   await page.getByLabel('Search records').fill('CUS-00001');
   await page.locator('.customer-name').first().click();

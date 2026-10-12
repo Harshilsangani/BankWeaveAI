@@ -5,8 +5,13 @@ from dataclasses import dataclass
 from typing import Protocol
 
 
-PERMISSIONS = {'viewer': {'read'}, 'analyst': {'read','analyze','form_read'},
-               'customer_operator': {'read','analyze','form_read','customer_write'}}
+PERMISSIONS = {'viewer': {'read'}, 'analyst': {'read','analyze','form_read','form_submit'},
+               'admin': {'read','analyze','form_read','form_submit','customer_write','approval_review'}}
+
+
+def canonical_role(role):
+    # Legacy header/actor IDs remain usable so owned saved work is not renamed.
+    return 'analyst' if role == 'customer_operator' else role
 
 
 @dataclass(frozen=True)
@@ -15,6 +20,9 @@ class Identity:
     role: str
     tenant: str = 'meridian-demo'
     adapter: str = 'development'
+
+    def __post_init__(self):
+        object.__setattr__(self,'role',canonical_role(self.role))
 
 
 class IdentityAdapter(Protocol):
@@ -26,7 +34,7 @@ class DevelopmentIdentity:
         if os.environ.get('RISKLENS_ENV','development') == 'production':
             raise PermissionError('Production staff identity is not configured; development identities are rejected.')
         role = request.headers.get('x-risklens-role','customer_operator')
-        if role not in PERMISSIONS:
+        if canonical_role(role) not in PERMISSIONS:
             raise PermissionError('Choose a supported development staff role.')
         return Identity(actor_id='local-'+role,role=role)
 
@@ -54,7 +62,11 @@ def require(permission):
 def permission_for(method,path):
     if path in ('/session', '/conversations', '/evidence') or method in ('GET','HEAD'):
         return 'read'
-    if path == '/customers' or path.startswith('/data/customers') or path in ('/data/imports/confirm','/data/imports/apply') or path.startswith('/preferences/') or path.startswith('/maintenance/'):
+    if path == '/customers' or path == '/approvals':
+        return 'form_submit'
+    if path.startswith('/approvals/'):
+        return 'approval_review'
+    if path.startswith('/data/customers') or path in ('/data/imports/confirm','/data/imports/apply') or path.startswith('/preferences/') or path.startswith('/maintenance/') or path.startswith('/kyc/'):
         return 'customer_write'
     if path == '/forms' or path.startswith('/forms/'):
         return 'form_read'

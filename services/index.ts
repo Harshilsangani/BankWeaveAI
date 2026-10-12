@@ -44,6 +44,7 @@ export function setWorkspaceConversationId(id: string) {
 // HTTP composition root. Next routes proxy validated FastAPI tools; the
 // browser cannot choose an upstream, database credentials or raw SQL.
 const API_BASE = "/api";
+import { developmentRoleHeader, selectDevelopmentRole, type StaffRole } from "@/lib/staff-role";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
@@ -53,8 +54,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (sid) headers.set("x-risklens-session", sid);
     const cid = workspaceConversationId();
     if (cid) headers.set("x-risklens-conversation", cid);
-    if (typeof window !== "undefined")
-      headers.set("x-risklens-role", localStorage.getItem("risklens-role") ?? "customer_operator");
+    if (typeof window !== "undefined") headers.set("x-risklens-role", developmentRoleHeader());
     response = await fetch(`${API_BASE}/${path}`, { ...init, headers });
   } catch {
     throw new Error("The BankWeave service is unreachable. Start the local server and retry.");
@@ -72,7 +72,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function workspaceSessionId() {
   if (typeof window === "undefined") return "";
-  const role = localStorage.getItem("risklens-role") ?? "customer_operator";
+  const role = developmentRoleHeader();
   const storageKey =
     role === "customer_operator" ? "risklens-session-v1" : `risklens-session-v1-${role}`;
   let sid = localStorage.getItem(storageKey);
@@ -85,14 +85,14 @@ export function workspaceSessionId() {
 
 export interface StaffIdentity {
   actorId: string;
-  role: "viewer" | "analyst" | "customer_operator";
+  role: StaffRole;
   permissions: string[];
   environment: string;
   adapter: string;
 }
 export const getStaffIdentity = () => request<StaffIdentity>("identity");
 export function setDevelopmentRole(role: StaffIdentity["role"]) {
-  localStorage.setItem("risklens-role", role);
+  selectDevelopmentRole(role);
   window.location.reload();
 }
 
@@ -356,7 +356,7 @@ export const uploadForm = (file: File) => {
   body.set("file", file);
   return request<import("@/types").FormDraft>("forms", { method: "POST", body });
 };
-export const confirmCustomer = (
+export const submitCustomerApproval = (
   draft: import("@/types").FormDraft,
   fields: import("@/types").CustomerFields,
   review?: {
@@ -365,10 +365,28 @@ export const confirmCustomer = (
     duplicateReason?: string;
   }
 ) =>
-  post<{ customerId: string; status: string }>("customers", {
+  post<import("@/types/approvals").ApprovalRequest>("customers", {
     threadId: draft.threadId,
     draftId: draft.id,
     confirmed: true,
     fields,
     ...review,
   });
+
+export const getApprovalRequests = (status = "pending", offset = 0) =>
+  request<import("@/types/approvals").ApprovalPage>(
+    `approvals?status=${encodeURIComponent(status)}&offset=${offset}`
+  );
+export const getApprovalRequest = (id: string) =>
+  request<import("@/types/approvals").ApprovalDetail>(`approvals?id=${encodeURIComponent(id)}`);
+export const decideApprovalRequest = (
+  id: string,
+  body: {
+    decision: "approve" | "reject";
+    revision: number;
+    confirmed: boolean;
+    note: string;
+    duplicateDecision?: "reuse" | "create_separate";
+    duplicateReason?: string;
+  }
+) => post<import("@/types/approvals").ApprovalDetail>("approvals", { id, ...body });

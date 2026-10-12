@@ -17,12 +17,14 @@ export function Dashboard({
   onData,
   onInvestigate,
   onRadar,
+  canAnalyze,
 }: {
   data: DashboardData;
   onAnalyst: () => void;
   onData: () => void;
   onInvestigate: (id: string) => void;
   onRadar: () => void;
+  canAnalyze: boolean;
 }) {
   return (
     <div className="dashboard animate-in">
@@ -139,7 +141,12 @@ export function Dashboard({
             <div className="risk-list">
               {data.risks.length ? (
                 data.risks.map((risk: RiskEvent) => (
-                  <RiskCard key={risk.id} risk={risk} onInvestigate={onInvestigate} />
+                  <RiskCard
+                    key={risk.id}
+                    risk={risk}
+                    onInvestigate={onInvestigate}
+                    disabled={!canAnalyze}
+                  />
                 ))
               ) : (
                 <p className="radar-empty muted">

@@ -33,6 +33,7 @@ const navigation: { label: Page; icon: typeof Activity }[] = [
 export const pages: Page[] = [...navigation.map((n) => n.label), "Data Workspace"];
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
 export function Shell({
+  role,
   page,
   riskCount,
   onPage,
@@ -44,6 +45,7 @@ export function Shell({
   chatHistory,
   children,
 }: {
+  role?: import("@/lib/staff-role").StaffRole;
   page: Page;
   riskCount?: number;
   onPage: (page: Page) => void;
@@ -166,7 +168,10 @@ export function Shell({
             <span className="avatar">AK</span>
             <span>
               <strong>Alex Kumar</strong>
-              <small>Risk analyst · Demo profile</small>
+              <small>
+                {role ? role[0].toUpperCase() + role.slice(1) : "Loading permissions"} · Demo
+                profile
+              </small>
             </span>
             <ChevronDown size={13} />
           </button>

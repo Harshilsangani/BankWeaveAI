@@ -28,5 +28,4 @@ export interface RiskService {
 export interface ReportService {
   generateReport(investigation: Investigation, scenario?: ScenarioResult): Promise<Report>;
 }
-export type AIService = AnalyticsService;
 export type BankWeaveService = BankDataService & AnalyticsService & RiskService & ReportService;

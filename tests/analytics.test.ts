@@ -12,15 +12,15 @@ import {
   snapshotMonth,
   transactions,
 } from "../data/banking";
-import { analyze, segmentTable } from "../services/analytics";
+import { analyze, segmentTable } from "./fixtures/analytics";
 import {
   buildInvestigation,
   buildRisks,
   calculateScenario,
   mockService,
   resolveContext,
-} from "../services/mock";
-import { reportHtml } from "../lib/report";
+} from "./fixtures/mock-service";
+import { reportHtml } from "./fixtures/report";
 
 test("synthetic foreign keys and fraud alert records reconcile", () => {
   const customerIds = new Set(customers.map((c) => c.id)),

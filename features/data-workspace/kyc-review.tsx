@@ -168,7 +168,7 @@ export function KycReview({ customerId }: { customerId: string }) {
         if (active) setError(error.message);
       });
     void getStaffIdentity().then((identity) => {
-      if (active) setCanReview(identity.permissions.includes("analyze"));
+      if (active) setCanReview(identity.permissions.includes("customer_write"));
     });
     return () => {
       active = false;

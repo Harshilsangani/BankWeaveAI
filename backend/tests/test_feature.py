@@ -104,11 +104,12 @@ class FraudFeatureTests(unittest.TestCase):
         with database.connect() as db:self.assertEqual(db.execute('SELECT status FROM customer_profiles WHERE id=?',(customer,)).fetchone()[0],'synthetic')
         draft=self.client.post('/forms',files={'file':('kyc-form.pdf',form_pdf(),'application/pdf')},headers=headers).json()
         fields={**draft['fields'],'fullName':'KYC extraction example','email':'unique-kyc@example.test','phone':''}
-        saved=self.client.post('/customers',json=dict(threadId=draft['threadId'],draftId=draft['id'],confirmed=True,fields=fields),headers=headers)
+        self.assertEqual(self.client.patch('/forms/'+draft['id'],json=fields,headers=headers).status_code,200)
+        saved=self.approve_form(dict(threadId=draft['threadId'],draftId=draft['id'],confirmed=True,fields=fields),headers=headers)
         self.assertEqual(saved.status_code,200,saved.text)
         cases=self.client.get('/kyc/customer/'+saved.json()['customerId'],headers=headers).json()
         self.assertEqual(len(cases),1);self.assertEqual(cases[0]['draftId'],draft['id']);self.assertIsNotNone(cases[0]['sourceHash']);self.assertIn('provenance',cases[0]['quality']);self.assertFalse(cases[0]['identityVerified'])
-        self.assertEqual(self.client.get('/kyc/customer/'+saved.json()['customerId'],headers={'x-risklens-session':str(uuid.uuid4())}).json(),[])
+        self.assertEqual(self.client.get('/kyc/customer/'+saved.json()['customerId'],headers={'x-risklens-session':str(uuid.uuid4()),'x-risklens-role':'analyst'}).json(),[])
 
     def test_24_cashflow_source_labels_balance_and_empty_profile(self):
         from backend.financial_health import overview
@@ -206,7 +207,7 @@ class FraudFeatureTests(unittest.TestCase):
         def content(rows):
             out=io.StringIO();writer=__import__('csv').writer(out);writer.writerow(COLUMNS);writer.writerows(rows);return out.getvalue()
         def preview(rows):return self.client.post('/data/imports/preview',json=dict(datasetId='meridian',csv=content(rows)),headers=headers).json()
-        def confirm(record,role='customer_operator'):return self.client.post('/data/imports/confirm',json=dict(previewId=record['id'],sourceHash=record['sourceHash'],confirmed=True),headers={**headers,'x-risklens-role':role})
+        def confirm(record,role='admin'):return self.client.post('/data/imports/confirm',json=dict(previewId=record['id'],sourceHash=record['sourceHash'],confirmed=True),headers={**headers,'x-risklens-role':role})
         bad=preview([row,row.copy()])
         self.assertFalse(bad['canImport']);self.assertTrue(any('Duplicate ID' in reason for item in bad['errors'] for reason in item['reasons']))
         self.assertEqual(confirm(bad).status_code,400)
@@ -324,7 +325,7 @@ class FraudFeatureTests(unittest.TestCase):
         self.assertEqual(first.content,second.content);self.assertEqual(first.headers['etag'],second.headers['etag'])
         with database.connect() as db:
             rows=db.execute('SELECT * FROM report_downloads WHERE report_id=?',(report['id'],)).fetchall()
-            self.assertEqual(len(rows),2);self.assertEqual(rows[0]['actor'],'local-customer_operator')
+            self.assertEqual(len(rows),2);self.assertEqual(rows[0]['actor'],'local-admin')
             db.execute('UPDATE loans SET principal_minor=principal_minor-1 WHERE dataset=?',('meridian',))
         self.assertEqual(self.client.get(path,headers={'x-risklens-session':str(uuid.uuid4())}).status_code,403)
 
@@ -377,7 +378,7 @@ class FraudFeatureTests(unittest.TestCase):
         cls.connection = sqlite3.connect(Path(cls.temp.name) / "checkpoints.sqlite3", check_same_thread=False)
         cls.original_graph = agents.graph
         agents.graph = agents._builder.compile(checkpointer=SqliteSaver(cls.connection))
-        cls.client = TestClient(app)
+        cls.client = TestClient(app,headers={'x-risklens-role':'admin','x-risklens-session':'feature-administrator-workspace'})
 
     @classmethod
     def tearDownClass(cls):
@@ -386,6 +387,26 @@ class FraudFeatureTests(unittest.TestCase):
 
     def ask(self, query="Why did fraud increase this month?", **scope):
         return self.client.post("/analyst", json={"query": query, "context": {"domain": "fraud", **scope}})
+
+    def test_greeting_routes_general_and_multi_year_credit_never_invents_a_chart(self):
+        hello=self.ask('Namaste').json()
+        self.assertIn('Hello!',hello['blocks'][0]['text'])
+        self.assertIn('General chat agent',hello['analysis']['stages'])
+        self.assertNotIn('Database analyst agent',hello['analysis']['stages'])
+        answer=self.ask('Show past 5 years total credit').json()
+        self.assertEqual(answer['title'],'Historical data coverage')
+        self.assertIn('April 2026',answer['blocks'][0]['text'])
+        self.assertIn('September 2026',answer['blocks'][0]['text'])
+        self.assertTrue(all(block['type']=='TEXT' for block in answer['blocks']))
+        self.assertIn('Database analyst agent',answer['analysis']['stages'])
+
+    def approve_form(self, body, headers=None):
+        request = self.client.post('/customers',headers=headers,json=body)
+        if request.status_code != 200:
+            return request
+        value = request.json()
+        return self.client.post('/approvals/'+value['id']+'/decision',headers=headers,
+            json=dict(decision='approve',revision=value['revision'],confirmed=True,note='Admin reviewed this synthetic application.',duplicateDecision=body.get('duplicateDecision'),duplicateReason=body.get('duplicateReason','')))
 
     def test_01_sql_parity_and_scoped_contribution(self):
         scope = {"datasetId": "meridian", "period": "2026-09"}
@@ -460,12 +481,12 @@ class FraudFeatureTests(unittest.TestCase):
         self.assertEqual(restored['messages'][-1]['blocks'][0]['draft']['fields'],corrected)
         body = dict(threadId=draft['threadId'],draftId=draft['id'],confirmed=True,fields=corrected)
         self.assertEqual(self.client.post('/customers',headers=other,json=body).status_code,400)
-        saved = self.client.post('/customers',headers=headers,json=body).json()
+        saved = self.approve_form(body,headers=headers).json()
         restored = self.client.get('/session',headers=headers).json()
         review = restored['messages'][-1]['blocks'][0]['draft']
         self.assertEqual(review['status'],'saved')
         self.assertEqual(review['customerId'],saved['customerId'])
-        again = self.client.post('/customers',headers=headers,json=body).json()
+        again = self.approve_form(body,headers=headers).json()
         self.assertEqual(again['customerId'],saved['customerId'])
         self.assertEqual(self.client.get('/session',headers=other).json()['messages'],[])
         reset = self.client.patch('/session',headers=headers,json={'datasetId':'bankshield','period':'2024-06'}).json()
@@ -600,7 +621,8 @@ class FraudFeatureTests(unittest.TestCase):
         self.assertEqual(first['provenance']['fullName']['page'],1)
         fields={**first['fields'],'fullName':'Duplicate Review Unique Customer','email':'dedup-unique@example.test','phone':''}
         body=dict(threadId=first['threadId'],draftId=first['id'],confirmed=True,fields=fields)
-        created_response=self.client.post('/customers',json=body)
+        self.assertEqual(self.client.patch('/forms/'+first['id'],json=fields).status_code,200)
+        created_response=self.approve_form(body)
         self.assertEqual(created_response.status_code,200,created_response.text)
         created=created_response.json()
         second=self.client.post('/forms',files={'file':('another.pdf',form_pdf(),'application/pdf')}).json()
@@ -610,15 +632,15 @@ class FraudFeatureTests(unittest.TestCase):
         body=dict(threadId=second['threadId'],draftId=second['id'],confirmed=True,fields=fields,reviewRevision=corrected['revision'])
         rejected=self.client.post('/customers',json=body)
         self.assertEqual(rejected.status_code,400)
-        self.assertIn('Possible existing',rejected.json()['error'])
-        linked=self.client.post('/customers',json={**body,'duplicateDecision':'reuse','duplicateReason':'Reviewed same fictional customer.'})
+        self.assertIn('possible duplicates',rejected.json()['error'])
+        linked=self.approve_form({**body,'duplicateDecision':'reuse','duplicateReason':'Reviewed same fictional customer.'})
         self.assertEqual(linked.status_code,200,linked.text)
         self.assertEqual(linked.json()['customerId'],created['customerId'])
         with database.connect() as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM customer_profiles WHERE full_name=?',(fields['fullName'],)).fetchone()[0],1)
             version=db.execute('SELECT * FROM form_review_versions WHERE draft_id=? ORDER BY version DESC LIMIT 1',(second['id'],)).fetchone()
             self.assertEqual(json.loads(version['fields']),fields)
-            self.assertEqual(version['actor_id'],'local-customer_operator')
+            self.assertEqual(version['actor_id'],'local-admin')
             self.assertIn('Confirmed review',version['reason'])
 
     def test_case_actions_dispositions_recovery_and_access(self):
@@ -631,7 +653,7 @@ class FraudFeatureTests(unittest.TestCase):
         restored=self.client.get('/cases/'+inv['id'],headers=headers).json()
         self.assertEqual(restored['status'],'Monitoring')
         self.assertEqual(restored['owner'],'local-analyst')
-        self.assertEqual(restored['events'][-1]['actor_id'],'local-customer_operator')
+        self.assertEqual(restored['events'][-1]['actor_id'],'local-admin')
         self.assertEqual(json.loads(restored['events'][-1]['source_scope']),inv['scope'])
         self.assertEqual(self.client.patch('/cases/'+inv['id'],headers=headers,json={'revision':1,'note':'Stale note'}).status_code,409)
         self.assertEqual(self.client.get('/cases/'+inv['id'],headers={'x-risklens-session':'case-review-test-0002'}).status_code,403)
@@ -657,7 +679,7 @@ class FraudFeatureTests(unittest.TestCase):
         self.assertFalse({r[0] for r in pages[0]["rows"]} & {r[0] for r in pages[1]["rows"]})
         report = self.client.post("/reports", json={"investigationId": inv["id"]}).json()
         self.assertEqual(report["investigation"]["risk"]["affectedRecords"], 1091)
-        self.assertEqual(self.client.post("/reports", json={"investigationId": "forged"}).status_code, 400)
+        self.assertEqual(self.client.post("/reports", json={"investigationId": "forged"}).status_code, 403)
         self.assertEqual(self.client.post("/reports", json={"investigationId": inv["id"], "investigation": {"title": "forged"}}).status_code, 422)
         self.assertEqual(self.client.post("/evidence", json={"scope": inv["scope"], "limit": 5000}).status_code, 422)
 
@@ -694,12 +716,12 @@ class FraudFeatureTests(unittest.TestCase):
         self.assertEqual(rejected.status_code, 422)
         mismatch = self.client.post("/customers", json={**body, "draftId": "wrong"})
         self.assertEqual(mismatch.status_code, 400)
-        added = self.client.post("/customers", json=body)
+        added = self.approve_form(body)
         self.assertEqual(added.status_code, 200, added.text)
-        replay = self.client.post("/customers", json=body)
+        replay = self.approve_form(body)
         self.assertEqual(added.json()["customerId"], replay.json()["customerId"])
         with database.connect() as db: self.assertEqual(db.execute("SELECT COUNT(*) FROM customer_profiles").fetchone()[0], before + 1)
-        self.assertEqual(added.json()["status"], "pending_verification")
+        self.assertEqual(added.json()["status"], "approved")
         profile = self.client.get("/data/customers", params={"q": added.json()["customerId"]}).json()["rows"][0]
         removed = self.client.request("DELETE", f'/data/customers/{profile["id"]}', json={"revision": profile["revision"]})
         self.assertEqual(removed.status_code, 200)

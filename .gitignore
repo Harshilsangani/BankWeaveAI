@@ -7,12 +7,7 @@ out/
 *.tsbuildinfo
 test-results/
 playwright-report/
-.preview.log
-.preview-error.log
-backend/.venv/
-backend/.venv-clean/
 backend/storage/
-artifacts/import-browser/
 __pycache__/
 *.pyc
 
@@ -26,11 +21,5 @@ backend/.venv*/
 *.pem
 *.key
 
-# Generated previews, screenshots and test snapshots stay local.
-# Keep the documented source-data audit and aggregate integrity evidence.
-artifacts/*
-!artifacts/bankshield-review/
-!artifacts/customer-integrity.json
-artifacts/bankshield-review/*
-!artifacts/bankshield-review/REVIEW.md
-!artifacts/bankshield-review/audit.json
+# Generated test results, screenshots, audit runs and snapshots stay local.
+artifacts/

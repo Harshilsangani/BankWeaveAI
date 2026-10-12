@@ -288,7 +288,7 @@ export function Settings({ theme, onTheme }: { theme: string; onTheme: (theme: s
               >
                 <option value="viewer">Viewer</option>
                 <option value="analyst">Analyst</option>
-                <option value="customer_operator">Customer operator</option>
+                <option value="admin">Admin</option>
               </select>
             </label>
           ) : (
@@ -304,6 +304,11 @@ export function Settings({ theme, onTheme }: { theme: string; onTheme: (theme: s
             </p>
           </div>
         </div>
+        <p className="settings-note">
+          Only admins can change banking records or approve submitted OCR customers. Analysts can
+          review forms and submit requests. Viewers can browse records and available results. Switch
+          local roles here to test the workflow.
+        </p>
         <p className="settings-note">
           Local roles enforce backend permissions; the development identity is rejected in
           production. Verified cloud authentication, Gemini and Google Cloud remain deployment

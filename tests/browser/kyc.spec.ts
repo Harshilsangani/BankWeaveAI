@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 test('KYC review requires evidence references and preserves a pending-verification decision',async({page})=>{
+  await page.addInitScript(() => localStorage.setItem('risklens-role','admin'));
   await page.goto('/#data-workspace');await page.getByLabel('Search records').fill('CUS-00003');await page.locator('.customer-name').first().click();await page.getByText('KYC review cases',{exact:true}).click();
   await page.getByLabel('New KYC review reason').fill('Synthetic staff documentation review');await page.getByRole('button',{name:'Open KYC review',exact:true}).click();
   await expect(page.getByRole('dialog')).toContainText('Identity verification: not performed.');

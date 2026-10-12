@@ -251,6 +251,15 @@ def investigate(scope):
 def analyst(query, scope, persist_result=True):
     scope = resolve(query, scope)
     q = sanitize(query)
+    if re.search(r'(?:past|last|previous)\s+(?:five|[2-9]|\d{2,})\s+years?|\b(?:five|[2-9]|\d{2,})[ -]year|total credit|credit.*(?:year|trend)|(?:year|trend).*credit',q,re.I):
+        meta=metadata(scope['datasetId'])
+        first,last=period_label(meta['periods'][0]),period_label(meta['periods'][-1])
+        result=dict(id=identifier('MSG'),question=q,context=scope,timestamp=now(),title='Historical data coverage',
+                    blocks=[dict(type='TEXT',text=f'The selected dataset covers {first} to {last} and does not provide the requested multi-year series. No multi-year chart can be calculated from these records. For credit analysis, specify whether you mean loan disbursements, outstanding loan balances or incoming account credits. Dated historical records and a consistent definition are required; transaction amounts do not establish a credit/debit direction.')],
+                    suggestions=['Show loan repayments and overdue evidence','Why did fraud increase this month?'])
+        result['analysis']=analysis_metadata(scope,result['id'])
+        if persist_result:persist('analyst',result,scope,query)
+        return result
     if scope['datasetId']=='meridian' and re.search(r'financial health|cashflow|cash.flow|income|spending|salary|affordab',q,re.I):
         from .financial_health import answer
         result=answer(query,scope)

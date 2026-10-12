@@ -14,7 +14,7 @@ class DataWorkspaceTests(unittest.TestCase):
         cls.original = database.DB_PATH
         database.DB_PATH = Path(cls.temp.name) / "test.sqlite3"
         database.initialize(); seed_meridian(); seed_bankshield()
-        cls.client = TestClient(app)
+        cls.client = TestClient(app,headers={'x-risklens-role':'admin'})
 
     @classmethod
     def tearDownClass(cls):

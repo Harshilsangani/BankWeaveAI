@@ -24,6 +24,7 @@ export function Investigation({
   loading,
   reportBusy,
   onInvestigate,
+  canAnalyze,
   onReport,
   onScenario,
   onBack,
@@ -35,6 +36,7 @@ export function Investigation({
   loading: boolean;
   reportBusy: boolean;
   onInvestigate: (id: string) => void;
+  canAnalyze: boolean;
   onReport: () => void;
   onScenario: () => void;
   onBack: () => void;
@@ -67,7 +69,7 @@ export function Investigation({
         </div>
         <div className="risk-grid">
           {risks.map((r) => (
-            <RiskCard key={r.id} risk={r} onInvestigate={onInvestigate} />
+            <RiskCard key={r.id} risk={r} onInvestigate={onInvestigate} disabled={!canAnalyze} />
           ))}
         </div>
       </div>
@@ -87,12 +89,12 @@ export function Investigation({
         <div className="page-actions">
           {investigation.risk.category === "fraud" &&
             investigation.scope.datasetId !== "bankshield" && (
-              <Button onClick={onScenario}>
+              <Button onClick={onScenario} disabled={!canAnalyze}>
                 <FlaskConical size={14} />
                 Run a scenario
               </Button>
             )}
-          <Button variant="primary" onClick={onReport} disabled={reportBusy}>
+          <Button variant="primary" onClick={onReport} disabled={reportBusy || !canAnalyze}>
             <Download size={14} />
             {reportBusy ? "Preparing report…" : "Create report"}
           </Button>

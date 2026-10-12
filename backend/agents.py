@@ -3,7 +3,6 @@
 No LangSmith/external tracing is enabled. Forms pause at an interrupt before writes.
 """
 import os
-import re
 import sqlite3
 from typing import TypedDict
 
@@ -12,11 +11,11 @@ os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.types import interrupt, Command
+from langgraph.types import interrupt
 
 from .analytics import analyst, analysis_metadata, identifier, now, persist, resolve, sanitize
 from .database import STORAGE, connect
-from .forms import read_form, add_customer
+from .forms import read_form
 
 
 class AgentState(TypedDict, total=False):
@@ -38,13 +37,15 @@ def router(state):
     if state["operation"] == "upload":
         emit('LangGraph router')
         return {"agent": "form_reader"}
-    from .providers import get_provider, RouteDecision
-    agent=RouteDecision.model_validate(get_provider().route(state.get('query',''))).agent
+    from .providers import get_provider, RouteDecision, is_greeting
+    agent='general_chat' if is_greeting(state.get('query','')) else RouteDecision.model_validate(get_provider().route(state.get('query',''))).agent
     emit('LangGraph router')
     return {'agent':agent}
 
 
 def general_chat(state):
+    from .security import require
+    require('analyze')
     from .progress import emit
     emit('General chat agent','running')
     scope = resolve("", state["scope"])
@@ -59,6 +60,8 @@ def general_chat(state):
 
 
 def database_agent(state):
+    from .security import require
+    require('analyze')
     from .progress import emit
     emit('Database analyst agent','running')
     response = analyst(state["query"], state["scope"],persist_result=False)
@@ -67,6 +70,8 @@ def database_agent(state):
 
 
 def knowledge_agent(state):
+    from .security import require
+    require('analyze')
     from .knowledge import answer
     return {'response':answer(state['query'],state['scope'])}
 
@@ -84,15 +89,23 @@ def form_reader(state):
 def review_gate(state):
     from .progress import emit
     emit('Human review pending')
-    approval = interrupt({"draftId": state["draft"]["id"], "status": "awaiting_review", "message": "Review the extracted form and explicitly confirm the proposed customer fields."})
+    approval = interrupt({"draftId": state["draft"]["id"], "status": "awaiting_admin_approval", "message": "Review the extracted form and submit it for an explicit admin approval decision."})
     if not isinstance(approval, dict) or approval.get("confirmed") is not True:
         raise ValueError("Explicit customer review confirmation is required.")
     return {"approval": approval}
 
 
 def customer_update(state):
-    approval=state['approval']
-    return {"result": add_customer(state["draft"]["id"], approval['fields'],approval.get('duplicateDecision'),approval.get('duplicateReason',''),approval.get('reviewRevision'))}
+    # Agents cannot apply writes. Only the admin endpoint commits the decision,
+    # customer and audit together. The graph can reflect its recorded result.
+    from .security import require
+    import json
+    identity=require('customer_write')
+    with connect() as db:
+        row=db.execute("SELECT result FROM admin_approval_requests WHERE draft_id=? AND tenant=? AND status='approved'",(state['draft']['id'],identity.tenant)).fetchone()
+    if not row or not row['result']:
+        raise PermissionError('An explicit recorded admin approval is required; an agent cannot create a customer.')
+    return {'result':json.loads(row['result'])}
 
 
 STORAGE.mkdir(parents=True, exist_ok=True)
@@ -141,28 +154,3 @@ def run_upload(path, filename):
     with recording() as stages:
         result = graph.invoke({"operation": "upload", "upload_path": str(path), "filename": filename}, {"configurable": {"thread_id": thread_id}})
     return {**result["draft"], "threadId": thread_id, "stages": list(stages)}
-
-
-def confirm_customer(thread_id, draft_id, fields,duplicate_decision=None,duplicate_reason='',review_revision=None):
-    from .security import require
-    require('customer_write')
-    config = {"configurable": {"thread_id": thread_id}}
-    state = graph.get_state(config)
-    if state.values.get("draft", {}).get("id") != draft_id:
-        raise ValueError("The form draft does not belong to this review workflow.")
-    if not state.next:
-        if state.values.get("result"):
-            with connect() as db:
-                if not db.execute("SELECT 1 FROM customer_profiles WHERE id=?", (state.values["result"]["customerId"],)).fetchone():
-                    raise ValueError("This customer profile was deleted from the directory.")
-            return state.values["result"]
-        raise ValueError("This workflow is not awaiting customer review.")
-    approval={"confirmed": True, "fields": fields,'duplicateDecision':duplicate_decision,'duplicateReason':duplicate_reason,'reviewRevision':review_revision}
-    # A tool validation failure leaves customer_update pending, not another interrupt.
-    # Replace its reviewed approval on retry instead of replaying stale fields.
-    if 'human_review' in state.next:
-        result=graph.invoke(Command(resume=approval),config)
-    else:
-        graph.update_state(config,{'approval':approval},as_node='human_review')
-        result=graph.invoke(None,config)
-    return result["result"]

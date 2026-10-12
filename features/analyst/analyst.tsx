@@ -15,6 +15,7 @@ import { Button, LoadingSteps } from "@/components/ui";
 import { scopeLabel } from "@/lib/utils";
 import { PromptBox, starterQuestions } from "./prompt-box";
 import { DataControls } from "./data-controls";
+import { roleLabels, type StaffRole } from "@/lib/staff-role";
 
 export function Analyst({
   notice,
@@ -36,6 +37,8 @@ export function Analyst({
   onDataset,
   onPeriod,
   onUpload,
+  role,
+  canAnalyze,
 }: {
   notice: string;
   onDismissNotice: () => void;
@@ -60,8 +63,11 @@ export function Analyst({
   onDataset: (id: DatasetId) => void;
   onPeriod: (period: string) => void;
   onUpload: (file: File) => void;
+  role?: StaffRole;
+  canAnalyze: boolean;
 }) {
-  const locked = busy || Boolean(contextStatus) || !ready || !datasets.length;
+  const contextLocked = busy || Boolean(contextStatus) || !ready || !datasets.length;
+  const locked = contextLocked || !canAnalyze;
   const scroller = useRef<HTMLDivElement>(null);
   const latest = useRef<HTMLDivElement>(null);
   const pending = useRef<HTMLDivElement>(null);
@@ -122,7 +128,7 @@ export function Analyst({
           <Button
             variant="ghost"
             onClick={onClear}
-            disabled={locked || !messages.length}
+            disabled={contextLocked || !messages.length}
             aria-label="New analysis"
           >
             <MessageSquarePlus size={18} />
@@ -134,7 +140,7 @@ export function Analyst({
         datasets={datasets}
         datasetId={datasetId}
         period={period}
-        busy={locked}
+        busy={contextLocked}
         onDataset={onDataset}
         onPeriod={onPeriod}
       />
@@ -171,8 +177,17 @@ export function Analyst({
               <span className="chat-welcome-icon">
                 <Sparkles size={30} strokeWidth={1.5} />
               </span>
-              <h2>Hello, Alex.</h2>
-              <h3>Where should we look closer?</h3>
+              <h2>{role ? `Hello, ${roleLabels[role]}.` : "Welcome to BankWeave."}</h2>
+              <h3>
+                {role === "viewer"
+                  ? "Your banking workspace, at a glance."
+                  : "What would you like to explore?"}
+              </h3>
+              <p className="chat-greeting-description">
+                {role === "viewer"
+                  ? "Browse available data and saved results. Ask an Analyst or Admin to start new analyses or upload forms."
+                  : "Ask about banking data, investigate a risk, or upload a customer form. Customer additions always need an admin decision."}
+              </p>
               <SuggestedQuestions
                 disabled={locked}
                 questions={
@@ -216,7 +231,12 @@ export function Analyst({
         </div>
       </div>
       <div className="chat-composer-region">
-        <PromptBox onSubmit={onQuery} onUpload={onUpload} busy={locked} chat />
+        {role === "viewer" && (
+          <p className="viewer-chat-notice" role="status">
+            Viewer access · Analysis and uploads are available to Analysts and Admins.
+          </p>
+        )}
+        <PromptBox onSubmit={onQuery} onUpload={onUpload} busy={busy} disabled={locked} chat />
       </div>
     </section>
   );

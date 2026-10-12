@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 test('lost maintenance response retries once and guarded reversal preserves history',async({page})=>{
+  await page.addInitScript(() => localStorage.setItem('risklens-role','admin'));
   await page.goto('/#data-workspace');await page.getByLabel('Search records').fill('CUS-00002');await page.locator('.customer-name').first().click();await page.getByText('Controlled record maintenance',{exact:true}).click();
   await expect(page.getByLabel('Record workflow')).toBeVisible({timeout:20000});
   const requests:string[]=[];

@@ -38,6 +38,7 @@ import { Recommendations } from "./recommendations";
 import { FinancialHealth } from "./financial-health";
 import { KycReview } from "./kyc-review";
 import { RecordMaintenance } from "./record-maintenance";
+import { ApprovalQueue } from "./approval-queue";
 
 function CustomerOverview({
   id,
@@ -305,7 +306,7 @@ export function DataWorkspace({
   onBack: () => void;
   onInvestigate: (id: string, scope: QueryContext) => void;
 }) {
-  const [mode, setMode] = useState<"customers" | "records" | "quality">("customers");
+  const [mode, setMode] = useState<"customers" | "records" | "quality" | "approvals">("customers");
   const [filters, setFilters] = useState({ branch: "", source: "", status: "", product: "" });
   const [canWrite, setCanWrite] = useState(false);
   useEffect(() => {
@@ -366,7 +367,7 @@ export function DataWorkspace({
   function refresh() {
     setRevision((value) => value + 1);
   }
-  function changeMode(value: "customers" | "records" | "quality") {
+  function changeMode(value: "customers" | "records" | "quality" | "approvals") {
     setMode(value);
     setQuery("");
     setOffset(0);
@@ -439,8 +440,18 @@ export function DataWorkspace({
             <ShieldCheck size={16} />
             Data quality & imports
           </button>
+          <button
+            aria-pressed={mode === "approvals"}
+            className={mode === "approvals" ? "active" : ""}
+            onClick={() => changeMode("approvals")}
+          >
+            <ShieldCheck size={16} />
+            Approval requests
+          </button>
         </div>
-        {mode === "quality" ? (
+        {mode === "approvals" ? (
+          <ApprovalQueue onApplied={refresh} />
+        ) : mode === "quality" ? (
           <DataQuality onImported={refresh} />
         ) : (
           <>
@@ -465,6 +476,12 @@ export function DataWorkspace({
                 )}
               </div>
             </div>
+            {!canWrite && mode === "customers" && (
+              <p className="muted admin-access-note">
+                Only admins can add, edit or delete banking records. Submit extracted customer forms
+                through AI Analyst for approval.
+              </p>
+            )}
             <div className="data-filters">
               <label className="data-search">
                 <Search size={16} />

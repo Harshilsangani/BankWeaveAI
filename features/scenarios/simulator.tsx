@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { FlaskConical, Loader2, RotateCcw } from "lucide-react";
 import type { QueryContext, RiskEvent, ScenarioResult } from "@/types";
-import { runScenario } from "@/services";
+import { runScenario, getStaffIdentity } from "@/services";
 import { Button, EmptyState } from "@/components/ui";
 import { InsightCard, ScenarioComparison } from "@/components/blocks";
 import { scopeLabel } from "@/lib/utils";
@@ -30,6 +30,20 @@ export function Simulator({
     [friction, setFriction] = useState(5);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [canRun, setCanRun] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void getStaffIdentity()
+      .then((identity) => {
+        if (active) setCanRun(identity.permissions.includes("analyze"));
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   useEffect(() => {
     if (result && result.input.riskId === riskId) {
       setCoverage(result.input.coverage);
@@ -52,6 +66,7 @@ export function Simulator({
       visible.input.effectiveness !== effectiveness ||
       visible.input.friction !== friction);
   async function run() {
+    if (!canRun) return;
     setBusy(true);
     setError("");
     try {
@@ -138,7 +153,7 @@ export function Simulator({
               <small>{field.help}</small>
             </label>
           ))}
-          <Button variant="primary" onClick={run} disabled={busy}>
+          <Button variant="primary" onClick={run} disabled={busy || !canRun}>
             {busy ? <Loader2 size={15} className="spin" /> : <FlaskConical size={15} />}
             {busy ? "Modeling scenario…" : "Run simulation"}
           </Button>

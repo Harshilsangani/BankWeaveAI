@@ -54,7 +54,8 @@ def quality(db,draft_id,fields=None):
 
 def save_correction(draft_id,fields):
     from .analytics import now
-    from .security import actor
+    from .security import actor,require
+    require('form_read')
     with connect() as db:
         db.execute('BEGIN IMMEDIATE')
         row=db.execute('SELECT * FROM form_drafts WHERE id=?',(draft_id,)).fetchone()

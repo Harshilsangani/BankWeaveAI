@@ -179,11 +179,13 @@ export function RiskCard({
   onInvestigate,
   onEvidence,
   onDismiss,
+  disabled = false,
 }: {
   risk: RiskEvent;
   onInvestigate: (id: string) => void;
   onEvidence?: (risk: RiskEvent) => void;
   onDismiss?: (id: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <article className={`risk-card severity-${risk.severity}`}>
@@ -241,7 +243,11 @@ export function RiskCard({
         </details>
       )}
       <div className="risk-card-bottom">
-        <Button className="investigate-button" onClick={() => onInvestigate(risk.id)}>
+        <Button
+          className="investigate-button"
+          disabled={disabled}
+          onClick={() => onInvestigate(risk.id)}
+        >
           <ScanLine size={14} />
           Investigate
         </Button>
@@ -472,15 +478,23 @@ export function AIMessage({
   const [formSaved, setFormSaved] = useState(
     response.blocks.some((b) => b.type === "FORM" && b.draft.status === "saved")
   );
+  const [adminApprovalRecorded, setAdminApprovalRecorded] = useState(
+    response.blocks.some((b) => b.type === "FORM" && b.draft.approval?.status === "approved")
+  );
+  const [formStatus, setFormStatus] = useState(
+    response.blocks.find((b) => b.type === "FORM")?.draft.status
+  );
   const stages = formSaved
     ? [
         "LangGraph router",
         "Form reader",
-        "Human review complete",
-        "Customer update agent",
+        adminApprovalRecorded ? "Admin approval recorded" : "Human review complete",
+        "Customer review recorded",
         "Database committed",
       ]
-    : response.analysis?.stages;
+    : formStatus === "deleted"
+      ? ["Customer profile deleted", "Original review history retained"]
+      : response.analysis?.stages;
   return (
     <article className="ai-message">
       <div className="user-message">
@@ -505,9 +519,15 @@ export function AIMessage({
             <summary>
               <Sparkles size={14} />
               {isForm
-                ? formSaved
-                  ? "Customer workflow completed"
-                  : "Form extracted · Awaiting review"
+                ? formStatus === "deleted"
+                  ? "Customer profile deleted · History retained"
+                  : formSaved
+                    ? "Customer workflow completed"
+                    : formStatus === "submitted"
+                      ? "Form submitted · Awaiting admin approval"
+                      : formStatus === "rejected"
+                        ? "Form request rejected · No customer created"
+                        : "Form extracted · Awaiting review"
                 : response.analysis
                   ? "Completed local agent workflow"
                   : "Completed demo analysis"}
@@ -534,7 +554,14 @@ export function AIMessage({
                   <FormReview
                     key={block.draft.id}
                     draft={block.draft}
-                    onSaved={() => setFormSaved(true)}
+                    onSaved={() => {
+                      setFormSaved(true);
+                      setAdminApprovalRecorded(true);
+                    }}
+                    onStatusChange={(status) => {
+                      setFormStatus(status);
+                      if (status === "deleted") setFormSaved(false);
+                    }}
                   />
                 );
               case "TEXT":

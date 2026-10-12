@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 test('viewer UI and direct API both deny customer writes',async ({page})=>{
   await page.goto('/#settings');
-  await expect(page.getByLabel('Local staff role')).toHaveValue('customer_operator');
+  await expect(page.getByLabel('Local staff role')).toHaveValue('analyst');
   await page.getByLabel('Local staff role').selectOption('viewer');
   await expect(page.getByLabel('Local staff role')).toHaveValue('viewer');
   await page.goto('/#data-workspace');

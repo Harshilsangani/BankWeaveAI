@@ -5,11 +5,11 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field, StrictBool
 
-from .analytics import (aggregate, analyst, build, evidence_rows, investigate, make_report,
-                        metadata, previous_period, resolve, validate_scope)
+from .analytics import (aggregate, evidence_rows, investigate, make_report,
+                        metadata, resolve, validate_scope)
 from .database import connect, initialize
 from contextlib import asynccontextmanager
-from .agents import run_query, run_upload, confirm_customer
+from .agents import run_query, run_upload
 from .forms import CustomerFields
 
 @asynccontextmanager
@@ -50,6 +50,8 @@ from .maintenance import router as maintenance_router
 app.include_router(maintenance_router)
 from .conversations import router as conversation_router
 app.include_router(conversation_router)
+from .approvals import router as approval_router
+app.include_router(approval_router)
 
 
 @app.middleware('http')
@@ -283,9 +285,8 @@ class CustomerConfirmation(BaseModel):
 
 @app.post("/customers")
 def customer_confirmation(body: CustomerConfirmation):
-    from .sessions import form_access
-    form_access(body.draftId)
-    return confirm_customer(body.threadId, body.draftId, body.fields.model_dump(),body.duplicateDecision,body.duplicateReason,body.reviewRevision)
+    from .approvals import submit_form
+    return submit_form(body.threadId, body.draftId, body.fields.model_dump(),body.reviewRevision,body.duplicateDecision,body.duplicateReason)
 
 
 @app.patch('/forms/{draft_id}')

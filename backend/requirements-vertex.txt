@@ -1,2 +1,0 @@
-# Optional adapter only. No live calls until explicit configuration and G02.
-google-genai==1.29.0

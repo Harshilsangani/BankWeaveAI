@@ -1,5 +1,4 @@
 """Human review case history. Extraction/reference metadata never verifies identity."""
-import json
 from fastapi import APIRouter,HTTPException
 from pydantic import BaseModel,ConfigDict,Field
 from typing import Literal
@@ -25,8 +24,13 @@ def ensure_form_case(db,draft_id,customer_id=None):
     return case_id
 
 def permitted(row):
+    if actor().role == 'admin' and row['source_draft_id']:
+        with connect() as db:
+            shared=db.execute('SELECT 1 FROM admin_approval_requests WHERE draft_id=? AND tenant=?',(row['source_draft_id'],actor().tenant)).fetchone()
+        if shared:return
+    if row['owner'] != owner():
+        raise PermissionError('KYC case belongs to another workspace/staff actor.')
     if row['source_draft_id']:form_access(row['source_draft_id'])
-    elif row['owner']!=owner():raise PermissionError('KYC case belongs to another workspace/staff actor.')
 
 def payload(db,row):
     events=[dict(event) for event in db.execute('SELECT * FROM kyc_events WHERE case_id=? ORDER BY created_at,id',(row['id'],))]
@@ -45,7 +49,10 @@ def customer_cases(customer_id:str):
     identity=owner()
     with connect() as db:
         if not db.execute("SELECT 1 FROM customers WHERE dataset='meridian' AND id=?",(customer_id,)).fetchone():raise ValueError('Select an existing customer.')
-        rows=db.execute('SELECT * FROM kyc_cases WHERE customer_id=? AND owner=? ORDER BY created_at DESC',(customer_id,identity)).fetchall()
+        if actor().role == 'admin':
+            rows=db.execute('SELECT k.* FROM kyc_cases k WHERE k.customer_id=? AND (k.owner=? OR EXISTS(SELECT 1 FROM admin_approval_requests a WHERE a.draft_id=k.source_draft_id AND a.tenant=?)) ORDER BY k.created_at DESC',(customer_id,identity,actor().tenant)).fetchall()
+        else:
+            rows=db.execute('SELECT * FROM kyc_cases WHERE customer_id=? AND owner=? ORDER BY created_at DESC',(customer_id,identity)).fetchall()
         return [payload(db,row) for row in rows]
 
 class CreateCase(BaseModel):
@@ -54,7 +61,7 @@ class CreateCase(BaseModel):
 
 @router.post('/kyc/customer/{customer_id}')
 def create_case(customer_id:str,body:CreateCase):
-    require('analyze');identity=owner()
+    require('customer_write');identity=owner()
     with connect() as db:
         db.execute('BEGIN IMMEDIATE')
         if not db.execute("SELECT 1 FROM customers WHERE dataset='meridian' AND id=?",(customer_id,)).fetchone():raise ValueError('Select an existing customer.')
@@ -74,7 +81,7 @@ class Review(BaseModel):
 
 @router.patch('/kyc/{case_id}')
 def review_case(case_id:str,body:Review):
-    require('analyze')
+    require('customer_write')
     with connect() as db:row=db.execute('SELECT * FROM kyc_cases WHERE id=?',(case_id,)).fetchone()
     if not row:raise ValueError('KYC case not found.')
     permitted(row)

@@ -356,7 +356,375 @@
   border-radius: 50%;
 }
 
+/* OCR documents read directly inside the conversation, with their own typography. */
+.chat-greeting-description {
+  max-width: 520px;
+  margin: 16px auto 24px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.viewer-chat-notice {
+  margin: 0 8px 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.markdown-content {
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+:root .ocr-markdown {
+  padding: 0;
+  margin: 24px 0 16px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.markdown-content > * + * {
+  margin-top: 16px;
+}
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.markdown-content h3 {
+  font-size: 22px;
+}
+.markdown-content h4 {
+  font-size: 18px;
+}
+.markdown-content h5,
+.markdown-content h6 {
+  font-size: 15px;
+}
+.markdown-content p,
+.markdown-content li {
+  white-space: pre-line;
+}
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 24px;
+}
+.markdown-content ul {
+  list-style-type: disc;
+}
+.markdown-content ol {
+  list-style-type: decimal;
+}
+.markdown-content li + li {
+  margin-top: 6px;
+}
+.markdown-content li > ul,
+.markdown-content li > ol {
+  margin-top: 6px;
+}
+.markdown-content .contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+.markdown-content .task-list-item input {
+  margin-right: 8px;
+  accent-color: var(--accent);
+}
+.markdown-content strong {
+  font-weight: 600;
+}
+.markdown-content em {
+  font-style: italic;
+}
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.markdown-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 16px;
+  background: var(--surface-raised);
+  border-radius: 12px;
+  white-space: pre;
+}
+.markdown-content code {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+}
+.markdown-content :not(pre) > code {
+  padding: 2px 5px;
+  background: var(--surface-raised);
+  border-radius: 5px;
+}
+.markdown-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.markdown-table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.markdown-content table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+}
+.markdown-content th {
+  background: var(--surface-raised);
+  font-weight: 600;
+  text-align: left;
+}
+.markdown-content th,
+.markdown-content td {
+  padding: 12px;
+  vertical-align: top;
+}
+.markdown-content tbody tr:last-child td {
+  border-bottom: 0;
+}
+.form-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 12px;
+}
+.form-document-actions .button {
+  font-size: 12px;
+}
+.form-document-actions > [role="status"] {
+  font-size: 12px;
+}
+
 /* Shared cards cover every dashboard and the rich blocks inside the AI thread. */
+.admin-access-note {
+  margin: 0 0 20px;
+  font-size: 13px;
+}
+.form-approval-status {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-raised);
+  overflow-wrap: anywhere;
+}
+.form-approval-status p {
+  font-size: 13px;
+}
+.approval-workspace {
+  min-width: 0;
+  padding: 0 24px 24px;
+}
+.approval-workspace .data-panel-heading {
+  padding-inline: 0;
+}
+.approval-workspace h2,
+.approval-request-heading,
+.approval-actions,
+.approval-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.approval-filters {
+  justify-content: space-between;
+  margin: 20px 0;
+}
+.approval-filters label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.approval-filters select,
+.approval-note textarea {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px;
+  min-width: 0;
+  font-size: 13px;
+}
+.approval-filters select {
+  min-height: 44px;
+}
+.approval-note textarea::placeholder {
+  color: var(--subtle);
+}
+.approval-list {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.approval-request {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-raised);
+}
+.approval-request > div {
+  flex: 1;
+  min-width: 0;
+}
+.approval-request p,
+.approval-request small,
+.approval-request-heading p {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.approval-request h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.approval-detail {
+  margin-top: 24px;
+}
+.approval-request-heading {
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.approval-request-heading h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.approval-decision h4,
+.approval-audit h4 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.approval-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.approval-fields > div {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  background: var(--surface-raised);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.approval-fields span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.approval-fields strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.approval-document {
+  margin: 20px 0;
+  border-block: 1px solid var(--border);
+  padding: 16px 0;
+}
+.approval-document summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+.approval-document .markdown-content {
+  margin-top: 20px;
+}
+.approval-document ul {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.approval-decision {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  margin: 20px 0;
+}
+.approval-decision > p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.approval-note {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+  font-size: 13px;
+}
+.approval-note textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.approval-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0;
+  font-size: 13px;
+  min-height: 44px;
+}
+.approval-confirm input {
+  margin-top: 4px;
+  accent-color: var(--accent);
+}
+.approval-reject {
+  color: var(--red);
+}
+.approval-audit {
+  margin-top: 24px;
+}
+.approval-audit > div {
+  border-left: 2px solid var(--border);
+  padding: 12px 16px;
+}
+.approval-audit strong {
+  font-size: 13px;
+}
+.approval-audit small {
+  display: block;
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.approval-audit p {
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .approval-workspace {
+    padding: 0 16px 16px;
+  }
+  .approval-request {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+  .approval-request > div {
+    flex-basis: calc(100% - 100px);
+  }
+  .approval-request > .button {
+    width: 100%;
+  }
+  .approval-fields {
+    grid-template-columns: 1fr;
+  }
+  .approval-decision {
+    padding: 16px;
+  }
+  .approval-actions > .button {
+    flex: 1 1 160px;
+  }
+}
+
 :root .kpi-card,
 :root .chart-card,
 :root .panel,

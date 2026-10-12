@@ -1,12 +1,37 @@
 import { test, expect } from "@playwright/test";
 import fs from "node:fs";
-import {transactions,snapshotMonth} from '../../data/banking';
+import { transactions, snapshotMonth } from "../../data/banking";
+
+test("report and scenario routes use backend permissions without mock fallback", async ({
+  request,
+}) => {
+  const headers = { "x-risklens-role": "viewer" };
+  const report = await request.post("/api/reports", {
+    headers,
+    data: { investigation: { id: "INV-FORGED", title: "Untrusted client report" } },
+  });
+  expect(report.status()).toBe(403);
+  const scenario = await request.post("/api/scenarios", {
+    headers,
+    data: { riskId: "RSK-002", coverage: 80, effectiveness: 65, friction: 5 },
+  });
+  expect(scenario.status()).toBe(403);
+  const unavailable = await request.post("/api/scenarios", {
+    headers: { "x-risklens-role": "analyst" },
+    data: { riskId: "RSK-002", coverage: 80, effectiveness: 65, friction: 5 },
+  });
+  expect(unavailable.status()).toBe(422);
+  const malformed = await request.post("/api/reports", {
+    data: { investigation: { id: "INV-FORGED" }, scenario: "invalid" },
+  });
+  expect(malformed.status()).toBe(400);
+});
 
 test("analyst chat keeps the composer visible and renders tool results inline", async ({
   page,
 }) => {
   await page.goto("/#ai-analyst");
-  await expect(page.getByRole("heading", { name: "Hello, Alex." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await expect(page.locator(".analyst-side-panel")).toHaveCount(0);
   fs.mkdirSync("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/risklens-chat-empty.png" });
@@ -30,10 +55,10 @@ test("analyst chat keeps the composer visible and renders tool results inline", 
   });
   expect((await composer.boundingBox())!.y).toBeCloseTo(before!.y, 0);
   await page.getByRole("button", { name: "New analysis" }).click();
-  await expect(page.getByRole("heading", { name: "Hello, Alex." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Hello, Alex." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await expect(composer).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true
@@ -46,7 +71,12 @@ test("complete banking investigation, scenario, and report flow", async ({ page 
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Command Center", exact: true })).toBeVisible();
-  await expect(page.getByText(transactions.filter(tx=>tx.month===snapshotMonth).length.toLocaleString(), { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(
+      transactions.filter((tx) => tx.month === snapshotMonth).length.toLocaleString(),
+      { exact: true }
+    )
+  ).toBeVisible();
   fs.mkdirSync("artifacts", { recursive: true });
   await page.waitForTimeout(850); // Let the intentional chart entrance finish before visual capture.
   await page.screenshot({ path: "artifacts/risklens-desktop.png", fullPage: true });

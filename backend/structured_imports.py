@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import PurePath
 from typing import Literal
-from zipfile import BadZipFile, ZipFile
+from zipfile import ZipFile
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response

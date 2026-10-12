@@ -290,9 +290,7 @@ export function ImportWizard({
                   {busy ? "Reading file…" : "Choose CSV or Excel file"}
                 </Button>
                 {!canPreview && (
-                  <small>
-                    Your role can view imports. An analyst or customer operator must upload data.
-                  </small>
+                  <small>Your role can view imports. An Analyst or Admin must upload data.</small>
                 )}
               </div>
               <div className="import-template-links">
@@ -519,7 +517,10 @@ export function ImportWizard({
                       </Button>
                     </>
                   ) : (
-                    <p>A customer operator must confirm the import.</p>
+                    <p>
+                      Only an admin can confirm an import. An admin must upload and review the file
+                      in their workspace.
+                    </p>
                   )}
                 </>
               )}

@@ -4,8 +4,6 @@ import json
 import re
 import threading
 from datetime import date
-from pathlib import Path
-from typing import Literal
 
 import fitz
 from PIL import Image
@@ -163,14 +161,16 @@ def read_form(content, filename):
     return dict(id=draft_id,filename=filename,markdown=markdown,fields=fields,status='pending',provider=provider.name,externalTransmission=provider.external,**review,warnings=[*extracted.warnings,'The draft does not perform KYC verification or open a bank account.','Original upload bytes are discarded after extraction; extracted content is stored for review.'])
 
 
-def add_customer(draft_id, fields, duplicate_decision=None,duplicate_reason='',review_revision=None):
+def add_customer(draft_id, fields, duplicate_decision=None,duplicate_reason='',review_revision=None, *, connection=None, approval_id=None):
     from .security import require
     require('customer_write')
     values = CustomerFields.model_validate(fields).model_dump()
     if len(values["fullName"].strip()) < 2 or not values["dateOfBirth"]:
         raise ValueError("Review and supply the customer's name and date of birth before saving.")
-    with connect() as db:
-        db.execute("BEGIN IMMEDIATE")
+    from contextlib import nullcontext
+    with (nullcontext(connection) if connection is not None else connect()) as db:
+        if not db.in_transaction:
+            db.execute("BEGIN IMMEDIATE")
         draft = db.execute("SELECT * FROM form_drafts WHERE id=?", (draft_id,)).fetchone()
         if not draft:
             raise ValueError("Form draft not found.")
@@ -178,6 +178,12 @@ def add_customer(draft_id, fields, duplicate_decision=None,duplicate_reason='',r
             raise ValueError("This customer profile was deleted. Upload a new form to begin again.")
         if draft["status"] == "saved":
             return dict(customerId=draft["customer_id"], status="pending_verification", duplicate=True)
+        if draft['status'] == 'rejected':
+            raise ValueError('This form request was rejected. Upload a new corrected application.')
+        from .security import actor
+        approval = db.execute("SELECT * FROM admin_approval_requests WHERE id=? AND draft_id=? AND status='pending' AND tenant=?",(approval_id,draft_id,actor().tenant)).fetchone()
+        if connection is None or draft['status'] != 'submitted' or not approval or json.loads(approval['snapshot'])['fields'] != values:
+            raise PermissionError('OCR customer creation requires an explicit admin approval decision.')
         from .form_quality import quality
         review=quality(db,draft_id,values)
         if review_revision is not None and review_revision!=review['revision']:
@@ -198,7 +204,7 @@ def add_customer(draft_id, fields, duplicate_decision=None,duplicate_reason='',r
                 db.execute("UPDATE form_drafts SET status='saved',customer_id=?,fields=? WHERE id=?",(customer_id,json.dumps(values),draft_id))
                 from .kyc import ensure_form_case
                 ensure_form_case(db,draft_id,customer_id)
-                db.execute('INSERT INTO audit_runs VALUES(?,?,?,?,?,?)',(identifier('RUN'),'form_linked_existing_customer',json.dumps(dict(draftId=draft_id,customerId=customer_id,actor=actor().actor_id,revision=review['revision'])),duplicate_reason.strip()[:500],now(),''))
+                db.execute('INSERT INTO audit_runs VALUES(?,?,?,?,?,?)',(identifier('RUN'),'form_linked_existing_customer',json.dumps(dict(draftId=draft_id,customerId=customer_id,actor=actor().actor_id,revision=review['revision'],approvalId=approval_id)),duplicate_reason.strip()[:500],now(),''))
                 return dict(customerId=customer_id,status='pending_verification',duplicate=True)
         from .form_quality import record_confirmed
         review['revision']=record_confirmed(db,draft,values,review,duplicate_reason)
@@ -209,5 +215,5 @@ def add_customer(draft_id, fields, duplicate_decision=None,duplicate_reason='',r
         from .kyc import ensure_form_case
         ensure_form_case(db,draft_id,customer_id)
         from .security import actor
-        db.execute("INSERT INTO audit_runs VALUES(?,?,?,?,?,?)", (identifier("RUN"), "customer_added_after_review", json.dumps({"datasetId": "meridian", "draftId": draft_id, "customerId": customer_id,'actor':actor().actor_id,'reviewRevision':review['revision'],'duplicateDecision':duplicate_decision}), duplicate_reason[:500] if duplicate_decision else "Explicit user confirmation", now(), ""))
+        db.execute("INSERT INTO audit_runs VALUES(?,?,?,?,?,?)", (identifier("RUN"), "customer_added_after_review", json.dumps({"datasetId": "meridian", "draftId": draft_id, "customerId": customer_id,'actor':actor().actor_id,'reviewRevision':review['revision'],'duplicateDecision':duplicate_decision,'approvalId':approval_id}), duplicate_reason[:500] if duplicate_decision else "Explicit admin approval", now(), ""))
     return dict(customerId=customer_id, status="pending_verification", duplicate=False)

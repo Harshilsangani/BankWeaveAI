@@ -61,6 +61,7 @@ export default function Home() {
   return (
     <div className="app-shell">
       <Shell
+        role={workspace.identity?.role}
         page={workspace.page}
         riskCount={data ? activeRisks.length : undefined}
         onPage={navigate}
@@ -129,6 +130,7 @@ export default function Home() {
                 onData={() => navigate("Data Workspace")}
                 onInvestigate={workspace.investigate}
                 onRadar={() => navigate("Risk Radar")}
+                canAnalyze={workspace.canAnalyze}
               />
             )}
             {workspace.page === "AI Analyst" && (
@@ -138,6 +140,8 @@ export default function Home() {
                 onDismissNotice={() => workspace.setToast("")}
                 contextStatus={workspace.contextStatus}
                 ready={workspace.sessionReady}
+                role={workspace.identity?.role}
+                canAnalyze={workspace.canAnalyze}
                 progress={workspace.progress}
                 onCancel={workspace.cancel}
                 datasets={workspace.datasets}
@@ -168,6 +172,7 @@ export default function Home() {
             )}
             {workspace.page === "Investigations" && data && (
               <Investigation
+                canAnalyze={workspace.canAnalyze}
                 progress={workspace.progress}
                 onCancel={workspace.cancel}
                 investigation={workspace.investigation}
@@ -315,7 +320,7 @@ export default function Home() {
         open={profileOpen}
         onOpenChange={setProfileOpen}
         title="Alex Kumar"
-        description="Risk analyst · Meridian Bank demo workspace"
+        description={`${workspace.identity?.role ?? "Loading permissions"} · Meridian Bank demo workspace`}
       >
         <div className="insight-card">
           <span className="avatar">AK</span>

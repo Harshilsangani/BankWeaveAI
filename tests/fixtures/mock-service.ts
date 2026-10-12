@@ -1,8 +1,8 @@
-import { baselineMonth, branches, policies, snapshot, transactions } from "@/data/banking";
+// Reference fixture for deterministic analytics tests; never imported by application routes.
+import { baselineMonth, branches, policies } from "@/data/banking";
 import { change, delay, money, number, uid } from "@/lib/utils";
 import type {
   AnalystResponse,
-  Dashboard,
   Investigation,
   QueryContext,
   ResponseBlock,
@@ -20,7 +20,7 @@ import {
   segmentTable,
   trend,
 } from "./analytics";
-import type { BankWeaveService } from "./contracts";
+import type { BankWeaveService } from "@/services/contracts";
 
 export function buildRisks(): RiskEvent[] {
   return [
@@ -238,64 +238,7 @@ export function resolveContext(query: string, previous?: QueryContext): QueryCon
   }
   return ctx;
 }
-export const mockService: BankWeaveService = {
-  async getDashboard(): Promise<Dashboard> {
-    await delay(250);
-    return {
-      metrics: [
-        metrics({ domain: "fraud" })[1],
-        {
-          label: "Transactions monitored",
-          value: number(analyze({ domain: "fraud" }).total),
-          change: "6 months",
-          direction: "neutral",
-          detail: `${number(transactions.length)} records in demo`,
-          sparkline: [19, 25, 21, 29, 27, 34],
-        },
-        metrics({ domain: "loans" })[2],
-        {
-          label: "Active risk signals",
-          value: "03",
-          change: "2 high severity",
-          direction: "up",
-          detail: "Ready for investigation",
-          sparkline: [1, 1, 2, 1, 2, 3],
-        },
-      ],
-      trend: trend({ domain: "fraud" }),
-      regions: regions({ domain: "fraud" }),
-      risks: buildRisks(),
-      recent: [
-        {
-          id: "RSK-003",
-          title: "New-device transaction cluster",
-          category: "Card fraud",
-          status: "In review",
-          time: "30 Sep · 18:35",
-        },
-        {
-          id: "RSK-002",
-          title: "Ahmedabad loan concentration",
-          category: "Credit risk",
-          status: "In review",
-          time: "30 Sep · 18:35",
-        },
-      ],
-      snapshot,
-    };
-  },
-  async getRiskRadar() {
-    await delay(250);
-    return buildRisks();
-  },
-  async startInvestigation(id, scope) {
-    await delay(1400);
-    return buildInvestigation(id, scope);
-  },
-  async runScenario(input) {
-    await delay(700);
-    return calculateScenario(input);
-  },
+export const mockService: Pick<BankWeaveService, "generateReport" | "sendAnalystQuery"> = {
   async generateReport(investigation, scenario) {
     await delay(600);
     return {
@@ -305,10 +248,6 @@ export const mockService: BankWeaveService = {
       investigation,
       scenario,
     };
-  },
-  async getPolicies() {
-    await delay(150);
-    return policies;
   },
   async sendAnalystQuery(query, previous, scenario): Promise<AnalystResponse> {
     if (!query.trim()) throw new Error("Enter a banking question to start an analysis.");

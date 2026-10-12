@@ -20,24 +20,24 @@ Original downloaded files are in the temporary directory recorded in `audit.json
 
 ## Actual public files
 
-| File | Rows checked | Columns | Duplicate primary keys |
-| --- | ---: | ---: | ---: |
-| customers.csv | 2,500 | 16 | 0 |
-| accounts.csv | 3,750 | 11 | 0 |
-| transactions.csv | 5,000 | 12 | 0 |
-| fraud_alerts.csv | 1,100 | 9 | 0 |
-| devices.csv | 1,750 | 10 | 0 |
+| File             | Rows checked | Columns | Duplicate primary keys |
+| ---------------- | -----------: | ------: | ---------------------: |
+| customers.csv    |        2,500 |      16 |                      0 |
+| accounts.csv     |        3,750 |      11 |                      0 |
+| transactions.csv |        5,000 |      12 |                      0 |
+| fraud_alerts.csv |        1,100 |       9 |                      0 |
+| devices.csv      |        1,750 |      10 |                      0 |
 
 These files have 14,100 rows in total. The public files do not contain the advertised full two-million-transaction release.
 
 ## Verified relationship gaps
 
-| Relationship | Rows missing a parent in the public files | Total child rows |
-| --- | ---: | ---: |
-| accounts.customer_id -> customers.customer_id | 3,548 | 3,750 |
-| devices.customer_id -> customers.customer_id | 1,673 | 1,750 |
-| transactions.account_id -> accounts.account_id | 4,740 | 5,000 |
-| fraud_alerts.transaction_id -> transactions.transaction_id | 1,096 | 1,100 |
+| Relationship                                               | Rows missing a parent in the public files | Total child rows |
+| ---------------------------------------------------------- | ----------------------------------------: | ---------------: |
+| accounts.customer_id -> customers.customer_id              |                                     3,548 |            3,750 |
+| devices.customer_id -> customers.customer_id               |                                     1,673 |            1,750 |
+| transactions.account_id -> accounts.account_id             |                                     4,740 |            5,000 |
+| fraud_alerts.transaction_id -> transactions.transaction_id |                                     1,096 |            1,100 |
 
 Only **10 transactions** have a complete transaction -> account -> customer chain in the sample. **No alert** has a complete alert -> transaction -> account -> customer chain.
 
@@ -70,3 +70,5 @@ Publisher descriptions of synthetic generation and production quality are claims
 3. **Keep the coherent BankWeave fixture for the connected demo** and add BankShield as a separately labeled external dataset. Compute findings independently; do not force the existing 31% story onto the source data.
 
 Do not repair the sample by randomly assigning customers, accounts or devices. If we generate enrichment, retain original source IDs and mark the new relationships as synthetic.
+
+The reproducible source audit is retained in [bankshield-audit.json](data/bankshield-audit.json). Current Meridian integrity can be checked without changing data using the script documented in [README](../README.md).

@@ -15,6 +15,17 @@ class FakeModels:
 
 
 class ProviderTests(unittest.TestCase):
+    def test_greetings_and_onboarding_follow_the_admin_approval_contract(self):
+        from backend.providers import LocalProvider,is_greeting
+        provider=LocalProvider()
+        for query in ('Hi','hello!','Hey BankWeave','Good morning','Namaste'):
+            self.assertTrue(is_greeting(query));self.assertEqual(provider.route(query).agent,'general_chat')
+            self.assertIn('Hello!',provider.chat(query).text)
+        self.assertFalse(is_greeting('Hi, show loan defaults'))
+        self.assertEqual(provider.route('Hi, show loan defaults').agent,'database_analyst')
+        text=provider.chat('How do I upload a form?').text
+        self.assertIn('Submit for admin approval',text);self.assertNotIn('Confirm & add customer',text)
+        self.assertEqual(provider.route('past 5 years total credit').agent,'database_analyst')
     def test_local_provider_no_credentials_and_route_allowlist(self):
         from backend.analytics import sanitize
         value=sanitize('Show transactions over 1000000000 for account 123456789012 email secret@example.test')

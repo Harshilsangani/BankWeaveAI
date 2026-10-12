@@ -7,7 +7,7 @@ const python =
   (process.platform === "win32" ? "backend/.venv/Scripts/python.exe" : "backend/.venv/bin/python");
 if (!existsSync(python) && !process.env.RISKLENS_PYTHON) {
   console.error(
-    "Create backend/.venv and install backend/requirements.txt first. See backend/README.md."
+    "Create backend/.venv and install backend/requirements.lock.txt first. See README.md."
   );
   process.exit(1);
 }
@@ -35,9 +35,9 @@ async function health() {
 }
 try {
   if (!(await health())) {
-    await run(python,['-m','backend.migrate']);
+    await run(python, ["-m", "backend.migrate"]);
     await run(process.execPath, ["--import", "tsx", "scripts/export-demo.ts"]);
-    if (process.env.RISKLENS_AUTO_SEED === 'true' && process.env.RISKLENS_ENV !== 'production')
+    if (process.env.RISKLENS_AUTO_SEED === "true" && process.env.RISKLENS_ENV !== "production")
       await run(python, ["-m", "backend.import_data"]);
     const backend = spawn(
       python,

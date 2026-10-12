@@ -26,7 +26,17 @@ export function Radar({
     [running, setRunning] = useState(false),
     [notice, setNotice] = useState("");
   useEffect(() => {
-    void getStaffIdentity().then((identity) => setCanRun(identity.permissions.includes("analyze")));
+    let active = true;
+    void getStaffIdentity()
+      .then((identity) => {
+        if (active) setCanRun(identity.permissions.includes("analyze"));
+      })
+      .catch(() => {
+        if (active) setNotice("Staff permissions could not be loaded. Reload to start a task.");
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   const [filter, setFilter] = useState("All signals");
   const visible = risks.filter(
@@ -67,7 +77,7 @@ export function Radar({
             </Button>
           )}
           {dismissed.length > 0 && (
-            <Button onClick={onRestore}>
+            <Button onClick={onRestore} disabled={!canRun}>
               <RotateCcw size={14} />
               Restore dismissed
             </Button>
@@ -102,7 +112,8 @@ export function Radar({
               risk={r}
               onInvestigate={onInvestigate}
               onEvidence={onEvidence}
-              onDismiss={onDismiss}
+              onDismiss={canRun ? onDismiss : undefined}
+              disabled={!canRun}
             />
           ))}
         </div>

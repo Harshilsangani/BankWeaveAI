@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 test('actual progress stream, cancellation and retry leave the analyst usable',async({page})=>{
   await page.goto('/#ai-analyst');
-  await expect(page.getByRole('heading',{name:'Hello, Alex.'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Hello, Analyst.'})).toBeVisible();
   let calls=0;
   await page.route('**/api/operations',async route=>{
     if(route.request().method()==='DELETE'){await route.fulfill({json:{cancelRequested:true}});return;}

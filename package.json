@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "format": "prettier --write app components features services data types hooks lib tests *.ts *.json *.md"
+    "format": "prettier --write app components features services data types hooks lib tests docs *.ts *.json *.md"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.0",

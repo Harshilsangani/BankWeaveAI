@@ -33,7 +33,7 @@ test("saved chats restore rich answers, filters and independent browser tabs", a
     release = resolve;
   });
   await page.getByRole("button", { name: "Start a new chat" }).click();
-  await expect(page.getByRole("heading", { name: "Hello, Alex." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await page.route("**/api/operations", async (route) => {
     await gate;
     await route.continue();
@@ -95,7 +95,7 @@ test("reopening an uploaded form preserves corrections without adding a customer
   await page.getByLabel("Customer Full name").fill("History Review Customer");
   await expect(page.getByRole("status").filter({ hasText: "Corrections saved" })).toBeVisible();
   await page.getByRole("button", { name: "Start a new chat" }).click();
-  await expect(page.getByRole("heading", { name: "Hello, Alex." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await chat(page, title).click();
   await expect(page.getByLabel("Customer Full name")).toHaveValue("History Review Customer");
   await expect(page.locator(".markdown-preview")).toContainText("Ananya Shah");
@@ -179,7 +179,7 @@ test("saved analyst chats remain usable when dashboard loading fails", async ({
   await expect(chat(page, title)).toHaveAttribute("aria-current", "true");
   await expect(page.locator(".chat-thread .chart-card")).toHaveCount(2);
   await page.getByRole("button", { name: "Start a new chat" }).click();
-  await expect(page.getByRole("heading", { name: "Hello, Alex." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await chat(page, title).click();
   await expect(page.locator(".chat-thread .chart-card")).toHaveCount(2);
 });

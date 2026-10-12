@@ -40,7 +40,7 @@ class CaseUpdate(BaseModel):
     model_config=ConfigDict(extra='forbid')
     revision:int=Field(ge=1)
     status:Literal['In review','Monitoring','Resolved'] | None=None
-    owner:Literal['local-analyst','local-customer_operator'] | None=None
+    owner:Literal['local-analyst','local-customer_operator','local-admin'] | None=None
     kind:Literal['note','action']='note'
     note:str=Field(default='',max_length=2000)
 

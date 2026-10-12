@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 const template = path.resolve("public/demo/banking-import-template.xlsx");
 async function openImports(page: import("@playwright/test").Page) {
+  await page.addInitScript(() => localStorage.setItem("risklens-role", "admin"));
   await page.goto("/#data-workspace");
   await page.getByRole("button", { name: "Data quality & imports", exact: true }).click();
   await expect(
@@ -83,7 +84,9 @@ test("mobile Excel mapping and SQL export guidance remain usable without page ov
   await page.setViewportSize({ width: 390, height: 844 });
   await openImports(page);
   await page.getByText("Storage and SQL database exports", { exact: true }).click();
-  await expect(page.locator(".import-wizard .import-storage")).toContainText("Customer IDs are preserved");
+  await expect(page.locator(".import-wizard .import-storage")).toContainText(
+    "Customer IDs are preserved"
+  );
   await page.getByLabel("Banking data file").setInputFiles(template);
   await page.getByLabel("Import worksheet").selectOption("Transactions");
   await expect(page.getByLabel("Import timezone")).toBeVisible();

@@ -35,6 +35,7 @@ test('customer filters lead to an investigation with the same customer ID',async
 });
 
 test("customer directory creates, edits, persists and deletes a profile", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("risklens-role", "admin"));
   const name = `Directory demo ${Date.now()}`;
   await page.goto("/");
   await page.getByRole("button", { name: "Manage customer data" }).click();

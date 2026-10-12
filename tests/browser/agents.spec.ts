@@ -60,10 +60,12 @@ test("BankShield preserves country, USD, dates and limited source coverage", asy
   expect(html).not.toContain("₹");
 });
 
-test("scanned PDF renders Markdown and waits for reviewed customer creation", async ({
+test("scanned PDF renders Markdown and creates a customer only after admin approval", async ({
   page,
   request,
+  browser,
 }) => {
+  const name = `Ananya Demo Shah ${Date.now()}`;
   await page.goto("/#ai-analyst");
   const before = (await (await request.get("/api/data?resource=customers")).json()).stats.customers;
   await page.getByLabel("Upload customer form").setInputFiles("public/demo/customer-form.pdf");
@@ -73,39 +75,71 @@ test("scanned PDF renders Markdown and waits for reviewed customer creation", as
     before
   );
   await expect(page.getByLabel("Customer Full name")).toHaveValue("Ananya Shah");
-  await page.getByLabel("Customer Full name").fill("Ananya Demo Shah");
+  await page.getByLabel("Customer Full name").fill(name);
   await expect(page.getByRole("status").filter({ hasText: "Corrections saved" })).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Customer Full name")).toHaveValue("Ananya Demo Shah");
+  await expect(page.getByLabel("Customer Full name")).toHaveValue(name);
   if (await page.getByLabel("Duplicate decision").isVisible()) {
     await page.getByLabel("Duplicate decision").selectOption("create_separate");
     await page
       .getByLabel("Duplicate review reason")
       .fill("Separate fictional profile for this explicit test run.");
   }
-  await page.getByRole("button", { name: "Confirm & add customer" }).click();
+  await page.getByRole("button", { name: "Submit for admin approval" }).click();
+  await expect(page.getByText("Awaiting admin approval", { exact: true })).toBeVisible();
+  expect((await (await request.get("/api/data?resource=customers")).json()).stats.customers).toBe(
+    before
+  );
+  await page.reload();
+  await expect(page.getByLabel("Customer Full name")).toBeDisabled();
+  await expect(page.getByText("Awaiting admin approval", { exact: true })).toBeVisible();
+  const adminContext = await browser.newContext();
+  await adminContext.addInitScript(() => localStorage.setItem("risklens-role", "admin"));
+  const admin = await adminContext.newPage();
+  await admin.goto("/#data-workspace");
+  await admin.getByRole("button", { name: "Approval requests", exact: true }).click();
+  await admin
+    .locator(".approval-request")
+    .filter({ hasText: name })
+    .getByRole("button", { name: "Review request" })
+    .click();
+  await expect(admin.locator(".approval-fields")).toContainText(name);
+  await admin
+    .getByLabel("Admin decision note")
+    .fill("Admin reviewed the fictional form and corrected customer fields.");
+  if (await admin.getByLabel("Admin duplicate decision").isVisible()) {
+    await admin.getByLabel("Admin duplicate decision").selectOption("create_separate");
+    await admin
+      .getByLabel("Admin duplicate reason")
+      .fill("Separate fictional profile for this explicit test run.");
+  }
+  await admin.getByText("I reviewed the submitted fields and confirm this decision.").click();
+  await admin.getByRole("button", { name: "Approve & add customer" }).click();
+  await expect(admin.getByRole("status")).toContainText("Approved.");
+  await adminContext.close();
+  await page.getByRole("button", { name: "Refresh approval status" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Customer saved" })).toContainText(
     "Verification pending"
   );
   await expect(page.locator(".chat-thread")).toContainText("Customer workflow completed");
-  await expect(page.locator(".chat-thread")).toContainText("Customer update agent");
+  await expect(page.locator(".chat-thread")).toContainText("Admin approval recorded");
   await page.reload();
   await expect(page.getByRole("status").filter({ hasText: "Customer saved" })).toBeVisible({
     timeout: 20000,
   });
-  await expect(page.getByRole("button", { name: "Confirm & add customer" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Submit for admin approval" })).toHaveCount(0);
   await page.getByRole("button", { name: "Start a new chat" }).click();
-  await expect(page.getByRole("heading", { name: "Hello, Alex." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await page
     .getByRole("button", { name: "Open chat: Read filled form: customer-form.pdf", exact: true })
     .click();
   await expect(page.getByRole("status").filter({ hasText: "Customer saved" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Confirm & add customer" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Submit for admin approval" })).toHaveCount(0);
   const customers = await (await request.get("/api/customers")).json();
   expect((await (await request.get("/api/data?resource=customers")).json()).stats.customers).toBe(
     before + 1
   );
-  expect(customers[0].full_name).toBe("Ananya Demo Shah");
+  expect(customers[0].full_name).toBe(name);
   expect(customers[0].status).toBe("pending_verification");
   await page.locator(".chat-scroll").evaluate((el) => {
     el.scrollTop = el.scrollHeight;

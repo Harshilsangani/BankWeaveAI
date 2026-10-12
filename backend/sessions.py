@@ -145,6 +145,8 @@ def load(conversation_id=None):
                         block['draft'].update(fields=json.loads(row['fields']),status=row['status'],customerId=row['customer_id'])
                         from .form_quality import quality
                         block['draft'].update(quality(db,row['id']))
+                        from .approvals import for_draft
+                        block['draft']['approval'] = for_draft(db,row['id'])
         return {**state,'conversations':summaries(db,sid),'messages':messages,'reports':list(filter(None,[artifact(i) for i in state['reportIds']])),'investigation':artifact(state['investigationId']) if state['investigationId'] else None}
 
 

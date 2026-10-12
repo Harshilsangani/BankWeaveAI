@@ -1,4 +1,5 @@
 import { workspaceSessionId, workspaceConversationId } from "./index";
+import { developmentRoleHeader } from "@/lib/staff-role";
 export interface ProgressEvent {
   type: "progress";
   stage: string;
@@ -24,7 +25,7 @@ export async function streamOperation<T>(
 ): Promise<T> {
   const headers = new Headers({
     "x-risklens-session": workspaceSessionId(),
-    "x-risklens-role": localStorage.getItem("risklens-role") ?? "customer_operator",
+    "x-risklens-role": developmentRoleHeader(),
     "x-risklens-request-id": options.requestId,
   });
   const conversationId = workspaceConversationId();
@@ -91,7 +92,7 @@ export async function cancelOperation(requestId: string) {
     method: "DELETE",
     headers: {
       "x-risklens-session": workspaceSessionId(),
-      "x-risklens-role": localStorage.getItem("risklens-role") ?? "customer_operator",
+      "x-risklens-role": developmentRoleHeader(),
     },
   });
 }

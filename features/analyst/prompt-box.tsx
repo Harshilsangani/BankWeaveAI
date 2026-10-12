@@ -21,12 +21,14 @@ export const starterQuestions = [
 export function PromptBox({
   onSubmit,
   busy = false,
+  disabled = false,
   hero = false,
   chat = false,
   onUpload,
 }: {
   onSubmit: (query: string) => void;
   busy?: boolean;
+  disabled?: boolean;
   hero?: boolean;
   chat?: boolean;
   onUpload?: (file: File) => void;
@@ -40,7 +42,7 @@ export function PromptBox({
     textarea.current.style.height = `${Math.min(textarea.current.scrollHeight, 180)}px`;
   }, [query, chat]);
   function submit() {
-    if (query.trim() && !busy) {
+    if (query.trim() && !busy && !disabled) {
       onSubmit(query.trim());
       setQuery("");
     }
@@ -76,7 +78,7 @@ export function PromptBox({
           onChange={(e) => setQuery(e.target.value)}
           maxLength={1000}
           rows={2}
-          disabled={busy}
+          disabled={busy || disabled}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
@@ -93,7 +95,7 @@ export function PromptBox({
                 accept="application/pdf,image/png,image/jpeg"
                 className="sr-only"
                 aria-label="Upload customer form"
-                disabled={busy}
+                disabled={busy || disabled}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) onUpload(file);
@@ -105,7 +107,7 @@ export function PromptBox({
                 className="form-attach"
                 aria-label="Attach filled customer form"
                 title="Read a filled PDF or image form"
-                disabled={busy}
+                disabled={busy || disabled}
                 onClick={() => upload.current?.click()}
               >
                 <Paperclip size={18} />
@@ -162,7 +164,7 @@ export function PromptBox({
               type="submit"
               className="send-button"
               aria-label="Send question"
-              disabled={!query.trim() || busy}
+              disabled={!query.trim() || busy || disabled}
             >
               {busy ? (
                 <Loader2 size={18} className="spin" />
@@ -176,7 +178,11 @@ export function PromptBox({
         </div>
       </form>
       {hero && (
-        <SuggestedQuestions questions={starterQuestions} onSelect={onSubmit} disabled={busy} />
+        <SuggestedQuestions
+          questions={starterQuestions}
+          onSelect={onSubmit}
+          disabled={busy || disabled}
+        />
       )}
       {!hero && (
         <p className="prompt-disclaimer">
