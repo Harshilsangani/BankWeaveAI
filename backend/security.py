@@ -39,14 +39,31 @@ class DevelopmentIdentity:
         return Identity(actor_id='local-'+role,role=role)
 
 
-identity_adapter: IdentityAdapter = DevelopmentIdentity()
+class ConfiguredIdentity:
+    def __init__(self):
+        self.development = DevelopmentIdentity()
+        self.iap = None
+
+    def resolve(self, request):
+        mode = os.environ.get('RISKLENS_IDENTITY_ADAPTER', 'development')
+        if mode == 'development':
+            return self.development.resolve(request)
+        if mode == 'iap':
+            if self.iap is None:
+                from .iap_identity import IAPIdentity
+                self.iap = IAPIdentity()
+            return self.iap.resolve(request)
+        raise PermissionError('The configured staff identity adapter is unsupported.')
+
+
+identity_adapter: IdentityAdapter = ConfiguredIdentity()
 current_identity = ContextVar('current_identity',default=None)
 
 
 def actor():
     identity = current_identity.get()
     if identity is None:
-        if os.environ.get('RISKLENS_ENV','development') == 'production':
+        if os.environ.get('RISKLENS_ENV','development') == 'production' or os.environ.get('RISKLENS_IDENTITY_ADAPTER','development') != 'development':
             raise PermissionError('A verified staff identity is required for this tool.')
         identity = Identity('local-customer_operator','customer_operator')
     return identity

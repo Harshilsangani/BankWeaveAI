@@ -381,7 +381,6 @@ export function DataWorkspace({
       </Button>
       <div className="page-heading">
         <div>
-          <div className="eyebrow">THE RECORDS BEHIND THE INTELLIGENCE</div>
           <h1>
             Data Workspace
             <span className="heading-dot" />

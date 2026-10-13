@@ -1,3 +1,4 @@
+import { randomId } from "@/lib/random-id";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { QueryContext } from "@/types";
@@ -14,7 +15,7 @@ export const formatMoney = (value: number, unit?: "USD" | "INR") => unit === "US
 export const change = (current: number, previous: number) =>
   previous ? ((current - previous) / previous) * 100 : 0;
 export const delay = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
-export const uid = (prefix: string) => `${prefix}-${globalThis.crypto.randomUUID().slice(0, 8)}`;
+export const uid = (prefix: string) => `${prefix}-${randomId().slice(0, 8)}`;
 export const scopeLabel = (scope?: QueryContext) =>
   [
     scope?.region

@@ -2,9 +2,9 @@
 
 **Banking Intelligence & Operations** — Understand your data. Investigate risk. Act with confidence.
 
-A local banking intelligence prototype built with Next.js, TypeScript, Tailwind, Recharts, FastAPI, LangGraph and SQLite. The Google-inspired light/dark interface combines banking dashboards, an analytical chat workspace, investigations and reviewed data operations.
+A local banking intelligence prototype built with Next.js, TypeScript, Tailwind, Recharts, FastAPI, LangGraph and SQLite. The Google-inspired light interface and neutral dark interface combine banking dashboards, an analytical chat workspace, investigations and reviewed data operations.
 
-Gemini and GCP are not connected yet. Local routing/chat are deterministic, analyses use database tools, and printed-form OCR runs locally.
+The private GCP VM uses **Gemini 3.5 Flash Lite through Vertex AI** for routing, chat, policy answers, form extraction and grounded fraud/loan explanations. KPI and chart values remain calculated by database tools. Local mode remains available without cloud credentials. Managed persistence and verified public staff sign-in are still pending.
 
 ## Run locally
 
@@ -30,7 +30,10 @@ Open [BankWeave](http://127.0.0.1:3000). The launcher starts/reuses the local ba
 ## Features and roles
 
 - Command Center and Risk Radar share database-backed historical metrics and evidence.
-- AI Analyst renders text, KPIs, interactive charts, tables, evidence and actions within one answer. Sidebar history restores separate conversations and their scope.
+- AI Analyst renders text, KPIs, interactive charts, tables, evidence and actions within one answer. Sidebar history restores separate conversations and their scope. Research mode, or a research-style question, scopes the brief, calculates chart series in SQL, and lets a second agent choose area, column, bar, or donut charts. That answer has an Export PDF action.
+- The Analyst keeps Workspace → AI Analyst in its navigation row, with a separate toolbar below containing aligned dataset/month controls and a New chat icon on the right. New chat appears only on AI Analyst; shared page headers keep navigation and notifications. Chat messages scroll behind its opaque background. Dropdown menus match their input width and the theme, and All months selects full history. Compact Recent chat titles and the profile remain in the sidebar; the search icon opens chat search. Dark selections use subtle white highlights. Top-customer questions return ranked records; the default basis is recorded transaction value. Tools → Read a document (OCR) opens the PDF/image picker. Process lists use user-facing labels.
+- Knowledge Library is a labeled sidebar resource with searchable guides for all nine pages, page/resource filters, direct page links, and versioned policies. Guides remain available when dashboard or policy loading fails.
+- Shared navigation stays visible while scrolling. Cards and data controls adapt to desktop, tablet and phone sizes; Settings shows the connected AI provider/model. Analyst Tools supports Escape and outside-click dismissal.
 - Investigations retain case notes, source-linked relationship maps and immutable HTML reports.
 - Customer Workspace joins the same identities across accounts, loans, repayments, insurance, declarations and synthetic cashflow.
 - CSV/Excel imports provide worksheet selection, column mapping, validation, provenance and explicit admin confirmation. Executable `.sql` dumps are not accepted.
@@ -65,6 +68,8 @@ docs/              Current architecture, imports, deployment and roadmap
 
 There is one application backend. Mock analytics/report helpers live only in test fixtures; application routes do not fall back to client-supplied report data.
 
+On the current Linux VM, frontend and backend run as independently supervised services: `npm run frontend:start` serves the Next production build on port 3000, and the backend launcher runs FastAPI/Uvicorn on port 8000. The browser uses the same-origin Next gateway. See [VM service configuration](docs/deployment.md#independent-frontend-and-backend-services).
+
 ## Validation
 
 ```powershell
@@ -76,6 +81,16 @@ npm run test:e2e
 npm run build
 npm start
 ```
+
+Opt-in live Gemini acceptance (billable; all test writes use a disposable copy of the existing database):
+
+```bash
+backend/.venv/bin/python -m backend.evaluate_vertex --allow-live \
+  --storage /home/harshilsangani07/bankweave-state/storage \
+  --project ai-builders-cup --location global --model gemini-3.5-flash-lite
+```
+
+See [Vertex activation and browser acceptance](docs/deployment.md#vertex-activation-on-the-private-vm) for the runtime settings and isolated browser checks.
 
 Browser tests use Edge on Windows; elsewhere install Chromium with `npx playwright install chromium`. Run write/approval/import tests against an isolated database copy, not a working directory with records you want to preserve. Generated screenshots and test snapshots stay under ignored `artifacts/`.
 

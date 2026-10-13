@@ -1,3 +1,4 @@
+import { randomId } from "@/lib/random-id";
 import type {
   AnalystResponse,
   Dashboard,
@@ -10,11 +11,14 @@ import type {
   ScenarioInput,
   ScenarioResult,
 } from "@/types";
-import type { BankWeaveService } from "./contracts";
+import type { BankWeaveService, DatasetScope } from "./contracts";
 import type { ConversationSummary } from "@/types/conversations";
 
 let activeConversationId: string | undefined;
 let conversationWorkspaceId: string | undefined;
+let verifiedIdentity: StaffIdentity | undefined;
+let identityRequest: Promise<StaffIdentity> | undefined;
+const memorySessions = new Map<string, string>();
 export function workspaceConversationId() {
   if (typeof window === "undefined") return undefined;
   const sid = workspaceSessionId();
@@ -48,11 +52,12 @@ import { developmentRoleHeader, selectDevelopmentRole, type StaffRole } from "@/
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
+  if (path !== "identity" && typeof window !== "undefined") await getStaffIdentity();
   try {
     const headers = new Headers(init?.headers);
-    const sid = workspaceSessionId();
+    const sid = path === "identity" ? "" : workspaceSessionId();
     if (sid) headers.set("x-risklens-session", sid);
-    const cid = workspaceConversationId();
+    const cid = path === "identity" ? undefined : workspaceConversationId();
     if (cid) headers.set("x-risklens-conversation", cid);
     if (typeof window !== "undefined") headers.set("x-risklens-role", developmentRoleHeader());
     response = await fetch(`${API_BASE}/${path}`, { ...init, headers });
@@ -73,12 +78,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export function workspaceSessionId() {
   if (typeof window === "undefined") return "";
   const role = developmentRoleHeader();
-  const storageKey =
-    role === "customer_operator" ? "risklens-session-v1" : `risklens-session-v1-${role}`;
-  let sid = localStorage.getItem(storageKey);
+  const storageKey = verifiedIdentity
+    ? `risklens-session-v1-verified-${verifiedIdentity.actorId}`
+    : role === "customer_operator"
+      ? "risklens-session-v1"
+      : `risklens-session-v1-${role}`;
+  let sid = memorySessions.get(storageKey);
+  try {
+    const stored = localStorage.getItem(storageKey);
+    if (stored && /^[a-zA-Z0-9-]{16,80}$/.test(stored)) sid = stored;
+  } catch {
+    // Browser storage can be unavailable; keep this page's owned handle stable.
+  }
   if (!sid || !/^[a-zA-Z0-9-]{16,80}$/.test(sid)) {
-    sid = crypto.randomUUID();
+    sid = randomId();
+  }
+  memorySessions.set(storageKey, sid);
+  try {
     localStorage.setItem(storageKey, sid);
+  } catch {
+    /* Recovery lasts for this page only. */
   }
   return sid;
 }
@@ -90,7 +109,19 @@ export interface StaffIdentity {
   environment: string;
   adapter: string;
 }
-export const getStaffIdentity = () => request<StaffIdentity>("identity");
+export function getStaffIdentity() {
+  if (!identityRequest)
+    identityRequest = request<StaffIdentity>("identity")
+      .then((identity) => {
+        verifiedIdentity = identity.adapter === "development" ? undefined : identity;
+        return identity;
+      })
+      .catch((error) => {
+        identityRequest = undefined;
+        throw error;
+      });
+  return identityRequest;
+}
 export function setDevelopmentRole(role: StaffIdentity["role"]) {
   selectDevelopmentRole(role);
   window.location.reload();
@@ -170,10 +201,17 @@ function post<T>(path: string, body: unknown): Promise<T> {
   });
 }
 
+function scopedPath(path: string, scope?: DatasetScope): string {
+  const query = new URLSearchParams();
+  if (scope?.datasetId !== undefined) query.set("datasetId", scope.datasetId);
+  if (scope?.period !== undefined) query.set("period", scope.period);
+  return query.size ? `${path}?${query}` : path;
+}
+
 export const service: BankWeaveService = {
-  getDashboard: () => request<Dashboard>("dashboard"),
+  getDashboard: (scope) => request<Dashboard>(scopedPath("dashboard", scope)),
   getPolicies: () => request<Policy[]>("policies"),
-  getRiskRadar: () => request<RiskEvent[]>("risk-radar"),
+  getRiskRadar: (scope) => request<RiskEvent[]>(scopedPath("risk-radar", scope)),
   startInvestigation: (riskId: string, scope?: QueryContext) =>
     post<Investigation>("investigations", { riskId, scope }),
   runScenario: (input: ScenarioInput) => post<ScenarioResult>("scenarios", input),

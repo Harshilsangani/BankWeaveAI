@@ -50,7 +50,7 @@ class ProviderTests(unittest.TestCase):
         self.assertNotIn('private@example.test',call['contents'])
         self.assertEqual(call['config'].response_mime_type,'application/json')
         self.assertIsNone(call['config'].tools)
-        self.assertEqual(outbound.get(),('sanitizedQuery',))
+        self.assertEqual(outbound.get(),('sanitizedQuery','analysisScope'))
         models.payload = {'text':'Use the form review workflow.'}
         self.assertIn('review',provider.chat('Hello').text)
         models.payload = {'markdown':'# Source form','fields':{'fullName':'Demo'},'warnings':['DOB missing']}
@@ -58,6 +58,44 @@ class ProviderTests(unittest.TestCase):
         self.assertIsInstance(result,FormExtraction)
         self.assertEqual(result.fields.dateOfBirth,'')
         self.assertIn('uploadedDocumentBytes',outbound.get())
+
+    def test_vertex_routes_with_bounded_scope_and_never_sends_customer_identifiers(self):
+        models = FakeModels({'agent':'database_analyst'})
+        provider = VertexProvider(client=SimpleNamespace(models=models),model='fake-test-model')
+        self.assertEqual(provider.route('Only Ahmedabad',dict(datasetId='meridian',domain='fraud',period='2026-09',customerId='private-customer',region='Ahmedabad')).agent,'database_analyst')
+        payload = json.loads(models.calls[0]['contents'])
+        self.assertEqual(payload['context']['domain'],'fraud')
+        self.assertNotIn('private-customer',models.calls[0]['contents'])
+        self.assertIn('Compare it to Surat',models.calls[0]['config'].system_instruction)
+
+    def test_analytical_narration_uses_exact_facts_and_only_selects_existing_chart_series(self):
+        data=dict(summary='Flagged transactions: 833 → 1091 (+31.0%).',findings=['650 flags in Ahmedabad. Association is not causation.'],
+          trend=[dict(name='Aug',value=833),dict(name='Sep',value=1091)],regions=[dict(name='Ahmedabad',value=650)],
+          meta=dict(limitations=['Synthetic historical data.']),rows=[['private-transaction','private-account']])
+        models=FakeModels(dict(text='{summary}\n\n{finding-1} Review the underlying evidence.',charts=[dict(reference='trend',kind='bar')]))
+        provider=VertexProvider(client=SimpleNamespace(models=models),model='fake-test-model')
+        result=provider.explain_analysis('Why?',dict(datasetId='meridian',customerId='private-customer'),data)
+        self.assertTrue(result.text.startswith(data['summary']))
+        self.assertIn(data['findings'][0],result.text)
+        self.assertEqual(result.charts[0].reference,'trend')
+        self.assertNotIn('private-',models.calls[0]['contents'])
+        for payload,message in [
+          (dict(text='{summary} {invented}',charts=[]),'source references'),
+          (dict(text='{summary} Confirmed loss is 999.',charts=[]),'numerical claim'),
+          (dict(text='{summary} There are five confirmed cases.',charts=[]),'numerical claim'),
+          (dict(text='{summary}',charts=[dict(reference='trend',kind='area'),dict(reference='trend',kind='bar')]),'repeats'),
+          (dict(text='{summary}',charts=[dict(reference='invented',kind='bar',points=[999])]),'invalid result'),
+        ]:
+            with self.subTest(payload=payload):
+                models.payload=payload
+                with self.assertRaisesRegex(ValueError,message):provider.explain_analysis('Why?',{},data)
+
+    def test_vertex_ignores_thought_parts_when_validating_visible_structured_output(self):
+        models=FakeModels({})
+        parts=[SimpleNamespace(text='private reasoning',thought=True),SimpleNamespace(text='{"text":"Hello from Gemini."}',thought=False),SimpleNamespace(text=None,thought=False)]
+        with patch.object(models,'generate_content',return_value=SimpleNamespace(candidates=[SimpleNamespace(content=SimpleNamespace(parts=parts))])):
+            provider=VertexProvider(client=SimpleNamespace(models=models),model='fake-test-model')
+            self.assertEqual(provider.chat('Hello').text,'Hello from Gemini.')
 
     def test_invalid_provider_output_and_failures_are_bounded(self):
         models = FakeModels({'agent':'customer_update','sql':'DROP TABLE customers'})

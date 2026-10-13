@@ -26,10 +26,10 @@ test("saving dataset context disables submission until the new scope is ready", 
     .getByLabel("Ask anything about your banking data")
     .fill("Show suspicious transactions");
   await page.getByRole("button", { name: "Send question" }).click();
-  await expect(page.locator(".chat-thread")).toContainText("Database analyst agent", {
+  await expect(page.locator(".chat-thread")).toContainText("Analyzing selected data", {
     timeout: 20000,
   });
-  await expect(page.locator(".chat-thread")).toContainText("June 2024");
+  await expect(page.locator(".chat-thread")).toContainText("All months");
 });
 
 test("BankShield preserves country, USD, dates and limited source coverage", async ({ page }) => {
@@ -37,13 +37,11 @@ test("BankShield preserves country, USD, dates and limited source coverage", asy
   await expect(page.getByLabel("Analysis dataset")).toBeEnabled();
   await page.getByLabel("Analysis dataset").selectOption("bankshield");
   await page.getByLabel("Reporting month").selectOption("2024-06");
-  await page.getByText("Limited sample coverage", { exact: false }).click();
-  await expect(page.locator(".coverage-grid")).toContainText("10");
   await page
     .getByLabel("Ask anything about your banking data")
     .fill("Show suspicious transactions");
   await page.getByRole("button", { name: "Send question" }).click();
-  await expect(page.locator(".chat-thread")).toContainText("Database analyst agent");
+  await expect(page.locator(".chat-thread")).toContainText("Analyzing selected data");
   await expect(page.locator(".chat-thread")).toContainText("June 2024");
   await expect(page.locator(".chat-thread")).toContainText("$");
   await page.getByRole("button", { name: "Open investigation workspace" }).click();
@@ -70,7 +68,7 @@ test("scanned PDF renders Markdown and creates a customer only after admin appro
   const before = (await (await request.get("/api/data?resource=customers")).json()).stats.customers;
   await page.getByLabel("Upload customer form").setInputFiles("public/demo/customer-form.pdf");
   await expect(page.locator(".markdown-preview")).toContainText("Ananya Shah", { timeout: 60000 });
-  await expect(page.locator(".chat-thread")).toContainText("Human review pending");
+  await expect(page.locator(".chat-thread")).toContainText("Ready for your review");
   expect((await (await request.get("/api/data?resource=customers")).json()).stats.customers).toBe(
     before
   );
@@ -157,7 +155,9 @@ test("general conversation routes locally and cannot create customers", async ({
     .getByLabel("Ask anything about your banking data")
     .fill("Hello, add a customer for me");
   await page.getByRole("button", { name: "Send question" }).click();
-  await expect(page.locator(".chat-thread")).toContainText("General chat agent");
+  await expect(
+    page.getByRole("heading", { name: "Your banking assistant", exact: true })
+  ).toBeVisible();
   await expect(page.locator(".chat-thread")).toContainText(
     "A chat instruction alone cannot create a customer"
   );

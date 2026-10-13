@@ -1,4 +1,5 @@
 "use client";
+import { randomId } from "@/lib/random-id";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getDashboard,
@@ -77,6 +78,14 @@ export function useWorkspace() {
   const [scenarioRisk, setScenarioRisk] = useState("RSK-001");
   const [scenarioScope, setScenarioScope] = useState<QueryContext>();
   const [busy, setBusy] = useState<"query" | "investigation" | "report" | null>(null);
+  const [researchMode, setResearchModeState] = useState(false);
+  useEffect(() => {
+    setResearchModeState(window.sessionStorage.getItem("bankweave-research-mode") === "on");
+  }, []);
+  function setResearchMode(enabled: boolean) {
+    setResearchModeState(enabled);
+    window.sessionStorage.setItem("bankweave-research-mode", enabled ? "on" : "off");
+  }
   const [contextStatus, setContextStatus] = useState<"restoring" | "saving" | null>("restoring");
   const lock = useRef(false);
   const [progress, setProgress] = useState<ProgressEvent[]>([]);
@@ -95,7 +104,7 @@ export function useWorkspace() {
     setMessages(saved.messages);
     setContext(saved.context ?? undefined);
     setDatasetId(saved.datasetId);
-    setPeriod(saved.period ?? undefined);
+    setPeriod(saved.period ?? "all");
     setInvestigation(saved.investigation ?? undefined);
     setReports(saved.reports);
     setScenario(undefined);
@@ -145,7 +154,7 @@ export function useWorkspace() {
     type: "query" | "investigation",
     label: string,
     accept: (result: T) => void,
-    requestId = crypto.randomUUID()
+    requestId = randomId()
   ) {
     if (lock.current || !sessionRestored.current) return;
     if (!(kind === "form" ? canReadForms : canAnalyze)) {
@@ -182,7 +191,7 @@ export function useWorkspace() {
         );
         const nextId =
           aborted || (error instanceof OperationError && error.terminal)
-            ? crypto.randomUUID()
+            ? randomId()
             : requestId;
         retryJob.current = () => startJob(kind, payload, type, label, accept, nextId);
         setCanRetry(true);
@@ -287,13 +296,20 @@ export function useWorkspace() {
         setContextStatus(null);
       }
     }
+    const prior = context ? { ...context } : undefined;
+    if (prior) delete prior.research;
     const selected = datasetOverride
-      ? { domain: "fraud" as const, datasetId: datasetOverride }
+      ? {
+          domain: "fraud" as const,
+          datasetId: datasetOverride,
+          ...(researchMode ? { research: true as const } : {}),
+        }
       : {
-          ...context,
-          domain: context?.domain ?? "fraud",
+          ...prior,
+          domain: prior?.domain ?? "fraud",
           datasetId,
           ...(period ? { period } : {}),
+          ...(researchMode ? { research: true as const } : {}),
         };
     startJob<AnalystResponse>("query", { query, context: selected }, "query", query, (response) => {
       setMessages((current) =>
@@ -439,7 +455,7 @@ export function useWorkspace() {
       navigate("Scenario Simulator");
     }
   }
-  async function resetSelection(id: DatasetId, month?: string) {
+  async function resetSelection(id: DatasetId, month = "all") {
     if (lock.current) return;
     lock.current = true;
     setContextStatus("saving");
@@ -515,6 +531,8 @@ export function useWorkspace() {
     readForm,
     datasetId,
     period,
+    researchMode,
+    setResearchMode,
     selectDataset: (id: DatasetId) => void resetSelection(id),
     selectPeriod: (value: string) => void resetSelection(datasetId, value),
     page,

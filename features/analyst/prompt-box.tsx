@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { SuggestedQuestions } from "@/components/blocks";
+import type { AIProviderStatus } from "@/types";
 export const starterQuestions = [
   "Why did fraud increase this month?",
   "Which regions have the highest loan risk?",
@@ -25,6 +26,7 @@ export function PromptBox({
   hero = false,
   chat = false,
   onUpload,
+  provider,
 }: {
   onSubmit: (query: string) => void;
   busy?: boolean;
@@ -32,10 +34,32 @@ export function PromptBox({
   hero?: boolean;
   chat?: boolean;
   onUpload?: (file: File) => void;
+  provider?: AIProviderStatus;
 }) {
   const [query, setQuery] = useState("");
   const textarea = useRef<HTMLTextAreaElement>(null);
   const upload = useRef<HTMLInputElement>(null);
+  const tools = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (!chat) return;
+    const dismiss = (event: PointerEvent) => {
+      if (tools.current?.open && !tools.current.contains(event.target as Node)) {
+        tools.current.open = false;
+      }
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && tools.current?.open) {
+        tools.current.open = false;
+        tools.current.querySelector("summary")?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [chat]);
   useEffect(() => {
     if (!chat || !textarea.current) return;
     textarea.current.style.height = "auto";
@@ -77,7 +101,7 @@ export function PromptBox({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           maxLength={1000}
-          rows={2}
+          rows={chat ? 1 : 2}
           disabled={busy || disabled}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -115,28 +139,40 @@ export function PromptBox({
             </>
           )}
           {chat ? (
-            <details className="composer-tools">
+            <details className="composer-tools" ref={tools}>
               <summary>
                 <SlidersHorizontal size={17} />
                 Tools
                 <ChevronDown size={12} />
               </summary>
               <div className="composer-tools-popover">
-                <strong>Banking analysis tools</strong>
-                <p>Selected automatically for your question.</p>
-                <span>
+                <strong>Tools</strong>
+                <button
+                  type="button"
+                  className="composer-tool-option"
+                  disabled={busy || disabled}
+                  onClick={() => {
+                    if (tools.current) tools.current.open = false;
+                    textarea.current?.focus();
+                  }}
+                >
                   <Database size={14} />
-                  Query synthetic banking records
-                </span>
-                <span>
-                  <Sparkles size={14} />
-                  Analyze trends & risk patterns
-                </span>
-                <span>
-                  <SlidersHorizontal size={14} />
-                  Compare regions & model scenarios
-                </span>
-                <small>Local LangGraph workflow · No live banking connection</small>
+                  Analyze banking data
+                </button>
+                {onUpload && (
+                  <button
+                    type="button"
+                    className="composer-tool-option"
+                    disabled={busy || disabled}
+                    onClick={() => {
+                      if (tools.current) tools.current.open = false;
+                      upload.current?.click();
+                    }}
+                  >
+                    <Paperclip size={14} />
+                    Read a document (OCR)
+                  </button>
+                )}
                 <a href="/demo/customer-form.pdf" download>
                   Download fictional sample form ↗
                 </a>
@@ -152,7 +188,14 @@ export function PromptBox({
           <div>
             {chat && (
               <span className="composer-mode">
-                BankWeave <span>Local</span>
+                BankWeave{" "}
+                <span>
+                  {provider?.provider === "vertex"
+                    ? "Gemini"
+                    : provider?.provider === "local"
+                      ? "Local"
+                      : "AI"}
+                </span>
               </span>
             )}
             {!chat && (
@@ -184,9 +227,12 @@ export function PromptBox({
           disabled={busy || disabled}
         />
       )}
-      {!hero && (
+      {!hero && !chat && (
         <p className="prompt-disclaimer">
-          Local analytics & form reading · Review findings before acting
+          {provider?.provider === "vertex"
+            ? "Gemini analysis & form reading"
+            : "Analytics & form reading"}{" "}
+          · Review findings before acting
         </p>
       )}
     </div>

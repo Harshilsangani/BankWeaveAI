@@ -40,12 +40,12 @@ def snapshot(db,dataset,period):
         return total
     current=baseline=0
     chunk=[]
-    for row in db.execute('SELECT period,id,account_id,occurred_at,amount_minor,region,merchant,channel,device_id,new_device,flagged,score FROM transactions WHERE dataset=? AND period IN (?,?) ORDER BY id',(dataset,*periods)):
+    for row in db.execute('SELECT period,id,account_id,occurred_at,amount_minor,region,merchant,channel,device_id,new_device,flagged,score FROM transactions WHERE dataset=? AND (?=\'all\' OR period IN (?,?)) ORDER BY id',(dataset,period,*periods)):
         chunk.append(tuple(row))
         if len(chunk)>=5000:
             digest.update(json.dumps(chunk,separators=(',',':')).encode())
             chunk=[]
-        if row[0]==period:current+=1
+        if period=='all' or row[0]==period:current+=1
         else:baseline+=1
     if chunk:
         digest.update(json.dumps(chunk,separators=(',',':')).encode())

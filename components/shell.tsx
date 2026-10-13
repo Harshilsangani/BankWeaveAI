@@ -7,14 +7,13 @@ import {
   Building2,
   ChevronDown,
   ChevronRight,
-  ChevronsUpDown,
   FileText,
   FlaskConical,
   LayoutDashboard,
   Menu,
+  SquarePen,
   Radar,
   ScanLine,
-  Search,
   Settings2,
   Sparkles,
 } from "lucide-react";
@@ -27,17 +26,19 @@ const navigation: { label: Page; icon: typeof Activity }[] = [
   { label: "Investigations", icon: ScanLine },
   { label: "Scenario Simulator", icon: FlaskConical },
   { label: "Reports", icon: FileText },
-  { label: "Knowledge", icon: BookOpen },
   { label: "Settings", icon: Settings2 },
 ];
-export const pages: Page[] = [...navigation.map((n) => n.label), "Data Workspace"];
-const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent);
+export const pages: Page[] = [...navigation.map((n) => n.label), "Knowledge", "Data Workspace"];
 export function Shell({
   role,
   page,
   riskCount,
   onPage,
-  onSearch,
+  onNewChat,
+  researchMode,
+  onResearchMode,
+  chatLocked,
+  headerControls,
   onNotifications,
   onProfile,
   mobileOpen,
@@ -49,7 +50,11 @@ export function Shell({
   page: Page;
   riskCount?: number;
   onPage: (page: Page) => void;
-  onSearch: () => void;
+  onNewChat: () => void;
+  researchMode?: boolean;
+  onResearchMode?: (enabled: boolean) => void;
+  chatLocked: boolean;
+  headerControls?: React.ReactNode;
   onNotifications: () => void;
   onProfile: () => void;
   mobileOpen: boolean;
@@ -100,6 +105,31 @@ export function Shell({
       previousFocus?.focus();
     };
   }, [narrow, mobileOpen]);
+  const chatActions = (
+    <div className="analyst-chat-actions">
+      {onResearchMode && (
+        <button
+          type="button"
+          className={researchMode ? "research-toggle is-on" : "research-toggle"}
+          aria-pressed={researchMode}
+          disabled={chatLocked}
+          title="Research mode asks a scope agent, runs database queries, then chooses research charts"
+          onClick={() => onResearchMode(!researchMode)}
+        >
+          Research
+        </button>
+      )}
+      <button
+        className="icon-button header-action"
+        onClick={onNewChat}
+        disabled={chatLocked}
+        aria-label="Start a new chat"
+        title="New chat"
+      >
+        <SquarePen size={18} aria-hidden="true" />
+      </button>
+    </div>
+  );
   return (
     <>
       <a className="sr-only focus:not-sr-only" href="#main-content">
@@ -128,7 +158,6 @@ export function Shell({
             <strong>Meridian Bank</strong>
             <small>Intelligence workspace</small>
           </div>
-          <ChevronsUpDown size={12} />
         </div>
         <div className="nav-label">WORKSPACE</div>
         <nav className="nav-list" aria-label="Main navigation">
@@ -149,8 +178,15 @@ export function Shell({
         </nav>
         {chatHistory}
         <div className="nav-section-separator" />
-        <div className="nav-label">RESOURCES</div>
         <nav className="nav-list" aria-label="Resources">
+          <button
+            className={`nav-item ${page === "Knowledge" ? "active" : ""}`}
+            aria-current={page === "Knowledge" ? "page" : undefined}
+            onClick={() => onPage("Knowledge")}
+          >
+            <BookOpen />
+            <span>Knowledge Library</span>
+          </button>
           {navigation.slice(6).map((n) => (
             <button
               key={n.label}
@@ -177,43 +213,40 @@ export function Shell({
           </button>
         </div>
       </aside>
-      <div className="main-shell">
+      <div className={`main-shell ${page === "AI Analyst" ? "main-shell--analyst" : ""}`}>
         <header className="topbar">
-          <div className="breadcrumb">
-            <button
-              className="icon-button mobile-menu"
-              aria-label="Open navigation"
-              aria-expanded={mobileOpen}
-              aria-controls="workspace-navigation"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu size={19} />
-            </button>
-            <span>Workspace</span>
-            <ChevronRight size={12} />
-            <strong>{page}</strong>
-          </div>
-          <div className="topbar-actions">
-            <span className="environment">
-              <span className="status-dot" />
-              Demo environment
-            </span>
-            <button className="topbar-search" onClick={onSearch} aria-label="Search workspace">
-              <Search size={15} />
-              <span>Search anything</span>
-              <kbd>{isMac ? "⌘K" : "Ctrl K"}</kbd>
-            </button>
-            <div className="topbar-divider" />
-            <button className="icon-button" onClick={onNotifications} aria-label="Notifications">
-              <Bell size={17} />
-              <i className="notification-dot" />
-            </button>
-            <button className="icon-button" onClick={onProfile} aria-label="Open profile">
-              <span className="avatar">AK</span>
-            </button>
+          <div className="topbar-navigation">
+            <div className="topbar-left">
+              <button
+                className="icon-button mobile-menu"
+                aria-label="Open navigation"
+                aria-expanded={mobileOpen}
+                aria-controls="workspace-navigation"
+                onClick={() => setMobileOpen(true)}
+              >
+                <Menu size={19} />
+              </button>
+              <div className="breadcrumb">
+                <span>Workspace</span>
+                <ChevronRight size={12} />
+                <strong>{page}</strong>
+              </div>
+            </div>
+            <div className="topbar-actions">
+              <button className="icon-button" onClick={onNotifications} aria-label="Notifications">
+                <Bell size={17} />
+                <i className="notification-dot" />
+              </button>
+            </div>
           </div>
         </header>
         <main className="content" id="main-content">
+          {page === "AI Analyst" && (
+            <div className="analyst-toolbar" role="group" aria-label="Analysis controls">
+              {headerControls}
+              {chatActions}
+            </div>
+          )}
           {children}
         </main>
       </div>

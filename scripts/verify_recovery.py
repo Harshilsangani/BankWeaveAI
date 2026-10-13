@@ -70,7 +70,8 @@ if __name__=='__main__':
         sys.path.insert(0,str(ROOT)); phase(sys.argv[1])
     else:
         with tempfile.TemporaryDirectory(prefix='risklens-recovery-') as directory:
-            shutil.copy2(ROOT/'backend/storage/meridian.json',Path(directory)/'meridian.json')
+            storage = Path(os.environ.get('RISKLENS_STORAGE_DIR', str(ROOT/'backend/storage')))
+            shutil.copy2(storage/'meridian.json',Path(directory)/'meridian.json')
             env={**os.environ,'RISKLENS_STORAGE_DIR':directory,'RISKLENS_DB':str(Path(directory)/'bank.sqlite3'),'RISKLENS_CHECKPOINT_DB':str(Path(directory)/'checkpoints.sqlite3'),'RISKLENS_PROVIDER':'local','RISKLENS_ENV':'development'}
             for name in ('prepare','resume','verify'):
                 subprocess.run([sys.executable,__file__,name],cwd=ROOT,env=env,check=True,timeout=180)

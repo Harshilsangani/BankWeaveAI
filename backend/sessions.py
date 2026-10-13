@@ -68,7 +68,7 @@ def key(value):
 
 
 def empty():
-    return dict(datasetId='meridian',period=None,context=None,messageIds=[],reportIds=[],investigationId=None)
+    return dict(datasetId='meridian',period='all',context=None,messageIds=[],reportIds=[],investigationId=None)
 
 
 def ensure(db, sid):

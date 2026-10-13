@@ -30,7 +30,6 @@ export function Dashboard({
     <div className="dashboard animate-in">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">YOUR BANK. A CLEARER PICTURE.</div>
           <h1>
             Command Center
             <span className="heading-dot" />
@@ -54,9 +53,8 @@ export function Dashboard({
             <section className="workspace-shortcut analyst-shortcut">
               <Sparkles size={22} />
               <div>
-                <span className="eyebrow">ONE CONVERSATION. ALL YOUR ANALYSIS.</span>
-                <h2>Follow the question.</h2>
-                <p>Ask your analyst, explore evidence and read customer forms in one workspace.</p>
+                <h2>AI Analyst</h2>
+                <p>Explore banking data, investigate signals, and read customer forms.</p>
               </div>
               <Button variant="primary" onClick={onAnalyst}>
                 Open AI Analyst <ArrowUpRight size={16} />
@@ -65,8 +63,7 @@ export function Dashboard({
             <section className="workspace-shortcut">
               <Database size={22} />
               <div>
-                <span className="eyebrow">YOUR RECORDS, WITHIN REACH</span>
-                <h2>Work with your data.</h2>
+                <h2>Customer data</h2>
                 <p>
                   {data.customerCount?.toLocaleString()} current customer identities · browse linked
                   banking records.

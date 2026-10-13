@@ -31,12 +31,13 @@ def condition(scope):
 
 def aggregate(scope, period):
     sql, args = condition(scope)
-    month = calendar.month_abbr[int(period[-2:])]
+    months = [calendar.month_abbr[int(p[-2:])] for p in metadata(scope['datasetId'])['periods']] if period == 'all' else [calendar.month_abbr[int(period[-2:])]]
+    placeholders = ','.join('?' for _ in months)
     with connect() as db:
         row = db.execute(f'''SELECT COUNT(*) total, COALESCE(SUM(affected),0) affected,
           COALESCE(SUM(CASE WHEN affected THEN principal_minor ELSE 0 END),0) amount
-          FROM (SELECT l.principal_minor, EXISTS(SELECT 1 FROM json_each(l.default_months) WHERE value=?) affected
-          FROM loans l {JOINS} WHERE {sql})''', [month, *args]).fetchone()
+          FROM (SELECT l.principal_minor, EXISTS(SELECT 1 FROM json_each(l.default_months) WHERE value IN ({placeholders})) affected
+          FROM loans l {JOINS} WHERE {sql})''', [*months, *args]).fetchone()
     return dict(total=row['total'], affected=row['affected'], exposure=row['amount']/100,
                 rate=row['affected']/row['total']*100 if row['total'] else 0, newCount=0)
 
@@ -44,11 +45,13 @@ def aggregate(scope, period):
 def evidence_rows(scope, offset, limit):
     from .analytics import currency
     sql, args = condition(scope)
+    months = [calendar.month_abbr[int(p[-2:])] for p in metadata(scope['datasetId'])['periods']] if scope['period'] == 'all' else [calendar.month_abbr[int(scope['period'][-2:])]]
+    placeholders = ','.join('?' for _ in months)
     with connect() as db:
         rows = db.execute(f'''SELECT l.*,{REGION} region FROM loans l {JOINS} WHERE {sql}
-          AND EXISTS(SELECT 1 FROM json_each(l.default_months) WHERE value=?)
+          AND EXISTS(SELECT 1 FROM json_each(l.default_months) WHERE value IN ({placeholders}))
           ORDER BY l.principal_minor DESC,l.id LIMIT ? OFFSET ?''',
-          [*args, calendar.month_abbr[int(scope['period'][-2:])], limit, offset]).fetchall()
+          [*args, *months, limit, offset]).fetchall()
     return [[r['id'], currency(r['principal_minor']/100, 'INR'), r['region'], r['loan_type'], r['customer_id'], 'Default marker'] for r in rows]
 
 
@@ -76,6 +79,10 @@ def build(scope):
       dict(label='Default rate',value=f"{current['rate']:.2f}%",change=f"{current['rate']-prior['rate']:+.2f} pp" if has_prior else 'No baseline',direction='neutral',detail=f"{current['total']:,} loans in scope")]
     geography = ' vs '.join(filter(None,[scope.get('region'),scope.get('comparison')])) or 'All regions'
     summary = f"Loan defaults: {prior['affected']} → {current['affected']} ({change}). {geography} · {period_label(scope['period'])}." if has_prior else f"Loan defaults: {current['affected']}. No preceding-month baseline. {geography} · {period_label(scope['period'])}."
+    if scope['period'] == 'all':
+        summary = f"Loans with a default marker in any available month: {current['affected']:,} out of {current['total']:,} ({current['rate']:.2f}%). {geography} · {period_label(meta['periods'][0])} to {period_label(meta['periods'][-1])}. Each loan is counted once."
+        metrics[0].update(label='Loans with default markers', change='Full history', detail='Distinct loans across all months')
+        metrics[2]['change'] = 'Full history'
     rows = evidence_rows(scope,0,8)
     emit('Loan metrics reconciled')
     findings = ['Default markers describe a synthetic monthly snapshot. They do not establish days overdue, repayments or the current outstanding balance.']
@@ -83,7 +90,7 @@ def build(scope):
         lead = max(regions,key=lambda r:r['current']['affected']-r['prior']['affected'])
         findings.append(f"{lead['name']} contributes {lead['current']['affected']-lead['prior']['affected']:+} defaults ({lead['prior']['affected']} → {lead['current']['affected']}). This is a descriptive contribution, not a causal explanation.")
     evidence = [dict(id=identifier('EV'),title='Reconciled loan references',source=f"{meta['name']} · {period_label(scope['period'])}",detail=f"{current['affected']} marked defaults out of {current['total']} loans. Region is the historical customer branch. Evidence is ordered by original principal.",records=[f'{r[0]} · {r[1]} · {r[3]} · {r[4]}' for r in rows]),
-      dict(id=identifier('EV'),title='Coverage & methodology',source=f"SQLite · source version {meta['version'][:12]}",detail='Default rate = monthly default markers / all loans in the same scope. Principal is a proxy, not confirmed loss.',records=['Currency: INR','No repayment ledger or verified overdue-day observations are supplied.'])]
+      dict(id=identifier('EV'),title='Coverage & methodology',source=meta['name'],detail='Default rate = loans with default markers / all loans in the same scope. For all months, each loan is counted once. Principal is a proxy, not confirmed loss.',records=['Currency: INR','No repayment ledger or verified overdue-day observations are supplied.'])]
     segments = dict(columns=['Region / branch','Defaults','Rate','Original principal','Count change'],rows=[[r['name'],r['current']['affected'],f"{r['current']['rate']:.2f}%",currency(r['current']['exposure'],'INR'),f"{r['current']['affected']-r['prior']['affected']:+}" if has_prior else 'N/A'] for r in regions])
     from .repayments import ledger
     repayment=ledger(scope)

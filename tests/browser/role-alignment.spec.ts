@@ -46,7 +46,9 @@ for (const legacy of ["customer_operator", "analyst"]) {
     await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
     await page.getByLabel("Ask anything about your banking data").fill("Good morning");
     await page.getByRole("button", { name: "Send question" }).click();
-    await expect(page.locator(".chat-thread")).toContainText("General chat agent");
+    await expect(
+      page.getByRole("heading", { name: "Your banking assistant", exact: true })
+    ).toBeVisible();
     await expect(page.locator(".chat-thread")).toContainText("Hello! Welcome to BankWeave.");
   });
 }

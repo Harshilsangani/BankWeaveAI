@@ -10,7 +10,7 @@ router = APIRouter()
 class NewConversation(BaseModel):
     model_config = ConfigDict(extra='forbid')
     datasetId: Literal['meridian', 'bankshield'] = 'meridian'
-    period: str | None = Field(default=None, pattern=r'^20\d{2}-(0[1-9]|1[0-2])$')
+    period: str | None = Field(default=None, pattern=r'^(all|20\d{2}-(0[1-9]|1[0-2]))$')
 
 
 class OpenConversation(BaseModel):

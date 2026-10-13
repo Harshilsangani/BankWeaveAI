@@ -50,7 +50,6 @@ export function Radar({
     <div className="animate-in">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">EARLY SIGNALS. INFORMED ACTION.</div>
           <h1>Risk Radar</h1>
           <p>A prioritized view of the risks emerging across your bank.</p>
         </div>

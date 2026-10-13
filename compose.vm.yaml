@@ -1,0 +1,15 @@
+# Private VM demo only. Restore and verify the matched DB/fixture set first.
+# docker compose -f compose.yaml -f compose.vm.yaml config
+services:
+  backend:
+    volumes:
+      - type: bind
+        source: ${BANKWEAVE_STORAGE_DIR:?Set BANKWEAVE_STORAGE_DIR to the restored absolute storage path}
+        target: /data
+        bind:
+          create_host_path: false
+    environment:
+      RISKLENS_STORAGE_DIR: /data
+      RISKLENS_DB: /data/risklens.sqlite3
+      RISKLENS_CHECKPOINT_DB: /data/agent-checkpoints.sqlite3
+      RISKLENS_AUTO_SEED: "false"

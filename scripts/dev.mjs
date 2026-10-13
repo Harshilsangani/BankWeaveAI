@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { cpSync, existsSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const python =
@@ -12,6 +12,11 @@ if (!existsSync(python) && !process.env.RISKLENS_PYTHON) {
   process.exit(1);
 }
 const children = [];
+const production = process.argv[2] === "start";
+if (production && !existsSync(".next/standalone/server.js")) {
+  console.error("Run npm run build before starting the standalone application.");
+  process.exit(1);
+}
 const run = (cmd, args) =>
   new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: "inherit", windowsHide: true });
@@ -52,15 +57,16 @@ try {
     for (let i = 0; i < 60 && !(await health()); i++) await sleep(250);
     if (!(await health())) throw new Error("Fraud backend did not become ready on port 8000.");
   }
+  if (production) {
+    cpSync("public", ".next/standalone/public", { recursive: true });
+    cpSync(".next/static", ".next/standalone/.next/static", { recursive: true });
+  }
   const next = spawn(
     process.execPath,
-    [
-      "node_modules/next/dist/bin/next",
-      process.argv[2] === "start" ? "start" : "dev",
-      "--hostname",
-      "127.0.0.1",
-    ],
-    { stdio: "inherit", windowsHide: true }
+    production
+      ? [".next/standalone/server.js"]
+      : ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1"],
+    { stdio: "inherit", windowsHide: true, env: { ...process.env, HOSTNAME: "127.0.0.1" } }
   );
   children.push(next);
   next.on("exit", (code) => {

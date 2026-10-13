@@ -1,4 +1,5 @@
 "use client";
+import { randomId } from "@/lib/random-id";
 import { useEffect, useRef, useState } from "react";
 import { getRecordMaintenance, maintainRecord, getStaffIdentity } from "@/services";
 import type { Maintenance } from "@/types/maintenance";
@@ -81,7 +82,7 @@ export function RecordMaintenance({
               : {};
       const input = JSON.stringify({ action, fields, reason });
       if (requestKey.current?.input !== input)
-        requestKey.current = { input, id: crypto.randomUUID() };
+        requestKey.current = { input, id: randomId() };
       const receipt = await maintainRecord(customerId, action, {
         ...fields,
         requestId: requestKey.current.id,

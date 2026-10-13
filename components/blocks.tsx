@@ -1,4 +1,5 @@
 "use client";
+import { processLabel } from "@/lib/process-label";
 import { useState } from "react";
 import { useHorizontalOverflow } from "@/hooks/use-horizontal-overflow";
 import {
@@ -30,7 +31,7 @@ import type {
 } from "@/types";
 import { Badge, Button, Logo } from "./ui";
 import { AnalyticsChart, Sparkline } from "./charts";
-import { downloadReport } from "@/lib/report";
+import { downloadReport, downloadResearchPdf } from "@/lib/report";
 
 export function KpiCard({ metric }: { metric: Metric }) {
   return (
@@ -76,16 +77,18 @@ export function ChartCard({
   subtitle,
   points,
   kind = "area",
+  tone,
   children,
 }: {
   title: string;
   subtitle?: string;
   points: { name: string; value: number; baseline?: number }[];
-  kind?: "area" | "bar";
+  kind?: "area" | "bar" | "column" | "donut";
+  tone?: "research";
   children?: React.ReactNode;
 }) {
   return (
-    <section className="panel chart-card">
+    <section className={`panel chart-card${tone === "research" ? " chart-card-research" : ""}`}>
       <div className="chart-heading">
         <div>
           <h3>{title}</h3>
@@ -94,11 +97,11 @@ export function ChartCard({
         {children ?? (
           <span className="chart-legend">
             <i />
-            {kind === "area" ? "Monthly count" : "Selected period"}
+            {kind === "donut" ? "Share" : kind === "column" ? "Compared values" : kind === "area" ? "Monthly count" : "Selected period"}
           </span>
         )}
       </div>
-      <AnalyticsChart points={points} kind={kind} />
+      <AnalyticsChart points={points} kind={kind} tone={tone} valueLabel={subtitle || "Value"} />
     </section>
   );
 }
@@ -507,11 +510,23 @@ export function AIMessage({
           <span>
             BankWeave Analyst
             <small>
-              {response.analysis
-                ? `${response.analysis.provider === "vertex" ? "Vertex assisted analyst" : "Local analyst"} · ${response.analysis.period}`
-                : "Demo analysis · September 2026"}
+              {response.analysis ? `Query results · ${response.analysis.period}` : "Query results"}
             </small>
           </span>
+          {response.research && (
+            <button
+              type="button"
+              className="export-pdf"
+              onClick={() =>
+                void downloadResearchPdf(response.id).catch((error: unknown) =>
+                  window.alert(error instanceof Error ? error.message : "The PDF could not be downloaded.")
+                )
+              }
+            >
+              <Download size={14} />
+              Export PDF
+            </button>
+          )}
           <ShieldCheck size={17} className="text-accent" />
         </div>
         {showTrace && (
@@ -528,20 +543,17 @@ export function AIMessage({
                       : formStatus === "rejected"
                         ? "Form request rejected · No customer created"
                         : "Form extracted · Awaiting review"
-                : response.analysis
-                  ? "Completed local agent workflow"
-                  : "Completed demo analysis"}
+                : "Processes"}
               <ChevronDown size={13} />
             </summary>
-            <p>
-              {stages?.join(" · ") ??
-                "Source records retrieved · Scope filters applied · Results assembled"}
-            </p>
-            <small>
-              {response.analysis
-                ? "Executed locally. Evidence and source versions are shown below."
-                : "Simulated tool workflow. Evidence and results are shown below."}
-            </small>
+            <ol>
+              {(stages?.length
+                ? stages
+                : ["Records retrieved", "Filters applied", "Results assembled"]
+              ).map((stage, index) => (
+                <li key={`${stage}-${index}`}>{processLabel(stage)}</li>
+              ))}
+            </ol>
           </details>
         )}
         <h2>{response.title}</h2>
@@ -586,6 +598,7 @@ export function AIMessage({
                     subtitle={block.subtitle}
                     points={block.points}
                     kind={block.kind}
+                    tone={block.tone}
                   />
                 );
               case "TABLE":
@@ -623,7 +636,7 @@ export function AIMessage({
               ? formSaved
                 ? "Reviewed profile saved locally"
                 : "Uploaded form · Human review required"
-              : `${response.analysis?.provider === "vertex" ? "Vertex assisted analysis" : "Local analysis"} · Source coverage disclosed`}
+              : "Results from selected records"}
           </span>
           <span>{formSaved ? "KYC verification pending" : "Human review required"}</span>
         </div>

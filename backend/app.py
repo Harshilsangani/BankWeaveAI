@@ -63,12 +63,14 @@ async def workspace_context(request: Request, call_next):
     identity = None
     identity_token = None
     try:
-        identity = identity_adapter.resolve(request)
+        identity = await run_in_threadpool(identity_adapter.resolve, request)
         if __import__('os').environ.get('RISKLENS_ENV') == 'production' and identity.adapter == 'development':
             raise PermissionError('Production cannot accept a development identity.')
         identity_token = current_identity.set(identity)
         require(permission_for(request.method,request.url.path))
-        sid = key(request.headers.get('x-risklens-session'))
+        # Identity discovery must work after sign-in changes, even when this
+        # browser still holds another user's old recovery handle.
+        sid = None if request.url.path == '/identity' else key(request.headers.get('x-risklens-session'))
         # SQLite may wait for a concurrent write. Do not block SSE delivery or
         # other requests on the event loop while validating chat ownership.
         conversation = await run_in_threadpool(bind_conversation, sid, request.headers.get('x-risklens-conversation')) if sid else None
@@ -103,7 +105,7 @@ def get_identity():
 class SessionSelection(BaseModel):
     model_config = ConfigDict(extra='forbid')
     datasetId: Literal['meridian','bankshield']='meridian'
-    period: str | None = Field(default=None,pattern=r'^20\d{2}-(0[1-9]|1[0-2])$')
+    period: str | None = Field(default=None,pattern=r'^(all|20\d{2}-(0[1-9]|1[0-2]))$')
 
 
 @app.get('/session')
@@ -121,14 +123,18 @@ def set_session(body: SessionSelection):
 class Scope(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     domain: Literal["fraud", "loans"] = "fraud"
+    view: Literal['customer_ranking', 'customer_summary'] | None = None
+    ranking: Literal['transaction_value', 'transaction_count', 'loan_principal'] | None = None
+    limit: int | None = Field(default=None, ge=1, le=20)
     datasetId: Literal["meridian", "bankshield"] = "meridian"
-    period: str | None = Field(default=None, pattern=r"^20\d{2}-(0[1-9]|1[0-2])$")
+    period: str | None = Field(default=None, pattern=r"^(all|20\d{2}-(0[1-9]|1[0-2]))$")
     region: str | None = Field(default=None, max_length=50)
     comparison: str | None = Field(default=None, max_length=50)
     minAmount: float | None = Field(default=None, ge=0, le=1_000_000_000)
     newDeviceOnly: StrictBool | None = None
     riskId: str | None = Field(default=None, max_length=30)
     customerId: str | None = Field(default=None,max_length=80,pattern=r'^[a-zA-Z0-9-]+$')
+    research: StrictBool | None = None
 
 
 class Query(BaseModel):
@@ -188,7 +194,8 @@ def health():
         count = db.execute("SELECT COUNT(*) FROM datasets").fetchone()[0]
         version = db.execute('SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1').fetchone()
     import os
-    return {"service": "risklens-fraud", "database": "sqlite", "datasets": count, "provider": os.environ.get('RISKLENS_PROVIDER','local'), "externalTransmission": os.environ.get('RISKLENS_PROVIDER','local') != 'local', 'schemaVersion':version[0] if version else None,'readyForAnalysis':count>0}
+    provider = os.environ.get('RISKLENS_PROVIDER','local')
+    return {"service": "risklens-fraud", "database": "sqlite", "datasets": count, "provider": provider, "externalTransmission": provider != 'local', 'model':os.environ.get('RISKLENS_VERTEX_MODEL') if provider == 'vertex' else None,'location':os.environ.get('RISKLENS_GCP_LOCATION') if provider == 'vertex' else None,'schemaVersion':version[0] if version else None,'readyForAnalysis':count>0}
 
 
 @app.get("/datasets")
@@ -208,6 +215,15 @@ def get_radar(datasetId: Literal['meridian','bankshield']='meridian', period: st
     from .dashboard import radar
     validate_scope(dict(datasetId=datasetId,period=period))
     return radar(datasetId,period)
+
+
+@app.get('/analyst/{message_id}/export.pdf')
+def export_research_pdf(message_id: str):
+    from fastapi.responses import Response
+    from .research import load_brief, render_pdf
+    payload = load_brief(message_id)
+    document = render_pdf(payload)
+    return Response(document, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="{message_id}-research-brief.pdf"', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
 
 
 @app.post("/analyst")

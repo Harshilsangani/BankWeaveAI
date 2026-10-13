@@ -8,9 +8,18 @@ export const roleLabels: Record<StaffRole, string> = {
 const analystIdentityKey = "bankweave-analyst-identity-v1";
 export function developmentRoleHeader(): string {
   if (typeof window === "undefined") return "customer_operator";
-  const raw = localStorage.getItem("risklens-role") ?? "customer_operator";
+  let raw: string;
+  try {
+    raw = localStorage.getItem("risklens-role") ?? "customer_operator";
+  } catch {
+    return "customer_operator";
+  }
   if (raw === "analyst" || raw === "customer_operator") {
-    localStorage.setItem(analystIdentityKey, raw);
+    try {
+      localStorage.setItem(analystIdentityKey, raw);
+    } catch {
+      /* Preserve a readable role when writes are blocked. */
+    }
   }
   return raw;
 }

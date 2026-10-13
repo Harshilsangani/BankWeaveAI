@@ -9,8 +9,9 @@ import type {
   ScenarioInput,
   ScenarioResult,
 } from "@/types";
+export type DatasetScope = Pick<QueryContext, "datasetId" | "period">;
 export interface BankDataService {
-  getDashboard(): Promise<Dashboard>;
+  getDashboard(scope?: DatasetScope): Promise<Dashboard>;
   getPolicies(): Promise<Policy[]>;
 }
 export interface AnalyticsService {
@@ -21,7 +22,7 @@ export interface AnalyticsService {
   ): Promise<AnalystResponse>;
 }
 export interface RiskService {
-  getRiskRadar(): Promise<RiskEvent[]>;
+  getRiskRadar(scope?: DatasetScope): Promise<RiskEvent[]>;
   startInvestigation(riskId: string, scope?: QueryContext): Promise<Investigation>;
   runScenario(input: ScenarioInput): Promise<ScenarioResult>;
 }

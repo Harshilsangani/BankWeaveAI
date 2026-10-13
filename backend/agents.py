@@ -1,4 +1,4 @@
-"""LangGraph orchestration; local routing until a Vertex provider is configured.
+"""LangGraph orchestration with configurable local or Vertex providers.
 
 No LangSmith/external tracing is enabled. Forms pause at an interrupt before writes.
 """
@@ -25,6 +25,7 @@ class AgentState(TypedDict, total=False):
     upload_path: str
     filename: str
     agent: str
+    plan: dict
     response: dict
     draft: dict
     approval: dict
@@ -38,9 +39,18 @@ def router(state):
         emit('LangGraph router')
         return {"agent": "form_reader"}
     from .providers import get_provider, RouteDecision, is_greeting
-    agent='general_chat' if is_greeting(state.get('query','')) else RouteDecision.model_validate(get_provider().route(state.get('query',''))).agent
+    from .research import is_research_question
+    query, scope = state.get('query', ''), state.get('scope') or {}
+    if is_greeting(query):
+        plan = RouteDecision(agent='general_chat')
+    elif is_research_question(query):
+        plan = RouteDecision(agent='research_analyst')
+    else:
+        plan = RouteDecision.model_validate(get_provider().route(query, scope))
+        if scope.get('research') and plan.agent == 'database_analyst':
+            plan = plan.model_copy(update={'agent': 'research_analyst'})
     emit('LangGraph router')
-    return {'agent':agent}
+    return {'agent':plan.agent, 'plan':plan.model_dump()}
 
 
 def general_chat(state):
@@ -64,9 +74,20 @@ def database_agent(state):
     require('analyze')
     from .progress import emit
     emit('Database analyst agent','running')
-    response = analyst(state["query"], state["scope"],persist_result=False)
+    response = analyst(state["query"], state["scope"],persist_result=False, plan=state.get('plan'))
     emit('Database analyst agent')
     return {"response": response}
+
+
+def research_agent(state):
+    from .security import require
+    require('analyze')
+    from .progress import emit
+    from .research import answer
+    emit('Research scope agent', 'running')
+    response = answer(state['query'], state['scope'])
+    emit('Research brief assembled')
+    return {'response': response}
 
 
 def knowledge_agent(state):
@@ -113,12 +134,13 @@ checkpoint_path = os.environ.get('RISKLENS_CHECKPOINT_DB',str(STORAGE / 'agent-c
 _connection = sqlite3.connect(checkpoint_path, check_same_thread=False,timeout=15)
 _connection.execute("PRAGMA journal_mode=WAL")
 _builder = StateGraph(AgentState)
-for name, node in [("router", router), ("general_chat", general_chat), ("database_analyst", database_agent), ("form_reader", form_reader), ("human_review", review_gate), ("customer_update", customer_update)]:
+for name, node in [("router", router), ("general_chat", general_chat), ("database_analyst", database_agent), ("research_analyst", research_agent), ("form_reader", form_reader), ("human_review", review_gate), ("customer_update", customer_update)]:
     _builder.add_node(name, node)
 _builder.add_node('knowledge_analyst',knowledge_agent)
 _builder.add_edge(START, "router")
-_builder.add_conditional_edges("router", lambda state: state["agent"], {"general_chat": "general_chat", "database_analyst": "database_analyst", "knowledge_analyst":"knowledge_analyst", "form_reader": "form_reader"})
+_builder.add_conditional_edges("router", lambda state: state["agent"], {"general_chat": "general_chat", "database_analyst": "database_analyst", "research_analyst": "research_analyst", "knowledge_analyst":"knowledge_analyst", "form_reader": "form_reader"})
 _builder.add_edge('knowledge_analyst',END)
+_builder.add_edge('research_analyst', END)
 _builder.add_edge("general_chat", END)
 _builder.add_edge("database_analyst", END)
 _builder.add_edge("form_reader", "human_review")
@@ -141,7 +163,9 @@ def run_query(query, scope):
             result['response']['analysis']['stages']=list(stages)
     finally: transmission_fields.reset(token)
     provider = get_provider()
-    result['response']['analysis'].update(provider=provider.name,externalTransmission=provider.external,outboundFields=sent)
+    result['response']['analysis'].update(provider=provider.name,externalTransmission=bool(sent),outboundFields=sent)
+    if provider.external:
+        result['response']['analysis'].update(model=provider.model,location=os.environ.get('RISKLENS_GCP_LOCATION'))
     persist('analyst',result['response'],result['response']['context'],query)
     return result["response"]
 

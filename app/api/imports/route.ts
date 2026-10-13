@@ -1,4 +1,4 @@
-import { BackendError, fraudBackend, workspaceHeaders } from "@/services/fraud-backend";
+import { backendRequest, fraudBackend, readBackendJson } from "@/services/fraud-backend";
 import { badRequest, isRecord, readJson, run } from "../shared";
 
 export async function GET(request: Request) {
@@ -19,19 +19,16 @@ export async function POST(request: Request) {
       const file = form.get("file");
       if (!(file instanceof File) || !file.size || file.size > 5 * 1024 * 1024)
         throw new Error("Use a non-empty CSV or Excel file up to 5 MB.");
-      const response = await fetch(
-        `${process.env.RISKLENS_BACKEND_URL ?? "http://127.0.0.1:8000"}/data/imports/file`,
+      const response = await backendRequest(
+        "data/imports/file",
         {
           method: "POST",
-          headers: await workspaceHeaders(),
           body: form,
-          signal: AbortSignal.timeout(30000),
-        }
+          signal: request.signal,
+        },
+        30000
       );
-      const payload = await response.json();
-      if (!response.ok)
-        throw new BackendError(payload.error ?? "The file could not be read.", response.status);
-      return payload;
+      return readBackendJson(response);
     });
   }
   const body = await readJson(request);

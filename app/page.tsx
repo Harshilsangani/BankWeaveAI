@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CheckCircle2, ChevronRight, Search, X } from "lucide-react";
-import { pages, Shell } from "@/components/shell";
+import { CheckCircle2, X } from "lucide-react";
+import { Shell } from "@/components/shell";
 import { Badge, Button, Skeleton } from "@/components/ui";
 import { Dialog } from "@/components/dialog";
 import { EvidenceCard } from "@/components/blocks";
 import { Dashboard } from "@/features/dashboard/dashboard";
 import { Analyst } from "@/features/analyst/analyst";
+import { DataControls } from "@/features/analyst/data-controls";
 import { ChatHistory } from "@/features/analyst/chat-history";
 import { DataWorkspace } from "@/features/data-workspace/data-workspace";
 import { Radar } from "@/features/risk/radar";
@@ -19,17 +20,11 @@ import type { Page, RiskEvent } from "@/types";
 export default function Home() {
   const workspace = useWorkspace();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [commandOpen, setCommandOpen] = useState(false),
-    [search, setSearch] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false),
     [profileOpen, setProfileOpen] = useState(false);
   const [selectedEvidence, setSelectedEvidence] = useState<RiskEvent>();
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setCommandOpen((open) => !open);
-      }
       if (e.key === "Escape") setMobileOpen(false);
     };
     window.addEventListener("keydown", handler);
@@ -38,7 +33,6 @@ export default function Home() {
   function navigate(page: Page) {
     workspace.navigate(page);
     setMobileOpen(false);
-    setCommandOpen(false);
   }
   useWebMCP(navigate);
   if (workspace.page === "Data Workspace") {
@@ -57,7 +51,7 @@ export default function Home() {
   }
   const data = workspace.dashboard;
   const activeRisks = data?.risks.filter((risk) => !workspace.dismissed.includes(risk.id)) ?? [];
-  const searchMatches = pages.filter((p) => p.toLowerCase().includes(search.toLowerCase()));
+  const chatLocked = Boolean(workspace.busy || workspace.contextStatus) || !workspace.sessionReady;
   return (
     <div className="app-shell">
       <Shell
@@ -65,10 +59,26 @@ export default function Home() {
         page={workspace.page}
         riskCount={data ? activeRisks.length : undefined}
         onPage={navigate}
-        onSearch={() => {
-          setSearch("");
-          setCommandOpen(true);
-        }}
+        onNewChat={() =>
+          void workspace.newChat().then((opened) => {
+            if (opened) setMobileOpen(false);
+          })
+        }
+        researchMode={workspace.researchMode}
+        onResearchMode={workspace.setResearchMode}
+        chatLocked={chatLocked}
+        headerControls={
+          workspace.page === "AI Analyst" ? (
+            <DataControls
+              datasets={workspace.datasets}
+              datasetId={workspace.datasetId}
+              period={workspace.period}
+              busy={chatLocked}
+              onDataset={workspace.selectDataset}
+              onPeriod={workspace.selectPeriod}
+            />
+          ) : undefined
+        }
         onNotifications={() => setNotificationsOpen(true)}
         onProfile={() => setProfileOpen(true)}
         mobileOpen={mobileOpen}
@@ -81,11 +91,6 @@ export default function Home() {
             loading={!workspace.activeConversationId && workspace.contextStatus === "restoring"}
             error={workspace.historyError}
             onRetry={() => void workspace.refreshHistory()}
-            onNew={() =>
-              void workspace.newChat().then((opened) => {
-                if (opened) setMobileOpen(false);
-              })
-            }
             onOpen={(id) =>
               void workspace.openChat(id).then((opened) => {
                 if (opened) setMobileOpen(false);
@@ -107,7 +112,7 @@ export default function Home() {
             </button>
           </div>
         )}
-        {!data && workspace.page !== "AI Analyst" ? (
+        {!data && !["AI Analyst", "Knowledge", "Reports", "Settings"].includes(workspace.page) ? (
           <Skeleton />
         ) : (
           <>
@@ -144,19 +149,14 @@ export default function Home() {
                 canAnalyze={workspace.canAnalyze}
                 progress={workspace.progress}
                 onCancel={workspace.cancel}
-                datasets={workspace.datasets}
                 datasetId={workspace.datasetId}
-                period={workspace.period}
-                onDataset={workspace.selectDataset}
-                onPeriod={workspace.selectPeriod}
+                dataReady={Boolean(workspace.datasets.length)}
                 onUpload={workspace.readForm}
                 messages={workspace.messages}
-                context={workspace.context}
                 busy={workspace.busy === "query"}
                 pendingQuery={workspace.pendingQuery}
                 onQuery={workspace.ask}
                 onAction={workspace.action}
-                onClear={workspace.clearConversation}
               />
             )}
             {workspace.page === "Risk Radar" && data && (
@@ -209,89 +209,15 @@ export default function Home() {
             {workspace.page === "Reports" && (
               <Reports reports={workspace.reports} onStart={() => navigate("Investigations")} />
             )}
-            {workspace.page === "Knowledge" && <Knowledge onAsk={workspace.ask} />}
+            {workspace.page === "Knowledge" && (
+              <Knowledge onAsk={workspace.ask} onNavigate={navigate} />
+            )}
             {workspace.page === "Settings" && (
               <Settings theme={workspace.theme} onTheme={workspace.setTheme} />
             )}
           </>
         )}
       </Shell>
-      <Dialog
-        open={commandOpen}
-        onOpenChange={setCommandOpen}
-        title="Search your workspace"
-        description="Jump to a workspace, investigate a signal, or ask a banking question."
-      >
-        <label className="command-input">
-          <Search size={18} />
-          <input
-            autoFocus
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search or ask BankWeave…"
-            aria-label="Command search"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                if (searchMatches.length) navigate(searchMatches[0]);
-                else if (search.trim()) {
-                  setCommandOpen(false);
-                  void workspace.ask(search);
-                }
-              }
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
-                document.querySelector<HTMLButtonElement>(".command-results button")?.focus();
-              }
-            }}
-          />
-        </label>
-        <div
-          className="command-results"
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-              e.preventDefault();
-              const buttons = Array.from(e.currentTarget.querySelectorAll("button"));
-              const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-              buttons[
-                (index + (e.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length
-              ]?.focus();
-            }
-          }}
-        >
-          {searchMatches.map((p) => (
-            <button key={p} onClick={() => navigate(p)}>
-              <span>{p}</span>
-              <ChevronRight size={14} />
-            </button>
-          ))}
-          {data?.risks
-            .filter((r) => search && r.title.toLowerCase().includes(search.toLowerCase()))
-            .map((r) => (
-              <button
-                key={r.id}
-                onClick={() => {
-                  setCommandOpen(false);
-                  void workspace.investigate(r.id);
-                }}
-              >
-                <span>{r.title}</span>
-                <small>Investigate {r.id}</small>
-              </button>
-            ))}
-          {search.trim() && (
-            <button
-              onClick={() => {
-                setCommandOpen(false);
-                void workspace.ask(search);
-              }}
-            >
-              <span>Ask analyst: “{search}”</span>
-              <Badge tone="accent">Analyze</Badge>
-            </button>
-          )}
-        </div>
-        <div className="command-footer">↑ ↓ to navigate · Enter to select · Esc to close</div>
-      </Dialog>
       <Dialog
         open={notificationsOpen}
         onOpenChange={setNotificationsOpen}

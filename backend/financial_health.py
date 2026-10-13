@@ -1,7 +1,7 @@
 """Labelled synthetic flows, separated from verified income or affordability."""
 import calendar,hashlib,json
 from fastapi import APIRouter
-from .database import connect
+from .database import connect, metadata
 from .analytics import resolve,analysis_metadata,identifier,now,sanitize,currency
 router=APIRouter();VERSION='synthetic-cashflow-v1'
 
@@ -22,7 +22,9 @@ def overview(scope):
     scope=resolve('',scope)
     if scope['datasetId']!='meridian':raise ValueError('BankShield lacks coherent customer cashflow observations.')
     if scope.get('minAmount') is not None or scope.get('newDeviceOnly'):raise ValueError('Financial health supports customer, region and month filters. Clear transaction amount/device filters.')
-    year,month=map(int,scope['period'].split('-'));as_of=f'{year}-{month:02}-{calendar.monthrange(year,month)[1]:02}'
+    snapshot_period = metadata(scope['datasetId'])['periods'][-1] if scope['period'] == 'all' else scope['period']
+    year,month=map(int,snapshot_period.split('-'));as_of=f'{year}-{month:02}-{calendar.monthrange(year,month)[1]:02}'
+    selected_periods = metadata(scope['datasetId'])['periods'] if scope['period'] == 'all' else [scope['period']]
     where="c.dataset='meridian'";args=[]
     if scope.get('customerId'):where+=' AND c.id=?';args.append(scope['customerId'])
     if scope.get('region'):where+=' AND m.region IN (?,?)';args.extend([scope['region'],scope.get('comparison') or scope['region']])
@@ -31,9 +33,9 @@ def overview(scope):
         opening=db.execute(f'SELECT COALESCE(SUM(b.amount_minor),0) FROM cashflow_opening_balances b JOIN customers c ON c.dataset=b.dataset AND c.id=b.customer_id LEFT JOIN customer_master m ON m.dataset=c.dataset AND m.id=c.id WHERE {where} AND b.as_of<=?',[*args,as_of]).fetchone()[0]
         # Principal payments are distinct observed obligations; never counted as interest or fees.
         payments=[dict(row) for row in db.execute(f'''SELECT p.id,p.paid_on,p.principal_paid_minor,l.customer_id FROM loan_payments p JOIN loan_installments i ON i.dataset=p.dataset AND i.id=p.installment_id JOIN loans l ON l.dataset=i.dataset AND l.id=i.loan_id JOIN customers c ON c.dataset=l.dataset AND c.id=l.customer_id LEFT JOIN customer_master m ON m.dataset=c.dataset AND m.id=c.id WHERE {where} AND p.paid_on<=? ORDER BY p.paid_on,p.id''',[*args,as_of])]
-        due=db.execute(f'''SELECT COALESCE(SUM(i.principal_due_minor),0) FROM loan_installments i JOIN loans l ON l.dataset=i.dataset AND l.id=i.loan_id JOIN customers c ON c.dataset=l.dataset AND c.id=l.customer_id LEFT JOIN customer_master m ON m.dataset=c.dataset AND m.id=c.id WHERE {where} AND substr(i.due_on,1,7)=?''',[*args,scope['period']]).fetchone()[0]
-    current=[row for row in rows if row['occurred_on'][:7]==scope['period']]
-    income=sum(row['amount_minor'] for row in current if row['direction']=='inflow');spend=sum(row['amount_minor'] for row in current if row['direction']=='outflow');paid=sum(row['principal_paid_minor'] for row in payments if row['paid_on'][:7]==scope['period'])
+        due=db.execute(f'''SELECT COALESCE(SUM(i.principal_due_minor),0) FROM loan_installments i JOIN loans l ON l.dataset=i.dataset AND l.id=i.loan_id JOIN customers c ON c.dataset=l.dataset AND c.id=l.customer_id LEFT JOIN customer_master m ON m.dataset=c.dataset AND m.id=c.id WHERE {where} AND substr(i.due_on,1,7) IN ({','.join('?' for _ in selected_periods)})''',[*args,*selected_periods]).fetchone()[0]
+    current=[row for row in rows if row['occurred_on'][:7] in selected_periods]
+    income=sum(row['amount_minor'] for row in current if row['direction']=='inflow');spend=sum(row['amount_minor'] for row in current if row['direction']=='outflow');paid=sum(row['principal_paid_minor'] for row in payments if row['paid_on'][:7] in selected_periods)
     balance=opening+sum(row['amount_minor']*(1 if row['direction']=='inflow' else -1) for row in rows)-sum(row['principal_paid_minor'] for row in payments)
     categories={}
     for row in current:

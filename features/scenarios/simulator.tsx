@@ -81,7 +81,6 @@ export function Simulator({
     <div className="animate-in">
       <div className="page-heading">
         <div>
-          <div className="eyebrow">EXPLORE THE POSSIBILITIES</div>
           <h1>Scenario Simulator</h1>
           <p>Test a control change before making a decision.</p>
         </div>

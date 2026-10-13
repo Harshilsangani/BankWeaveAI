@@ -1,4 +1,5 @@
 "use client";
+import { processLabel } from "@/lib/process-label";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { ArrowUpRight, Check, FolderOpen, Hexagon, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -87,7 +88,7 @@ export function LoadingSteps({
   return (
     <div className="loading-steps" role="status" aria-live="polite">
       <div className="loading-title">
-        <Sparkles size={17} /> Operational progress <span className="streaming-dots">•••</span>
+        <Sparkles size={17} /> Processes <span className="streaming-dots">•••</span>
       </div>
       {!events.length && (
         <div className="loading-step">
@@ -95,13 +96,13 @@ export function LoadingSteps({
         </div>
       )}
       {events.map((event) => (
-        <div className="loading-step" key={event.stage}>
+        <div className="loading-step" key={processLabel(event.stage)}>
           {event.status === "complete" ? (
             <Check size={14} />
           ) : (
             <Loader2 size={14} className="spin" />
           )}
-          {event.stage}
+          {processLabel(event.stage)}
         </div>
       ))}
     </div>

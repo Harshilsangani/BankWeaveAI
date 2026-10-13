@@ -47,6 +47,7 @@ test("saved chats restore rich answers, filters and independent browser tabs", a
   await expect(chat(page, "Hello, help me get started")).toHaveAttribute("aria-current", "true");
   await page.unroute("**/api/operations");
 
+  await page.getByRole("button", { name: "Search recent chats" }).click();
   await page.getByLabel("Search chats").fill("Ahmedabad");
   await expect(page.locator(".chat-history-item")).toHaveCount(1);
   await chat(page, first).click();
@@ -65,7 +66,9 @@ test("saved chats restore rich answers, filters and independent browser tabs", a
     "aria-current",
     "true"
   );
-  await expect(secondTab.locator(".chat-thread")).toContainText("General chat agent");
+  await expect(
+    secondTab.getByRole("heading", { name: "Your banking assistant", exact: true })
+  ).toBeVisible();
   await expect(secondTab.locator(".chat-thread .chart-card")).toHaveCount(0);
   await page.reload();
   await expect(chat(page, first)).toHaveAttribute("aria-current", "true");
@@ -99,7 +102,7 @@ test("reopening an uploaded form preserves corrections without adding a customer
   await chat(page, title).click();
   await expect(page.getByLabel("Customer Full name")).toHaveValue("History Review Customer");
   await expect(page.locator(".markdown-preview")).toContainText("Ananya Shah");
-  await expect(page.locator(".chat-thread")).toContainText("Human review pending");
+  await expect(page.locator(".chat-thread")).toContainText("Ready for your review");
   await page.reload();
   await expect(page.getByLabel("Customer Full name")).toHaveValue("History Review Customer");
   expect((await (await request.get("/api/data?resource=customers")).json()).stats.customers).toBe(
@@ -206,6 +209,7 @@ test("mobile history is searchable, scrollable and closes after reopening a chat
   await page.goto("/#ai-analyst");
   await expect(prompt(page)).toBeEnabled();
   await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.getByRole("button", { name: "Search recent chats" }).click();
   await expect(page.getByLabel("Search chats")).toBeInViewport();
   expect(
     await page.locator(".chat-history-list").evaluate((el) => el.scrollHeight > el.clientHeight)

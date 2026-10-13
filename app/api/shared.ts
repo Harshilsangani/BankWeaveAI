@@ -4,9 +4,7 @@
  * local FastAPI backend over HTTP so the browser never touches database
  * credentials or raw SQL. Response schemas must not change. */
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
+export { isRecord } from "@/lib/records";
 
 export async function readJson(request: Request): Promise<unknown> {
   try {
@@ -20,11 +18,34 @@ export function badRequest(message: string): Response {
   return Response.json({ error: message }, { status: 400 });
 }
 
+export function datasetQuery(request: Request): string {
+  const incoming = new URL(request.url).searchParams;
+  const query = new URLSearchParams();
+  for (const key of ["datasetId", "period"])
+    if (incoming.has(key)) query.set(key, incoming.get(key)!);
+  return query.size ? `?${query}` : "";
+}
+
 export async function run(work: () => Promise<unknown>): Promise<Response> {
   try {
     return Response.json(await work());
   } catch (e) {
-    const status = e instanceof Error && 'status' in e && typeof e.status === 'number' && [400,403,404,409,422,502,504].includes(e.status) ? e.status : 400;
-    return Response.json({error: e instanceof Error ? e.message : 'The request could not be completed.'},{status});
+    return errorResponse(e);
   }
+}
+
+export function errorResponse(error: unknown): Response {
+  const status =
+    error instanceof Error &&
+    "status" in error &&
+    typeof error.status === "number" &&
+    Number.isInteger(error.status) &&
+    error.status >= 400 &&
+    error.status <= 599
+      ? error.status
+      : 400;
+  return Response.json(
+    { error: error instanceof Error ? error.message : "The request could not be completed." },
+    { status }
+  );
 }

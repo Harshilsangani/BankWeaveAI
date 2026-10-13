@@ -127,7 +127,6 @@ export function Investigation({
           </span>
         ))}
       </div>
-      <CaseControls key={investigation.id} id={investigation.id} />
       <div className="response-kpis">
         {investigation.metrics.map((m) => (
           <KpiCard key={m.label} metric={m} />
@@ -147,6 +146,7 @@ export function Investigation({
             points={investigation.trend}
           />
           <DataTable title="Affected regions & segments" data={investigation.segments} />
+          <CaseControls key={investigation.id} id={investigation.id} />
           {investigation.relationshipGraph && (
             <RelationshipGraph
               key={`graph-${investigation.id}`}

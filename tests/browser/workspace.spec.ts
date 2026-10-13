@@ -54,7 +54,7 @@ test("analyst chat keeps the composer visible and renders tool results inline", 
     el.scrollTop = el.scrollHeight;
   });
   expect((await composer.boundingBox())!.y).toBeCloseTo(before!.y, 0);
-  await page.getByRole("button", { name: "New analysis" }).click();
+  await page.getByRole("button", { name: "Start a new chat" }).click();
   await expect(page.getByRole("heading", { name: "Hello, Analyst." })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
@@ -123,7 +123,7 @@ test("complete banking investigation, scenario, and report flow", async ({ page 
   expect(errors).toEqual([]);
 });
 
-test("risk filtering, dismissal, policy search, command palette and theme", async ({ page }) => {
+test("risk filtering, dismissal, policy search, header navigation and theme", async ({ page }) => {
   await page.goto("/#risk-radar");
   await expect(page.getByRole("heading", { name: "Risk Radar", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "High severity", exact: true }).click();
@@ -132,12 +132,10 @@ test("risk filtering, dismissal, policy search, command palette and theme", asyn
   await expect(page.locator(".risk-grid .risk-card")).toHaveCount(1);
   await page.getByRole("button", { name: "Restore dismissed" }).click();
   await expect(page.locator(".risk-grid .risk-card")).toHaveCount(2);
-  await page.keyboard.press("Control+k");
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("textbox", { name: "Command search" }).fill("Knowledge");
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Knowledge Library", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Knowledge library" })).toBeVisible();
-  await page.getByRole("textbox", { name: "Search policies" }).fill("KYC");
+  await page.getByRole("button", { name: "Policies & procedures", exact: true }).click();
+  await page.getByRole("textbox", { name: "Search knowledge library" }).fill("KYC");
   await expect(page.locator(".policy-card")).toHaveCount(1);
   await page.getByRole("button", { name: "Read policy" }).click();
   await expect(page.getByRole("dialog")).toContainText("Verify the completeness");

@@ -1,5 +1,20 @@
 import { test, expect } from "@playwright/test";
 
+test("settings describes the connected provider instead of a fixed local label", async ({
+  page,
+}) => {
+  await page.route("**/api/health", (route) =>
+    route.fulfill({
+      json: { provider: "vertex", model: "gemini-3.5-flash-lite", location: "global" },
+    })
+  );
+  await page.goto("/#settings");
+  await expect(page.locator(".settings-panel")).toContainText(
+    "Gemini via Vertex AI · gemini-3.5-flash-lite"
+  );
+  await expect(page.locator(".settings-panel")).not.toContainText("Local AI provider");
+});
+
 test("narrow screens keep headings, actions and analyst tool popovers in view", async ({
   page,
 }) => {
@@ -49,7 +64,7 @@ test("mobile drawer traps focus and restores it without hidden navigation stops"
   await expect(trigger).toBeFocused();
   await expect(page.locator(".sidebar")).toHaveAttribute("inert", "");
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("button", { name: "Search workspace" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Notifications" })).toBeFocused();
 });
 
 test("customer review retains its header while scrolling and filters reset together", async ({

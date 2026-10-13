@@ -1,28 +1,28 @@
 /* BankWeave visual system: Google-inspired surfaces, with our own product identity.
    Layout and responsive behavior live in globals.css; all theme tokens live here. */
 :root {
-  --bg: #202124;
-  --sidebar: #1b1c1f;
-  --surface: #292a2d;
-  --surface-raised: #303236;
-  --hover: #383b40;
-  --border: #414449;
-  --border-strong: #626872;
-  --text: #f1f3f4;
-  --muted: #bdc1c6;
-  --subtle: #a0a7b0;
-  --accent: #a8c7fa;
-  --accent-dim: #293e61;
-  --on-accent: #062e6f;
+  --bg: #1c1c1e;
+  --sidebar: #18181a;
+  --surface: #242426;
+  --surface-raised: #2a2a2d;
+  --hover: rgb(255 255 255 / 5%);
+  --border: rgb(255 255 255 / 9%);
+  --border-strong: rgb(255 255 255 / 18%);
+  --text: #f4f4f5;
+  --muted: #b6b6bd;
+  --subtle: #8c8c95;
+  --accent: #eeeeef;
+  --accent-dim: rgb(255 255 255 / 7%);
+  --on-accent: #202022;
   --amber: #ffce83;
   --red: #ffb4ab;
-  --chart-grid: #43464b;
+  --chart-grid: #38383b;
   --shadow: 0 12px 40px #00000026;
   --card-shadow: none;
-  --radius-card: 20px;
-  --radius-control: 16px;
+  --radius-card: 16px;
+  --radius-control: 12px;
   --radius-pill: 24px;
-  --greeting-gradient: linear-gradient(100deg, #a8c7fa, #c3b8ff 60%, #f2b8ce);
+  --greeting-gradient: linear-gradient(100deg, #f4f4f5, #c5c5ce);
   color-scheme: dark;
 }
 
@@ -319,13 +319,13 @@
 
 /* Navigation and workspace chrome. */
 :root .sidebar {
-  border-right-color: transparent;
+  border-right-color: var(--border);
 }
 :root .topbar {
   background: var(--bg);
 }
 :root .nav-item {
-  border-radius: 28px;
+  border-radius: 10px;
 }
 :root .nav-item.active {
   border-color: transparent;
@@ -358,8 +358,8 @@
 
 /* OCR documents read directly inside the conversation, with their own typography. */
 .chat-greeting-description {
-  max-width: 520px;
-  margin: 16px auto 24px;
+  max-width: 580px;
+  margin: 16px 0 24px;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.7;
@@ -767,7 +767,7 @@
   border-radius: 6px;
 }
 
-/* Filled blue actions and tonal selection states keep semantic warnings intact. */
+/* Primary actions and tonal selection states keep semantic warnings distinct. */
 :root .button {
   border-radius: var(--radius-pill);
   padding-inline: 16px;
@@ -796,18 +796,18 @@
   color: transparent;
 }
 :root .chat-welcome .suggested-questions button {
-  background: var(--surface-raised);
-  border-color: transparent;
+  background: var(--surface);
+  border-color: var(--border);
   border-radius: var(--radius-card);
 }
 :root .chat-composer .prompt-box {
   background: var(--surface-raised);
-  border-color: transparent;
-  border-radius: 30px;
+  border-color: var(--border-strong);
+  border-radius: 22px;
 }
 :root .chat-composer .prompt-box:focus-within {
-  border-color: transparent;
-  box-shadow: 0 0 0 2px var(--accent);
+  border-color: var(--muted);
+  box-shadow: 0 0 0 1px var(--border-strong);
 }
 :root .analyst-chat .user-message {
   background: var(--surface-raised);
@@ -823,18 +823,14 @@
   border-radius: var(--radius-control);
 }
 :root .analyst-chat .suggested-questions button {
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
 }
 :root .data-controls {
   background: var(--bg);
 }
-:root .chat-context-popover,
 :root .composer-tools-popover,
 :root .dialog-content {
   border-radius: var(--radius-card);
-}
-:root .command-results button {
-  border-radius: 12px;
 }
 
 /* Dataset, customer, policy, case, and maintenance forms share one control style. */
@@ -857,6 +853,90 @@
 :root .quality-workspace select,
 :root .setting-field select {
   border-radius: var(--radius-control);
+}
+
+/* Style the actual dropdown as well as its closed control. */
+@supports (appearance: base-select) {
+  select:not([multiple]):not([size]),
+  select:not([multiple]):not([size])::picker(select) {
+    appearance: base-select;
+  }
+  select:not([multiple]):not([size]) {
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  select:not([multiple]):not([size])::picker-icon {
+    flex-shrink: 0;
+    color: var(--subtle);
+    margin-inline-start: auto;
+  }
+  select:not([multiple]):not([size]):open::picker-icon {
+    rotate: 180deg;
+  }
+  select:not([multiple]):not([size])::picker(select) {
+    background: var(--surface-raised);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 5px;
+    margin-top: 6px;
+    box-sizing: border-box;
+    width: anchor-size(width);
+    min-width: 0;
+    max-width: calc(100vw - 24px);
+    max-height: min(280px, 55dvh);
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+    scrollbar-width: thin;
+  }
+  select:not([multiple]):not([size]) option {
+    font: inherit;
+    padding: 9px 6px;
+    border-radius: 9px;
+    gap: 4px;
+    cursor: pointer;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+  select:not([multiple]):not([size]) option:hover,
+  select:not([multiple]):not([size]) option:focus-visible {
+    background: var(--hover);
+    outline: none;
+  }
+  select:not([multiple]):not([size]) option:checked {
+    background: var(--accent-dim);
+    color: var(--text);
+  }
+  select:not([multiple]):not([size]) option::checkmark {
+    order: 1;
+    margin-inline-start: auto;
+    color: var(--text);
+  }
+  .dataset-selects select > button {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    height: 100%;
+    line-height: inherit;
+  }
+  .dataset-selects selectedcontent {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 }
 :root .customer-form label:has(input[type="checkbox"]) {
   border-radius: var(--radius-control);
@@ -932,6 +1012,20 @@ input[type="file"]::file-selector-button:hover {
   letter-spacing: 0;
   color: var(--muted);
 }
+.chat-history-search-toggle {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--subtle);
+}
+.chat-history-search-toggle:hover {
+  color: var(--text);
+  background: var(--hover);
+}
 .chat-history-search {
   display: flex;
   align-items: center;
@@ -959,23 +1053,18 @@ input[type="file"]::file-selector-button:hover {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
-.chat-history-group {
-  color: var(--subtle);
-  font-size: 10px;
-  padding: 8px 12px 5px;
-}
 .chat-history-item {
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 9px;
-  padding: 10px 12px;
+  padding: 5px 10px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text);
   border: 0;
-  border-radius: 24px;
+  border-radius: 10px;
   text-align: left;
   font-size: 12px;
+  line-height: 18px;
 }
 .chat-history-item span {
   min-width: 0;
@@ -983,16 +1072,14 @@ input[type="file"]::file-selector-button:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.chat-history-item svg {
-  flex-shrink: 0;
-}
 .chat-history-item:hover {
   background: var(--hover);
   color: var(--text);
 }
 .chat-history-item.active {
   background: var(--accent-dim);
-  color: var(--accent);
+  color: var(--text);
+  font-weight: 500;
 }
 .chat-history-empty,
 .chat-history-error {
@@ -1006,6 +1093,15 @@ input[type="file"]::file-selector-button:hover {
   background: transparent;
   color: var(--accent);
   text-decoration: underline;
+}
+@media (max-width: 760px) {
+  .chat-history-item {
+    min-height: 40px;
+  }
+  .chat-history-search-toggle {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 @media (max-height: 900px) {

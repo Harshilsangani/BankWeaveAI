@@ -1,21 +1,12 @@
 "use client";
 import { useEffect, useRef } from "react";
-import {
-  CheckCircle2,
-  ChevronDown,
-  Database,
-  Loader2,
-  MessageSquarePlus,
-  Sparkles,
-  X,
-} from "lucide-react";
-import type { AnalystResponse, QueryContext, DatasetId, DatasetInfo } from "@/types";
+import { CheckCircle2, Loader2, Sparkles, X } from "lucide-react";
+import type { AnalystResponse, QueryContext, DatasetId } from "@/types";
 import { AIMessage, SuggestedQuestions } from "@/components/blocks";
 import { Button, LoadingSteps } from "@/components/ui";
-import { scopeLabel } from "@/lib/utils";
 import { PromptBox, starterQuestions } from "./prompt-box";
-import { DataControls } from "./data-controls";
 import { roleLabels, type StaffRole } from "@/lib/staff-role";
+import { useAIProvider } from "@/hooks/use-ai-provider";
 
 export function Analyst({
   notice,
@@ -25,17 +16,12 @@ export function Analyst({
   progress,
   onCancel,
   messages,
-  context,
   busy,
   pendingQuery,
   onQuery,
   onAction,
-  onClear,
-  datasets,
   datasetId,
-  period,
-  onDataset,
-  onPeriod,
+  dataReady,
   onUpload,
   role,
   canAnalyze,
@@ -47,7 +33,6 @@ export function Analyst({
   progress: import("@/services/operations").ProgressEvent[];
   onCancel: () => void;
   messages: AnalystResponse[];
-  context?: QueryContext;
   busy: boolean;
   pendingQuery?: string;
   onQuery: (q: string) => void;
@@ -56,17 +41,14 @@ export function Analyst({
     id: string,
     scope?: QueryContext
   ) => void;
-  onClear: () => void;
-  datasets: DatasetInfo[];
   datasetId: DatasetId;
-  period?: string;
-  onDataset: (id: DatasetId) => void;
-  onPeriod: (period: string) => void;
+  dataReady: boolean;
   onUpload: (file: File) => void;
   role?: StaffRole;
   canAnalyze: boolean;
 }) {
-  const contextLocked = busy || Boolean(contextStatus) || !ready || !datasets.length;
+  const contextLocked = busy || Boolean(contextStatus) || !ready || !dataReady;
+  const provider = useAIProvider();
   const locked = contextLocked || !canAnalyze;
   const scroller = useRef<HTMLDivElement>(null);
   const latest = useRef<HTMLDivElement>(null);
@@ -79,71 +61,12 @@ export function Analyst({
       target.getBoundingClientRect().top -
       container.getBoundingClientRect().top +
       container.scrollTop;
-    container.scrollTo({ top: Math.max(0, top - 24), behavior: "instant" });
+    const toolbarInset = parseFloat(getComputedStyle(container).scrollPaddingTop) || 24;
+    container.scrollTo({ top: Math.max(0, top - toolbarInset), behavior: "instant" });
   }, [messages.length, busy]);
 
   return (
-    <section className="analyst-chat">
-      <header className="chat-header">
-        <div className="chat-heading">
-          <h1>AI Analyst</h1>
-          <span>BankWeave intelligence</span>
-        </div>
-        <div className="chat-header-actions">
-          <details className="chat-context">
-            <summary>
-              <Database size={14} />
-              <span>{context?.region ?? "All regions"}</span>
-              <ChevronDown size={13} />
-            </summary>
-            <div className="chat-context-popover">
-              <strong>Conversation context</strong>
-              <div className="scope-item">
-                <span>Dataset</span>
-                <strong>{datasets.find((d) => d.id === datasetId)?.name ?? "Meridian demo"}</strong>
-              </div>
-              <div className="scope-item">
-                <span>Period</span>
-                <strong>
-                  {period ?? datasets.find((d) => d.id === datasetId)?.periods.at(-1) ?? "2026-09"}
-                </strong>
-              </div>
-              <div className="scope-item">
-                <span>Baseline</span>
-                <strong>Previous calendar month</strong>
-              </div>
-              <div className="scope-item">
-                <span>Focus</span>
-                <strong>
-                  {context?.domain === "loans" ? "Loan defaults" : "Transaction risk"}
-                </strong>
-              </div>
-              <div className="scope-item">
-                <span>Scope</span>
-                <strong>{scopeLabel(context)}</strong>
-              </div>
-              <p>Follow-ups remember your filters. Ask “show all regions” to reset them.</p>
-            </div>
-          </details>
-          <Button
-            variant="ghost"
-            onClick={onClear}
-            disabled={contextLocked || !messages.length}
-            aria-label="New analysis"
-          >
-            <MessageSquarePlus size={18} />
-            <span>New chat</span>
-          </Button>
-        </div>
-      </header>
-      <DataControls
-        datasets={datasets}
-        datasetId={datasetId}
-        period={period}
-        busy={contextLocked}
-        onDataset={onDataset}
-        onPeriod={onPeriod}
-      />
+    <section className="analyst-chat" aria-label="AI Analyst">
       {notice && (
         <div role="status" className="analyst-notice">
           <CheckCircle2 size={15} />
@@ -186,7 +109,7 @@ export function Analyst({
               <p className="chat-greeting-description">
                 {role === "viewer"
                   ? "Browse available data and saved results. Ask an Analyst or Admin to start new analyses or upload forms."
-                  : "Ask about banking data, investigate a risk, or upload a customer form. Customer additions always need an admin decision."}
+                  : "Explore your banking data, follow a risk signal, or read a customer form. Choose a question below or write your own."}
               </p>
               <SuggestedQuestions
                 disabled={locked}
@@ -236,7 +159,14 @@ export function Analyst({
             Viewer access · Analysis and uploads are available to Analysts and Admins.
           </p>
         )}
-        <PromptBox onSubmit={onQuery} onUpload={onUpload} busy={busy} disabled={locked} chat />
+        <PromptBox
+          onSubmit={onQuery}
+          onUpload={onUpload}
+          busy={busy}
+          disabled={locked}
+          provider={provider}
+          chat
+        />
       </div>
     </section>
   );

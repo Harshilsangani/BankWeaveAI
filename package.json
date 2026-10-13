@@ -6,6 +6,8 @@
     "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "node scripts/dev.mjs start",
+    "frontend:start": "node scripts/frontend.mjs",
+    "backend:start": "bash scripts/start-vm-backend.sh",
     "backend:seed": "tsx scripts/export-demo.ts && node scripts/python.mjs -m backend.import_data",
     "backend:migrate": "node scripts/python.mjs -m backend.migrate",
     "test:backend": "node scripts/python.mjs -m unittest discover -s backend/tests -v",

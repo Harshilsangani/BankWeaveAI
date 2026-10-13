@@ -1,5 +1,6 @@
-import { workspaceSessionId, workspaceConversationId } from "./index";
+import { getStaffIdentity, workspaceSessionId, workspaceConversationId } from "./index";
 import { developmentRoleHeader } from "@/lib/staff-role";
+import { readBackendJson } from "./backend-response";
 export interface ProgressEvent {
   type: "progress";
   stage: string;
@@ -23,6 +24,8 @@ export async function streamOperation<T>(
   payload: unknown,
   options: OperationOptions
 ): Promise<T> {
+  await getStaffIdentity();
+  options.signal.throwIfAborted();
   const headers = new Headers({
     "x-risklens-session": workspaceSessionId(),
     "x-risklens-role": developmentRoleHeader(),
@@ -46,11 +49,15 @@ export async function streamOperation<T>(
     signal: AbortSignal.any([options.signal, AbortSignal.timeout(120000)]),
   });
   if (!response.ok) {
-    const error = await response.json();
-    throw new OperationError(
-      error.error ?? "The operation failed.",
-      !String(error.error).includes("already running")
-    );
+    try {
+      await readBackendJson(response);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The operation failed.";
+      // A transient HTTP failure cannot establish whether the backend saved
+      // the result. Retry the same ID so a completed operation is replayed.
+      const uncertain = response.status >= 500 || [408, 429].includes(response.status);
+      throw new OperationError(message, !uncertain && !message.includes("already running"));
+    }
   }
   if (!response.body)
     throw new Error("The operation returned no stream. Retry to recover its saved result.");
@@ -88,11 +95,13 @@ export async function streamOperation<T>(
   }
 }
 export async function cancelOperation(requestId: string) {
-  await fetch(`/api/operations?id=${encodeURIComponent(requestId)}`, {
+  await getStaffIdentity();
+  const response = await fetch(`/api/operations?id=${encodeURIComponent(requestId)}`, {
     method: "DELETE",
     headers: {
       "x-risklens-session": workspaceSessionId(),
       "x-risklens-role": developmentRoleHeader(),
     },
   });
+  await readBackendJson(response);
 }

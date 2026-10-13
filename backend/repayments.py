@@ -2,7 +2,7 @@
 import calendar,json,hashlib
 from datetime import date
 from fastapi import APIRouter
-from .database import connect
+from .database import connect, metadata
 from .analytics import resolve,analysis_metadata,identifier,now,currency,sanitize
 from .loans import condition,JOINS,REGION
 router=APIRouter()
@@ -24,7 +24,8 @@ def seed():
 def ledger(scope):
     scope=resolve('',{**scope,'domain':'loans'})
     if scope['datasetId']!='meridian':raise ValueError('BankShield has no repayment observations.')
-    year,month=map(int,scope['period'].split('-'));as_of=date(year,month,calendar.monthrange(year,month)[1]).isoformat()
+    snapshot_period = metadata(scope['datasetId'])['periods'][-1] if scope['period'] == 'all' else scope['period']
+    year,month=map(int,snapshot_period.split('-'));as_of=date(year,month,calendar.monthrange(year,month)[1]).isoformat()
     sql,args=condition(scope)
     with connect() as db:
         rows=db.execute(f'''SELECT i.id,i.loan_id,l.customer_id,{REGION} region,i.due_on,i.principal_due_minor,

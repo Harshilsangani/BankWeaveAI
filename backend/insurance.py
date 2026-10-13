@@ -2,7 +2,7 @@
 import calendar,hashlib,json
 from datetime import date,timedelta
 from fastapi import APIRouter
-from .database import connect
+from .database import connect, metadata
 from .analytics import resolve,analysis_metadata,sanitize,identifier,now,currency
 router=APIRouter()
 VERSION='synthetic-insurance-v1'
@@ -21,7 +21,8 @@ def overview(scope):
     if scope.get('minAmount') is not None or scope.get('newDeviceOnly'):
         raise ValueError('Insurance supports customer, region and month filters. Clear transaction/loan amount and device filters first.')
     if scope['datasetId']!='meridian':raise ValueError('BankShield supplies no insurance policy observations.')
-    year,month=map(int,scope['period'].split('-'));as_of=date(year,month,calendar.monthrange(year,month)[1]);until=as_of+timedelta(days=60)
+    snapshot_period = metadata(scope['datasetId'])['periods'][-1] if scope['period'] == 'all' else scope['period']
+    year,month=map(int,snapshot_period.split('-'));as_of=date(year,month,calendar.monthrange(year,month)[1]);until=as_of+timedelta(days=60)
     where='c.dataset=?';args=['meridian']
     if scope.get('customerId'):where+=' AND c.id=?';args.append(scope['customerId'])
     if scope.get('region'):

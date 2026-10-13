@@ -23,8 +23,11 @@ export interface CustomerFields {
 export interface FormDraft {
   approval?: import("./approvals").ApprovalRequest | null;
   revision?: number;
-  provenance?: Record<keyof CustomerFields,{page:number|null;method:string;status:string;reason:string}>;
-  possibleDuplicates?: {customerId:string;name:string;reasons:string[]}[];
+  provenance?: Record<
+    keyof CustomerFields,
+    { page: number | null; method: string; status: string; reason: string }
+  >;
+  possibleDuplicates?: { customerId: string; name: string; reasons: string[] }[];
   customerId?: string;
   id: string;
   filename: string;
@@ -65,6 +68,8 @@ export interface AnalysisMetadata {
   baseline: string;
   currency: "INR" | "USD";
   provider: "local" | "vertex";
+  model?: string;
+  location?: string;
   datasetVersion: string;
   runId: string;
   stages: string[];
@@ -72,6 +77,11 @@ export interface AnalysisMetadata {
   outboundFields: string[];
   limitations: string[];
   coverage: DatasetInfo["coverage"];
+}
+export interface AIProviderStatus {
+  provider: "local" | "vertex";
+  model?: string | null;
+  location?: string | null;
 }
 export type Severity = "high" | "medium" | "low";
 export interface Branch {
@@ -142,7 +152,19 @@ export interface Evidence {
   records: string[];
 }
 export interface RiskEvent {
-  detection?:{runId:string;rulesVersion:string;inputHash:string;sourceVersion:string;sourceCounts:Record<string,number>;threshold:{name:string;minCount:number;minIncreasePct:number|null};currentCount:number;baselineCount:number;observedIncreasePct:number|null;executedAt:string;scope:QueryContext};
+  detection?: {
+    runId: string;
+    rulesVersion: string;
+    inputHash: string;
+    sourceVersion: string;
+    sourceCounts: Record<string, number>;
+    threshold: { name: string; minCount: number; minIncreasePct: number | null };
+    currentCount: number;
+    baselineCount: number;
+    observedIncreasePct: number | null;
+    executedAt: string;
+    scope: QueryContext;
+  };
   currency?: "INR" | "USD";
   id: string;
   title: string;
@@ -166,7 +188,14 @@ export type ResponseBlock =
   | { type: "FORM"; draft: FormDraft }
   | { type: "TEXT"; text: string }
   | { type: "KPI"; metrics: Metric[] }
-  | { type: "CHART"; title: string; subtitle: string; kind: "area" | "bar"; points: ChartPoint[] }
+  | {
+      type: "CHART";
+      title: string;
+      subtitle: string;
+      kind: "area" | "bar" | "column" | "donut";
+      tone?: "research";
+      points: ChartPoint[];
+    }
   | { type: "TABLE"; title: string; data: TableData }
   | { type: "INSIGHT"; title: string; text: string }
   | { type: "EVIDENCE"; evidence: Evidence[] }
@@ -174,7 +203,11 @@ export type ResponseBlock =
   | { type: "REPORT"; report: Report }
   | { type: "COMPARISON"; result: ScenarioResult };
 export interface QueryContext {
+  view?: "customer_ranking" | "customer_summary";
+  ranking?: "transaction_value" | "transaction_count" | "loan_principal";
+  limit?: number;
   customerId?: string;
+  research?: boolean;
   datasetId?: DatasetId;
   period?: string;
   domain: Domain;
@@ -191,11 +224,12 @@ export interface AnalystResponse {
   title: string;
   blocks: ResponseBlock[];
   suggestions: string[];
+  research?: boolean;
   context: QueryContext;
   timestamp: string;
 }
 export interface Investigation {
-  relationshipGraph?:import('./relationships').RelationshipGraph;
+  relationshipGraph?: import("./relationships").RelationshipGraph;
   analysis?: AnalysisMetadata;
   id: string;
   risk: RiskEvent;
@@ -249,6 +283,13 @@ export interface Dashboard {
   trend: ChartPoint[];
   regions: ChartPoint[];
   risks: RiskEvent[];
-  recent: { id: string; investigationId?: string; title: string; category: string; status: string; time: string }[];
+  recent: {
+    id: string;
+    investigationId?: string;
+    title: string;
+    category: string;
+    status: string;
+    time: string;
+  }[];
   snapshot: string;
 }
