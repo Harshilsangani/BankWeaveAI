@@ -1,0 +1,488 @@
+/* Employee card campaign workspace. */
+.campaign-page {
+  min-width: 0;
+}
+.campaign-setup,
+.campaign-report-detail,
+.campaign-candidates,
+.campaign-progress,
+.campaign-run-history,
+.campaign-readiness,
+.dashboard-campaign-reports {
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.campaign-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.campaign-section-heading h2 {
+  font-size: 19px;
+  line-height: 1.4;
+}
+.campaign-section-heading h3,
+.campaign-progress h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.campaign-section-heading p,
+.campaign-subtle,
+.campaign-readiness > p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 6px;
+}
+.campaign-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: var(--accent-dim);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+.campaign-form-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 340px);
+  gap: 16px;
+}
+.campaign-form-row label,
+.campaign-candidates label,
+.campaign-review label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 0;
+}
+.campaign-form-row input,
+.campaign-form-row select,
+.campaign-candidates select,
+.campaign-review textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+  color: var(--text);
+  padding: 10px 12px;
+  font: inherit;
+}
+.campaign-form-row input,
+.campaign-form-row select,
+.campaign-candidates select {
+  height: 42px;
+}
+.campaign-data-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 22px 0 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  font-size: 12px;
+  color: var(--muted);
+}
+.campaign-data-status.is-ready {
+  background: var(--accent-dim);
+}
+.campaign-data-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+.campaign-product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+  min-width: 0;
+}
+.campaign-product-grid legend {
+  font-size: 13px;
+  padding-bottom: 12px;
+  width: 100%;
+}
+.campaign-product-grid legend small {
+  display: block;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.campaign-product-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  min-width: 0;
+}
+.campaign-product-choice input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.campaign-product-choice strong {
+  font-size: 13px;
+  display: block;
+  line-height: 1.5;
+}
+.campaign-product-choice small {
+  font-size: 11px;
+  line-height: 1.7;
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.campaign-product-choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.campaign-prepare-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 25px;
+}
+.campaign-prepare-row p {
+  max-width: 560px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.campaign-prepare-row .button {
+  flex-shrink: 0;
+}
+.campaign-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  margin: 24px 0;
+}
+.campaign-metrics > div {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.campaign-metrics span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.campaign-metrics strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 550;
+  letter-spacing: -0.8px;
+}
+.campaign-tabs {
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+.campaign-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+  align-items: start;
+}
+.campaign-overview-grid .chart-card {
+  min-width: 0;
+}
+.campaign-exclusions {
+  padding: 20px;
+}
+.campaign-exclusions h2,
+.campaign-exclusions h3,
+.campaign-report-detail h3,
+.campaign-run-history h2 {
+  font-size: 17px;
+  margin-bottom: 14px;
+}
+.campaign-exclusions dl,
+.campaign-evidence-facts {
+  font-size: 12px;
+}
+.campaign-exclusions dl > div,
+.campaign-evidence-facts > div {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.campaign-exclusions dt {
+  color: var(--muted);
+}
+.campaign-exclusions dd {
+  flex-shrink: 0;
+}
+.campaign-exclusions p,
+.campaign-report-detail > p,
+.campaign-review p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 16px 0;
+}
+.campaign-candidates .table-scroll {
+  min-width: 0;
+}
+.campaign-candidates table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.campaign-candidates th,
+.campaign-candidates td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.campaign-candidates td small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.campaign-candidates .button {
+  white-space: nowrap;
+}
+.campaign-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.campaign-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+}
+.campaign-steps li {
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+  color: var(--muted);
+  font-size: 11px;
+}
+.campaign-steps li.reached {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.campaign-report-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.campaign-report-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.campaign-report-card h3 {
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.campaign-report-card > p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.campaign-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.campaign-card-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.campaign-card-counts strong {
+  font-size: 14px;
+  color: var(--text);
+}
+.campaign-report-card .button {
+  margin-top: auto;
+  align-self: flex-start;
+}
+.campaign-source-details {
+  margin: 24px 0;
+  padding: 16px;
+  background: var(--surface-raised);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.campaign-source-details summary {
+  color: var(--text);
+  cursor: pointer;
+}
+.campaign-source-details p {
+  margin-top: 12px;
+}
+.campaign-source-details small {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+}
+.campaign-review,
+.campaign-review-history {
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.campaign-review textarea {
+  resize: vertical;
+  margin-bottom: 16px;
+}
+.campaign-review-history p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 12px;
+  color: var(--muted);
+}
+.campaign-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+.campaign-history-row strong {
+  font-size: 13px;
+}
+.campaign-history-row small,
+.campaign-history-row p {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 8px;
+}
+.campaign-history-row .page-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.campaign-draft-preview {
+  margin-top: 24px;
+}
+.campaign-draft-preview h3 {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.campaign-draft-preview pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+  padding: 20px;
+  margin: 16px 0;
+  background: var(--surface-raised);
+  border-radius: var(--radius-control);
+}
+.campaign-chat-card {
+  padding: 20px;
+}
+.campaign-chat-card h3 {
+  font-size: 16px;
+}
+.campaign-chat-card p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 12px 0;
+}
+.notification-count {
+  position: absolute;
+  right: -3px;
+  top: -4px;
+  border-radius: 20px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 9px;
+  min-width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+}
+@media (max-width: 1100px) {
+  .campaign-product-grid {
+    grid-template-columns: 1fr;
+  }
+  .campaign-report-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .campaign-history-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+@media (max-width: 760px) {
+  .campaign-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .campaign-metrics > div {
+    padding: 16px;
+  }
+  .campaign-overview-grid,
+  .campaign-report-list {
+    grid-template-columns: 1fr;
+  }
+  .campaign-section-heading,
+  .campaign-prepare-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .campaign-form-row {
+    grid-template-columns: 1fr;
+  }
+  .campaign-setup,
+  .campaign-report-detail,
+  .campaign-candidates,
+  .campaign-progress,
+  .campaign-run-history,
+  .campaign-readiness,
+  .dashboard-campaign-reports {
+    padding: 18px;
+  }
+  .campaign-candidates table {
+    min-width: 660px;
+  }
+  .campaign-history-row .page-actions {
+    justify-content: flex-start;
+  }
+}

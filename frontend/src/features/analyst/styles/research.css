@@ -1,0 +1,45 @@
+.research-actions {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-bottom: 8px;
+}
+.export-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+}
+.research-execution {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin: 12px 0 18px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.research-execution summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.research-execution summary span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.research-execution p,
+.research-execution ul {
+  margin-top: 12px;
+  line-height: 1.6;
+}
+.research-execution ul {
+  padding-left: 18px;
+}

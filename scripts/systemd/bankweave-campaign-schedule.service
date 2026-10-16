@@ -1,0 +1,9 @@
+[Unit]
+Description=Enqueue enabled BankWeave monthly campaigns
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/BankWeaveAI
+EnvironmentFile=%h/.config/bankweave/backend.env
+ExecStart=/usr/bin/bash %h/BankWeaveAI/scripts/runtime/start-campaign-worker.sh --enqueue-scheduled
+UMask=0077

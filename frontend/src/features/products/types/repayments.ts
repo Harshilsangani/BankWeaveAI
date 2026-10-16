@@ -1,0 +1,21 @@
+export interface RepaymentLedger {
+  asOf: string;
+  version: string;
+  snapshotHash: string;
+  installments: number;
+  delinquentLoans: number;
+  paidPrincipal: number;
+  overduePrincipal: number;
+  outstandingPrincipal: number;
+  maxDaysOverdue: number;
+  limitations: string[];
+  rows: {
+    id: string;
+    loan_id: string;
+    due_on: string;
+    paid_minor: number;
+    overdueMinor: number;
+    daysOverdue: number;
+    status: string;
+  }[];
+}

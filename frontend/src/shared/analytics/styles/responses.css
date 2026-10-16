@@ -1,0 +1,14 @@
+.response-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.response-kpis .kpi-card {
+  padding: 15px;
+}
+.response-kpis .kpi-value-row strong {
+  font-size: 24px;
+}
+.response-kpis .sparkline {
+  width: 48px;
+}

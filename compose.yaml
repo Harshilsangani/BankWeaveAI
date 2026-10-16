@@ -7,18 +7,20 @@ services:
     environment:
       RISKLENS_ENV: development
       RISKLENS_PROVIDER: local
-      RISKLENS_ENABLE_VERTEX: 'false'
+      RISKLENS_ENABLE_VERTEX: "false"
       RISKLENS_STORAGE_DIR: /data
     volumes:
       - risklens-data:/data
     ports:
-      - '127.0.0.1:8000:8000'
+      - "127.0.0.1:8000:8000"
   frontend:
-    build: .
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     environment:
       RISKLENS_BACKEND_URL: http://backend:8000
     ports:
-      - '127.0.0.1:3000:3000'
+      - "127.0.0.1:3000:3000"
     depends_on:
       backend:
         condition: service_healthy

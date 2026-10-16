@@ -1,0 +1,469 @@
+@media (min-width: 1650px) {
+  html,
+  body {
+    font-size: 15px;
+  }
+  .content {
+    padding: 40px;
+  }
+  .dashboard-columns {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+  .analyst-hero {
+    padding: 35px;
+  }
+  .analyst-hero h2 {
+    font-size: 29px;
+  }
+  .analyst-hero > p,
+  .prompt-box textarea {
+    font-size: 14px;
+  }
+  .suggested-questions button {
+    font-size: 12px;
+  }
+  .kpi-label {
+    font-size: 13px;
+  }
+  .kpi-value-row strong {
+    font-size: 33px;
+  }
+  .risk-card h3 {
+    font-size: 14px;
+  }
+  .risk-card > p {
+    font-size: 12px;
+  }
+  .chart {
+    height: 240px;
+  }
+  .chart-heading h3 {
+    font-size: 14px;
+  }
+  .recent-name strong {
+    font-size: 13px;
+  }
+  .risk-card {
+    padding-bottom: 25px;
+    margin-bottom: 25px;
+  }
+}
+@media (max-width: 1250px) {
+  .sidebar > .logo {
+    font-size: 18px;
+    gap: 7px;
+  }
+  .sidebar .logo-symbol,
+  .sidebar .logo-symbol > svg {
+    width: 28px;
+    height: 32px;
+  }
+  .sidebar .logo-ai {
+    font-size: 10px;
+    margin-left: 3px;
+  }
+  .dashboard .dashboard-shortcuts {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    width: 205px;
+    padding-inline: 12px;
+  }
+  .main-shell {
+    margin-left: 205px;
+  }
+  .content {
+    padding: 28px 23px;
+  }
+  .topbar-navigation,
+  .analyst-toolbar {
+    padding-inline: 23px;
+  }
+  .dashboard-columns {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 17px;
+  }
+  .analyst-hero {
+    padding: 23px 20px;
+  }
+  .analyst-hero h2 {
+    font-size: 22px;
+  }
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart {
+    height: 195px;
+  }
+  .kpi-card {
+    padding: 16px 13px;
+  }
+  .kpi-value-row strong {
+    font-size: 24px;
+  }
+  .kpi-value-row .sparkline {
+    width: 46px;
+  }
+  .kpi-meta {
+    font-size: 12px;
+  }
+  .risk-card h3 {
+    flex-wrap: wrap;
+  }
+  .recent-head,
+  .recent-row {
+    grid-template-columns: 1fr 80px;
+  }
+  .recent-time,
+  .recent-head > span:last-child {
+    display: none;
+  }
+  .analyst-layout {
+    grid-template-columns: minmax(0, 1fr) 210px;
+    gap: 20px;
+  }
+  .risk-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .investigation-grid {
+    grid-template-columns: minmax(0, 1fr) 230px;
+  }
+  .knowledge-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 1000px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sidebar {
+    width: 185px;
+  }
+  .main-shell {
+    margin-left: 185px;
+  }
+  .nav-item {
+    font-size: 12px;
+    padding: 11px 9px;
+    gap: 9px;
+  }
+  .logo {
+    font-size: 21px;
+  }
+  .workspace-select {
+    padding: 10px 8px;
+  }
+  .workspace-select strong {
+    font-size: 12px;
+  }
+  .dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-aside .radar-panel .risk-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .dashboard-aside .risk-card {
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 0;
+  }
+  .dashboard-aside .radar-panel > .text-link {
+    padding-top: 12px;
+  }
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  .page-heading h1 {
+    font-size: 27px;
+  }
+  .analyst-layout {
+    grid-template-columns: 1fr;
+  }
+  .analyst-side-panel {
+    position: static;
+  }
+  .investigation-grid {
+    grid-template-columns: 1fr;
+  }
+  .investigation-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+  .risk-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .prompt-scope {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    width: 228px;
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    border: 0;
+    background: #0008;
+    backdrop-filter: blur(2px);
+  }
+  .main-shell {
+    margin-left: 0;
+  }
+  .mobile-menu {
+    display: grid;
+  }
+  .main-shell {
+    --workspace-header-height: 52px;
+  }
+  .topbar-navigation,
+  .analyst-toolbar {
+    padding-inline: 12px;
+    gap: 10px;
+  }
+  .topbar-navigation {
+    height: 52px;
+  }
+  .breadcrumb {
+    gap: 8px;
+    font-size: 12px;
+  }
+  .topbar-actions {
+    gap: 10px;
+  }
+  .content {
+    padding: 25px 18px;
+  }
+  .page-heading {
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .page-heading h1 {
+    font-size: 26px;
+  }
+  .page-heading p {
+    font-size: 12px;
+  }
+  .eyebrow {
+    font-size: 12px;
+  }
+  .snapshot-control {
+    padding: 8px;
+    font-size: 12px;
+    gap: 6px;
+  }
+  .snapshot-control .badge {
+    display: none;
+  }
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .kpi-card {
+    padding: 16px;
+  }
+  .kpi-value-row strong {
+    font-size: 26px;
+  }
+  .kpi-meta {
+    font-size: 12px;
+  }
+  .dashboard-columns {
+    gap: 22px;
+  }
+  .analyst-hero {
+    padding: 22px 19px;
+  }
+  .analyst-hero h2 {
+    font-size: 23px;
+  }
+  .analyst-hero h2 span {
+    display: block;
+    margin-top: 5px;
+  }
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart {
+    height: 220px;
+  }
+  .dashboard-aside .radar-panel .risk-list {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-aside .risk-card {
+    border-bottom: 1px solid var(--border);
+  }
+  .risk-card h3 {
+    font-size: 15px;
+  }
+  .risk-card > p {
+    font-size: 12px;
+  }
+  .risk-exposure {
+    font-size: 12px;
+  }
+  .risk-card-top .badge {
+    font-size: 12px;
+  }
+  .risk-card .investigate-button {
+    font-size: 12px;
+  }
+  .dashboard-footer {
+    font-size: 12px;
+    flex-direction: column;
+  }
+  .recent-head,
+  .recent-row {
+    grid-template-columns: 1fr 70px;
+  }
+  .recent-name strong {
+    font-size: 12px;
+  }
+  .risk-grid {
+    grid-template-columns: 1fr;
+  }
+  .filter-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .filter-tabs button {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .page-actions {
+    flex-wrap: wrap;
+  }
+  .page-heading:has(.page-actions) {
+    flex-wrap: wrap;
+  }
+  .response-kpis {
+    grid-template-columns: 1fr;
+  }
+  .response-kpis .kpi-card {
+    padding: 16px;
+  }
+  .investigation-header {
+    padding: 18px;
+    flex-wrap: wrap;
+  }
+  .investigation-header h2 {
+    font-size: 20px;
+  }
+  .investigation-header > .badge {
+    margin-left: 0;
+  }
+  .investigation-emblem {
+    display: none;
+  }
+  .investigation-side {
+    grid-template-columns: 1fr;
+  }
+  .scenario-comparison {
+    gap: 20px;
+  }
+  .scenario-comparison strong {
+    font-size: 27px;
+  }
+  .scenario-details {
+    font-size: 12px;
+    gap: 12px;
+  }
+  .simulation-label {
+    align-items: flex-start;
+    font-size: 12px;
+  }
+  .knowledge-grid {
+    grid-template-columns: 1fr;
+  }
+  .report-preview {
+    padding: 20px;
+  }
+  .setting-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .setting-row .filter-tabs {
+    width: fit-content;
+  }
+  .answer-footer {
+    flex-wrap: wrap;
+  }
+  .dialog-content {
+    top: 10%;
+    padding: 23px;
+  }
+  .evidence-card summary {
+    gap: 8px;
+    padding: 12px;
+  }
+  .evidence-card summary > .badge {
+    display: none;
+  }
+  .evidence-chevron {
+    margin-left: auto;
+  }
+  .evidence-content {
+    padding-left: 20px;
+  }
+  .prompt-toolbar {
+    font-size: 12px;
+  }
+  .keyboard-hint {
+    display: none;
+  }
+  .suggested-questions {
+    gap: 7px;
+  }
+  .suggested-questions button {
+    font-size: 12px;
+    padding: 9px 8px;
+  }
+  .suggested-questions button > span {
+    display: none;
+  }
+  .insight-card {
+    padding: 15px;
+  }
+  .insight-card h3 {
+    line-height: 1.6;
+  }
+  .skeleton-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .skeleton-large {
+    grid-column: span 2;
+  }
+  .report-outline {
+    font-size: 12px;
+  }
+  .toast {
+    bottom: 15px;
+    right: 15px;
+  }
+  .dashboard-main {
+    gap: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,102 @@
+.settings-page {
+  width: min(640px, 100%);
+  margin: 8px auto 48px;
+}
+.settings-panel {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.settings-intro h1 {
+  font-size: clamp(32px, 4vw, 40px);
+  font-weight: 520;
+  letter-spacing: -0.03em;
+}
+.settings-intro p,
+.settings-group > p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.settings-group {
+  margin-top: 36px;
+}
+.settings-group h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+.theme-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.theme-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 8px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.theme-choice span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.theme-choice[aria-pressed="true"] {
+  background: var(--hover);
+}
+.theme-swatch {
+  width: 72px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.theme-swatch.is-dark {
+  background: linear-gradient(180deg, #2a2a2d 0 18px, #1c1c1e 18px);
+}
+.theme-swatch.is-light {
+  background: linear-gradient(180deg, #f0f4f9 0 18px, #ffffff 18px);
+}
+.setting-row {
+  padding: 18px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+.setting-row + .setting-row {
+  border-top: 1px solid var(--border);
+}
+.setting-row h3 {
+  font-size: 15px;
+  font-weight: 550;
+  margin-bottom: 4px;
+}
+.setting-row p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.setting-row > .badge {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.settings-note {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 14px;
+}

@@ -1,0 +1,17 @@
+[Unit]
+Description=BankWeave durable campaign worker
+After=bankweave-backend.service
+PartOf=bankweave-private.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/BankWeaveAI
+EnvironmentFile=%h/.config/bankweave/backend.env
+ExecStart=/usr/bin/bash %h/BankWeaveAI/scripts/runtime/start-campaign-worker.sh
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=120
+UMask=0077
+
+[Install]
+WantedBy=bankweave-private.target

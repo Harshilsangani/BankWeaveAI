@@ -2,42 +2,31 @@
   "name": "bankweave-ai",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "build": "next build",
-    "start": "node scripts/dev.mjs start",
-    "frontend:start": "node scripts/frontend.mjs",
-    "backend:start": "bash scripts/start-vm-backend.sh",
-    "backend:seed": "tsx scripts/export-demo.ts && node scripts/python.mjs -m backend.import_data",
-    "backend:migrate": "node scripts/python.mjs -m backend.migrate",
-    "test:backend": "node scripts/python.mjs -m unittest discover -s backend/tests -v",
-    "evaluate": "node scripts/python.mjs -m backend.evaluate",
-    "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
-    "test:e2e": "playwright test",
-    "format": "prettier --write app components features services data types hooks lib tests docs *.ts *.json *.md"
-  },
-  "dependencies": {
-    "@radix-ui/react-dialog": "^1.1.0",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.468.0",
-    "next": "^16.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-markdown": "^10.1.0",
-    "recharts": "^3.0.0",
-    "remark-gfm": "^4.0.1",
-    "tailwind-merge": "^3.0.0"
+    "dev": "node scripts/runtime/dev.mjs",
+    "build": "npm run build --workspace @bankweave/frontend --",
+    "start": "node scripts/runtime/dev.mjs start",
+    "frontend:start": "node scripts/runtime/frontend.mjs",
+    "backend:start": "bash scripts/runtime/start-vm-backend.sh",
+    "backend:seed": "tsx scripts/data/export-demo.ts && node scripts/runtime/python.mjs -m backend.features.datasets.demo_import",
+    "backend:migrate": "node scripts/runtime/python.mjs -m backend.cli.migrate",
+    "test:backend": "node scripts/runtime/python.mjs -m unittest discover -s backend/tests -t . -v",
+    "evaluate": "node scripts/runtime/python.mjs -m backend.evaluation.offline",
+    "typecheck": "npm run typecheck --workspace @bankweave/frontend && tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test frontend/tests/unit/*.test.ts",
+    "test:e2e": "playwright test --config frontend/playwright.config.ts",
+    "format": "prettier --write frontend/src frontend/tests frontend/*.ts demo scripts docs *.json *.md",
+    "campaigns:generate": "node scripts/runtime/python.mjs scripts/data/generate-campaign-data.py",
+    "campaigns:worker": "node scripts/runtime/campaign-supervisor.mjs",
+    "check:structure": "node scripts/checks/verify_structure.mjs && node scripts/runtime/python.mjs scripts/checks/verify_structure.py"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.0",
-    "@tailwindcss/postcss": "^4.0.0",
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "prettier": "^3.9.9",
-    "tailwindcss": "^4.0.0",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "prettier": "^3.9.9",
+    "@next/env": "16.3.8"
   }
 }

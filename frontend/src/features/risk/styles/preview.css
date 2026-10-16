@@ -1,0 +1,16 @@
+.radar-panel {
+  padding: 21px 19px 0;
+}
+.radar-intro {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.radar-empty {
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 4px 0 19px;
+}
+.risk-list {
+  margin-top: 23px;
+}

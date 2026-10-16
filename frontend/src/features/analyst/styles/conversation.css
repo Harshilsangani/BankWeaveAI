@@ -1,0 +1,131 @@
+.ai-message {
+  margin-bottom: 30px;
+}
+.user-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 17px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.small-avatar {
+  width: 27px;
+  height: 27px;
+  font-size: 12px;
+}
+.ai-answer {
+  padding: 0 8px;
+}
+.answer-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.answer-heading > span {
+  font-size: 12px;
+  font-weight: 550;
+}
+.answer-heading small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 5px;
+}
+.answer-heading > svg {
+  margin-left: auto;
+}
+.ai-answer > h2 {
+  font-size: 23px;
+  margin-bottom: 15px;
+  font-weight: 450;
+}
+.response-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.answer-text {
+  color: var(--muted);
+  font-size: 14px;
+}
+.answer-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--subtle);
+}
+.answer-footer > span:first-child {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.analyst-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 30px;
+}
+.analyst-conversation {
+  max-width: 100%;
+  min-width: 0;
+}
+.analyst-welcome {
+  margin-bottom: 25px;
+}
+.analyst-welcome .analyst-hero {
+  padding: 36px 28px;
+}
+.analyst-side-panel {
+  padding: 20px;
+  align-self: start;
+  position: sticky;
+  top: 24px;
+}
+.analyst-side-panel h3 {
+  margin-bottom: 17px;
+}
+.scope-item {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.scope-item strong {
+  color: var(--text);
+  font-weight: 450;
+  text-align: right;
+}
+.analyst-side-panel > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 15px;
+}
+.prompt-dock {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 0;
+  background: var(--bg);
+  z-index: 5;
+}
+.prompt-dock .prompt-box {
+  margin-top: 0;
+  box-shadow: 0 -15px 30px var(--bg);
+}
+.prompt-disclaimer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--subtle);
+  padding: 8px;
+}

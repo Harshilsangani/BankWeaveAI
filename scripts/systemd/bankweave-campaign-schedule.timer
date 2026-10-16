@@ -1,0 +1,10 @@
+[Unit]
+Description=Check for due opted-in monthly campaigns
+
+[Timer]
+OnCalendar=*-*-* 09:00:00 Asia/Kolkata
+Persistent=true
+Unit=bankweave-campaign-schedule.service
+
+[Install]
+WantedBy=timers.target

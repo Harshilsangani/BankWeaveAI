@@ -1,0 +1,74 @@
+.button {
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  padding: 9px 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.button-secondary {
+  background: var(--surface-raised);
+}
+.button-secondary:hover {
+  background: var(--hover);
+  border-color: var(--muted);
+}
+.button-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 550;
+}
+.button-primary:hover {
+  filter: brightness(1.08);
+}
+.button-ghost {
+  background: none;
+  border-color: transparent;
+  color: var(--muted);
+}
+.button-ghost:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.investigate-button {
+  font-size: 12px;
+  padding: 7px 10px;
+  border-color: var(--border);
+  background: var(--surface-raised);
+}
+.subtle-button {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0;
+}
+.subtle-button:hover {
+  color: var(--accent);
+}
+.subtle-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.subtle-button:disabled:hover {
+  color: var(--muted);
+}
+.text-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 12px;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.radar-panel > .text-link {
+  padding: 0 0 19px;
+  margin-top: -3px;
+}

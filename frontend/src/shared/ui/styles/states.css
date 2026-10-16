@@ -1,0 +1,48 @@
+.skeleton {
+  background: linear-gradient(100deg, var(--surface) 25%, var(--hover) 45%, var(--surface) 65%);
+  background-size: 300% 100%;
+  animation: shimmer 1.5s infinite;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.skeleton-kpi {
+  height: 135px;
+}
+.skeleton-large {
+  height: 330px;
+  grid-column: span 2;
+}
+.empty-state {
+  padding: 70px 24px;
+  text-align: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  color: var(--muted);
+}
+.empty-state h2 {
+  color: var(--text);
+}
+.empty-state p {
+  max-width: 420px;
+  font-size: 13px;
+}
+.error-banner {
+  border: 1px solid var(--red);
+  background: var(--surface);
+  color: var(--red);
+  border-radius: 7px;
+  padding: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+.error-banner button {
+  border: 0;
+  background: none;
+  color: inherit;
+}

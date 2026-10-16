@@ -1,0 +1,174 @@
+.case-controls {
+  padding: 20px;
+  margin: 20px 0;
+}
+.case-fields {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.case-fields label,
+.case-note-label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.case-fields select,
+.case-note-label textarea {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px;
+  border-radius: 8px;
+}
+.quality-workspace {
+  padding: 0 24px 28px;
+}
+.quality-workspace .data-panel-heading {
+  padding-left: 0;
+  padding-right: 0;
+}
+.quality-import,
+.quality-preview {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  margin-top: 24px;
+}
+.quality-import p,
+.quality-preview p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 10px 0;
+}
+.quality-import label,
+.customer-form label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.quality-import textarea,
+.quality-workspace select,
+.customer-form input,
+.customer-form textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text);
+  max-width: 100%;
+}
+.quality-schema {
+  display: block;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 12px 0;
+}
+.quality-limitations {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  padding-left: 20px;
+}
+.source-facts {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+  padding: 12px 0;
+}
+.customer-form select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 12px;
+  max-width: 100%;
+}
+.relationship-panel {
+  padding: 20px;
+}
+.relationship-scroll {
+  overflow: auto;
+  margin: 12px 0;
+}
+.relationship-scroll svg {
+  width: 100%;
+  min-width: 660px;
+}
+.graph-column-label {
+  fill: var(--muted);
+  font: 10px monospace;
+  letter-spacing: 1px;
+}
+.graph-edge {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+.graph-edge.selected {
+  stroke: var(--accent);
+  opacity: 1;
+  stroke-width: 2;
+}
+.graph-node {
+  cursor: pointer;
+  outline: none;
+}
+.graph-node rect {
+  fill: var(--surface-raised);
+  stroke: var(--border-strong);
+  transition: stroke 0.15s;
+}
+.graph-node text {
+  fill: var(--text);
+  font: 11px monospace;
+}
+.graph-node:hover rect,
+.graph-node:focus rect,
+.graph-node.selected rect {
+  stroke: var(--accent);
+}
+.graph-detail {
+  background: var(--surface-raised);
+  border-radius: 8px;
+  padding: 14px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.case-note-label {
+  margin: 16px 0;
+}
+.case-events {
+  margin-top: 20px;
+  max-height: 250px;
+  overflow: auto;
+}
+.case-events article {
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  font-size: 12px;
+}
+.case-events small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+@media (max-width: 360px) {
+  .kpi-grid .sparkline {
+    display: none;
+  }
+  .composer-mode {
+    display: none;
+  }
+}
+
+/* Layout audit: shared controls, readable details and bounded mobile surfaces. */

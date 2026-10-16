@@ -18,7 +18,7 @@ Prepared **12 October 2026** from the current Windows working tree and a fresh r
 | 6     | [Import guide](imports.md)                                                         | Exact supported CSV/Excel schemas, worksheet order, limits and approval semantics.                                                                              |
 | 7     | [Data sources](data-sources.md) and [BankShield audit](data/bankshield-audit.json) | Dataset provenance, currency/date coverage, incomplete joins and source restrictions.                                                                           |
 
-Also inspect `.env.example`, `.gitignore`, `.dockerignore`, `compose.yaml`, both Dockerfiles, `package.json` and the Python requirement files. After `npm ci`, read the relevant installed guides under `node_modules/next/dist/docs/` before changing Next.js code; do not assume conventions from another Next.js version.
+Also inspect `.env.example`, `.gitignore`, `.dockerignore`, `compose.yaml`, both frontend/Dockerfiles, `package.json` and the Python requirement files. After `npm ci`, read the relevant installed guides under `node_modules/next/dist/docs/` before changing Next.js code; do not assume conventions from another Next.js version.
 
 Old root planning/completion files were consolidated into `docs/` and removed. Do not recreate a separate status log for each task. Update this handoff, the roadmap and durable reference documents as appropriate.
 
@@ -30,19 +30,19 @@ VM-local build/typecheck, 17 TypeScript checks, 69 backend checks (including eig
 
 The fresh working dataset passed read-only SQLite, schema, original-ID, product-join and source-cache checks: 10,000 Meridian customers/accounts, 8,000 loans and 120,000 transactions; fraud flags remain 833 → 1,091. An initial matched-state backup is retained at `/home/harshilsangani07/bankweave-state/backups/fresh-initial-20261012`. The application now runs as independent user-level `bankweave-frontend.service` (npm/Next production build) and `bankweave-backend.service` (FastAPI/Uvicorn), grouped by the enabled `bankweave-private.target`, with user lingering enabled and loopback ports 3000/8000. The original combined service is disabled and retained for rollback. Independent component restarts preserve the other component's process, stored counts and successful proxied directory/dashboard responses. See [service configuration](deployment.md#independent-frontend-and-backend-services). Actual VM reboot recovery has not been exercised. This is a fresh private demo, not completion of managed persistence, public identity or Gemini activation.
 
-`compose.vm.yaml` now supplies the bind-mount override that section 8 previously described as missing. `scripts/verify_vm_state.py` performs read-only restore checks, and `scripts/start-private-vm.sh` supports private host-process startup while Docker administration is unavailable. See [current startup instructions](deployment.md#private-vm-restore-and-host-startup). Existing fixture bytes are preserved by startup/export; all QA seeding stays separate from the receiving directory.
+`compose.vm.yaml` now supplies the bind-mount override that section 8 previously described as missing. `scripts/checks/verify_vm_state.py` performs read-only restore checks, and `scripts/runtime/start-private-vm.sh` supports private host-process startup while Docker administration is unavailable. See [current startup instructions](deployment.md#private-vm-restore-and-host-startup). Existing fixture bytes are preserved by startup/export; all QA seeding stays separate from the receiving directory.
 
 ## 2. Product goal and non-goals
 
 **BankWeave AI — Banking Intelligence & Operations.** The goal is an analytical workspace for banking staff: understand connected records, investigate risk, inspect evidence and carry out reviewed data operations.
 
-The approved interface is Google-inspired light styling and neutral dark styling with subtle white selection backgrounds, a single Gemini-style AI Analyst chat/composer, rich analytical blocks within answers, sidebar conversation history, and a standalone Data Workspace opened from Command Center with a back button. The Analyst retains Workspace → AI Analyst in the navigation row. A separate toolbar inside the chat area holds compact dataset/month controls and round New chat/Knowledge icons, aligned to the same height. Its opaque chat-colored background covers messages scrolling underneath; new responses and status notices remain below the controls. Native themed dropdown menus use the input width, and long dataset values truncate in the closed control while remaining readable in the menu. Recent chats use compact text rows without individual icons or date-group headings; chat search opens from its search icon. Knowledge is reached from the header; the profile remains at the sidebar bottom. The extra Analyst title/region control, workspace search and demo-environment label have been removed to give the conversation more space.
+The current interface uses Google-inspired light styling and neutral dark styling, with an AI Analyst chat/composer, inline analytical blocks, saved conversations, and a standalone Data Workspace opened from Command Center. New chat belongs below the Analyst navigation; Knowledge Library is a labeled sidebar resource. Attachments and dataset selection live in the composer's + menu. Tools offers removable OCR and Research selections. Relative reporting windows are requested in chat; Risk Radar keeps its own dataset/month controls. Settings displays the actual AI provider/model. Investigations has an owned case inbox and separate Overview, Evidence & links, Review and Activity views. Card Campaigns replaces the visible Scenario Simulator while legacy saved comparisons/reports stay readable.
 
 The 13 October screenshot review tightened the shared card/control spacing, kept navigation visible while scrolling, aligned the Analyst conversation and composer, made Tools dismissible with Escape/outside click, and improved tablet KPI/charts and mobile data tabs. Investigation metrics/charts precede the case form. Settings reads the actual AI provider/model from health rather than showing a fixed local-provider label. Final screenshots cover all nine pages in Chromium at 1440, 768, 390 and 320 pixels, with light and dark mobile/desktop checks; the generated gallery is `artifacts/frontend-deployment/ui-review-20261013/index.html`. See the roadmap for the current deployed build and validation.
 
 Maintain these two main demonstration paths:
 
-1. Banking question → scoped database analysis → text/KPIs/charts/tables → investigation → evidence/relationship map → illustrative scenario → immutable report.
+1. Banking question → scoped database analysis → text/KPIs/charts/tables → investigation → evidence/relationship map → staff review → immutable report.
 2. Filled form upload → inline Markdown extraction → editable customer fields → staff submission → locked approval request → explicit admin approval/rejection → pending-verification customer and linked KYC review case.
 
 The product does not execute real payments, open bank accounts, approve KYC, make lending decisions or establish regulatory compliance. Exposure is flagged value/principal under review, not confirmed loss. Preserve these distinctions in UI and model replies.
@@ -62,7 +62,7 @@ The product does not execute real payments, open bank accounts, approve KYC, mak
 
 There are two separate transfers:
 
-- **Source transfer:** all tracked source changes, intended deletions and required untracked files, including this handoff. Include `app/`, `backend/` code/migrations/evaluations/tests, `components/`, `data/`, `features/`, `hooks/`, `lib/`, `services/`, `types/`, `tests/`, `scripts/`, `public/`, `docs/`, lockfiles and root configuration/instruction files.
+- **Source transfer:** all tracked source changes, intended deletions and required untracked files, including this handoff. Include `frontend/` source/public/config/tests, `backend/` source/migrations/evaluation/tests, `demo/`, `scripts/`, `docs/`, the root npm workspace lockfile, and root configuration/instruction files.
 - **State transfer:** consistent application/checkpoint database backups plus the matching fixture/source cache, sent privately outside Git and container images.
 
 Do not transfer Windows virtual environments, `node_modules/`, `.next/`, `.git/` as an installation method, npm caches, old screenshots/test databases, local tooling databases, credentials or secrets. Reinstall dependencies/build on Linux. `.env.example` is a template, not a credential file.
@@ -71,18 +71,18 @@ The cleanup recovery archive is outside the repo at `C:\Users\HARSHIL\Documents\
 
 ## 4. Current architecture and important code
 
-| Layer                 | Files / responsibility                                                                                                                                           |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend              | Next.js/React/TypeScript/Tailwind, Radix dialogs, Lucide, Recharts; `app/page.tsx`, `components/`, `features/`, `app/theme.css`, `app/globals.css`.              |
-| Workspace lifecycle   | `hooks/use-workspace.ts`, `features/analyst/chat-history.tsx`: scope, saved chats, active requests, cancellation and restoration.                                |
-| Service boundary      | `services/index.ts`, `services/contracts.ts`, `services/operations.ts`; same-origin gateways in `app/api/`; server-only upstream in `services/fraud-backend.ts`. |
-| API and authorization | `backend/app.py`, `backend/security.py`, `backend/sessions.py`, `backend/conversations.py`.                                                                      |
-| Agents/providers      | `backend/agents.py`, `backend/providers.py`, `backend/knowledge.py`, `backend/forms.py`.                                                                         |
-| Analytics             | `backend/analytics.py`, `loans.py`, `dashboard.py`, `detectors.py`, `relationships.py`, product modules.                                                         |
-| Admin onboarding      | `backend/approvals.py`, `form_quality.py`, `kyc.py`; `features/analyst/form-review.tsx`, `features/data-workspace/approval-queue.tsx`.                           |
-| Records/imports       | `backend/data_workspace.py`, `structured_imports.py`, `data_quality.py`, `maintenance.py`; import wizard in the Data Workspace.                                  |
-| Storage/exports       | `backend/database.py`, `backend/migrations/`, `backend/report_files.py`, `backend/operations.py`.                                                                |
-| Fixtures/checks       | `data/banking.ts`, `tests/fixtures/`, `backend/tests/`, `tests/browser/`, `backend/evaluations/questions.json`.                                                  |
+| Layer                 | Files / responsibility                                                                                                                                                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend              | Next.js/React/TypeScript/Tailwind, Radix dialogs, Lucide, ECharts; `frontend/src/app/page.tsx`, `frontend/src/shared/`, `frontend/src/features/`, `frontend/src/shared/styles/theme.css`, `frontend/src/app/globals.css`.               |
+| Workspace lifecycle   | `frontend/src/features/workspace/hooks/use-workspace.ts`, `frontend/src/features/analyst/components/chat-history.tsx`: scope, saved chats, active requests, cancellation and restoration.                                               |
+| Service boundary      | Section `api.ts` and types, `frontend/src/shared/api/operations.ts`; same-origin gateways in `frontend/src/app/api/`; server-only upstream in `frontend/src/shared/api/server.ts`.                                                      |
+| API and authorization | `backend/app.py`, `backend/core/security.py`, `backend/features/workspaces/sessions.py`, `backend/features/workspaces/conversations.py`.                                                                                                |
+| Agents/providers      | `backend/workflows/analyst.py`, `backend/integrations/ai/__init__.py`, `backend/features/knowledge/service.py`, `backend/features/forms/service.py`.                                                                                    |
+| Analytics             | `backend/features/analytics/queries.py`, `backend/features/products/`, `dashboard/`, `risk/` and `investigations/`.                                                                                                                     |
+| Admin onboarding      | `backend/features/forms/approvals.py`, `backend/features/forms/quality.py`, `backend/features/customers/kyc.py`; `frontend/src/features/forms/components/form-review.tsx`, `frontend/src/features/forms/components/approval-queue.tsx`. |
+| Records/imports       | `backend/features/customers/records.py`, `backend/features/imports/service.py`, `backend/features/customers/quality.py`, `backend/features/customers/maintenance.py`; import wizard in the Data Workspace.                              |
+| Storage/exports       | `backend/core/database.py`, `backend/migrations/`, `backend/features/reports/html.py`, `backend/workflows/operations.py`.                                                                                                               |
+| Fixtures/checks       | `demo/banking-data.ts`, `frontend/tests/fixtures/`, `backend/tests/`, `frontend/tests/e2e/`, `backend/evaluation/cases/questions.json`.                                                                                                 |
 
 Application routes use FastAPI consistently. Historical mock analytics/report helpers are now test fixtures only. Do not restore a production mock fallback for reports, scenarios or permission failures. Reports are generated from the canonical stored investigation, not client-supplied findings.
 
@@ -123,7 +123,7 @@ Only Admin changes customer records, confirms imports, maintains account/policy/
 
 The old `customer_operator` input is an **Analyst compatibility alias**, preserving original actor `local-customer_operator` and its workspace. Do not rename stored owners or erase sessions to simplify naming. Preserve historical audit attribution and artifact provenance.
 
-**Verified production authentication is not configured/deployed.** An opt-in signed-IAP adapter is now implemented and covered by offline signature/API checks; see [current configuration and remaining G05 work](deployment.md#verified-staff-identity--g05-preparation). Current Settings role switching and `x-risklens-role` headers are development simulation. `backend/security.py` rejects development identities when `RISKLENS_ENV=production`; a healthy production backend can therefore still reject every staff request. This fail-closed behavior is intentional. The IAP adapter assigns new verified actor IDs and does not implicitly grant legacy local workspaces; actual authorized recovery mapping remains required before cutover.
+**Verified production authentication is not configured/deployed.** An opt-in signed-IAP adapter is now implemented and covered by offline signature/API checks; see [current configuration and remaining G05 work](deployment.md#verified-staff-identity--g05-preparation). Current Settings role switching and `x-risklens-role` headers are development simulation. `backend/core/security.py` rejects development identities when `RISKLENS_ENV=production`; a healthy production backend can therefore still reject every staff request. This fail-closed behavior is intentional. The IAP adapter assigns new verified actor IDs and does not implicitly grant legacy local workspaces; actual authorized recovery mapping remains required before cutover.
 
 For public deployment, configure and validate the selected verified identity adapter and a protected frontend-to-backend identity path. Verify signatures, issuer/audience/expiry, role and tenant grants server-side. Do not trust browser role/actor headers, expose the backend publicly or turn off production checks to make the demo work. Map verified users to authorized existing workspaces without changing immutable historical actor facts. Cover form requests, KYC handoff, import ownership, case/report access, replay and cross-tenant rejection in tests.
 
@@ -167,7 +167,7 @@ Rerun the verifier immediately before backup and after restore. Counts may legit
 1. On Windows, inspect `git status --short`, branch and revision. Review intended deletions/untracked files as well as modified files.
 2. Choose either a reviewed current Git commit/push, or an export of the complete working source tree with exclusions. Do not silently ship the initial HEAD or only tracked HEAD files.
 3. Keep the source package separate from data/secrets. Include lockfiles, all applied migrations, demo templates, docs and current tests; exclude the generated/runtime directories listed above.
-4. Record the source revision or package manifest/hash. On the VM, verify the expected new files exist: `backend/approvals.py`, `backend/migrations/017_admin_approvals.sql`, `app/api/approvals/route.ts`, `features/data-workspace/approval-queue.tsx`, `lib/staff-role.ts`, `tests/fixtures/` and this handoff.
+4. Record the source revision or package manifest/hash. On the VM, verify the expected new files exist: `backend/features/forms/approvals.py`, `backend/migrations/017_admin_approvals.sql`, `frontend/src/app/api/approvals/route.ts`, `frontend/src/features/forms/components/approval-queue.tsx`, `frontend/src/shared/lib/staff-role.ts`, `frontend/tests/fixtures/` and this handoff.
 
 ### B. Create a consistent data backup
 
@@ -202,14 +202,14 @@ This example does not copy the fixture/cache or create a transfer manifest; comp
 1. Transfer source and state through authenticated SSH/SCP or equivalent approved private transport. Verify package hashes on the VM.
 2. Use a deliberate application path such as `/opt/bankweave` and durable data path such as `/srv/bankweave/storage` on Persistent Disk. Keep state outside the source/image build directory.
 3. Restore the DB pair and matching fixture/cache **before** normal application startup. Do not overwrite an existing VM database unless it has a verified backup and this replacement is authorized.
-4. Set explicit storage/checkpoint paths and `RISKLENS_AUTO_SEED=false`. Apply migrations only. **Do not run `npm run backend:seed` or `python -m backend.import_data` over restored data.** Migration checksums must match; fix the source/revision mismatch rather than editing an applied migration or deleting schema history.
+4. Set explicit storage/checkpoint paths and `RISKLENS_AUTO_SEED=false`. Apply migrations only. **Do not run `npm run backend:seed` or `python -m backend.features.datasets.demo_import` over restored data.** Migration checksums must match; fix the source/revision mismatch rather than editing an applied migration or deleting schema history.
 5. Set ownership so the backend container UID 1001 can access the data directory. Protect access and backup credentials. Test integrity and restored state before switching users.
 
 ### D. Bring up a private single-VM demonstration
 
 The agreed sizing is `e2-standard-4` (4 vCPU/16 GB), Ubuntu 24.04 LTS, Standard provisioning and 50 GB Balanced Persistent Disk, with Mumbai (`asia-south1`) preferred. This is a sizing target, not evidence that a VM exists. Project/VM name/zone/IP and credentials were not supplied for this handoff.
 
-Use the existing Dockerfiles for Node 24 and Python 3.11 rather than copying Windows dependencies. Build/test Linux OCR and dependencies on the VM. `compose.yaml` is explicitly a **private development demo**: loopback ports 3000/8000, local provider and development identity. Access it over an SSH tunnel while production authentication is being implemented; do not expose this configuration publicly.
+Use the existing frontend/Dockerfiles for Node 24 and Python 3.11 rather than copying Windows dependencies. Build/test Linux OCR and dependencies on the VM. `compose.yaml` is explicitly a **private development demo**: loopback ports 3000/8000, local provider and development identity. Access it over an SSH tunnel while production authentication is being implemented; do not expose this configuration publicly.
 
 The existing Compose data target is `/data`. For a VM with restored files at `/srv/bankweave/storage`, add a reviewed override that replaces the backend volume at that target with a host bind mount. Example fragment:
 
@@ -243,7 +243,7 @@ Real authentication changes also need an explicit mapping from legacy local acto
 
 The future path remains **frontend → FastAPI/LangGraph → Gemini on Vertex AI plus approved SQL tools → durable storage**. Gemini does not need a model/GPU installed on the VM.
 
-Actual backend variables, from `.env.example` and `backend/providers.py`:
+Actual backend variables, from `.env.example` and `backend/integrations/ai/__init__.py`:
 
 ```dotenv
 RISKLENS_PROVIDER=local
@@ -302,8 +302,8 @@ npm test
 npm run test:backend
 npm run evaluate
 npm run build
-node scripts/python.mjs scripts/verify_customer_integrity.py
-node scripts/python.mjs scripts/verify_recovery.py
+node scripts/runtime/python.mjs scripts/checks/verify_customer_integrity.py
+node scripts/runtime/python.mjs scripts/checks/verify_recovery.py
 ```
 
 Install the pinned Python dependencies first. On Linux the launcher defaults to `backend/.venv/bin/python`; use `RISKLENS_PYTHON` if needed. Browser checks require Chromium on Linux (`npx playwright install --with-deps chromium`). Point browser tests at the intended private QA server with `RISKLENS_BROWSER_BASE_URL`, e.g. port 3100.

@@ -1,0 +1,14 @@
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 295px;
+  gap: 22px;
+}
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 23px;
+  min-width: 0;
+}
+.dashboard-aside {
+  min-width: 0;
+}

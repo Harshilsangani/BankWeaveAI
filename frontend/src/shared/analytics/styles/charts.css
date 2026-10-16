@@ -1,0 +1,70 @@
+.panel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  min-width: 0;
+}
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+}
+.chart-card {
+  padding: 19px 18px 16px;
+  min-width: 0;
+}
+.chart-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: flex-start;
+}
+.chart-heading h3 {
+  font-size: 12px;
+}
+.chart-heading p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.chart-legend i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.analytics-grid .chart-legend {
+  display: none;
+}
+.chart {
+  height: 205px;
+  width: 100%;
+  margin-top: 20px;
+  min-width: 0;
+}
+.chart-compact {
+  height: 160px;
+}
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.section-title h2 {
+  font-size: 14px;
+  letter-spacing: -0.2px;
+}
+.section-title p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}

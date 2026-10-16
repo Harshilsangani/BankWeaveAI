@@ -1,0 +1,67 @@
+import { test, expect } from "@playwright/test";
+test("Radar exposes recorded rule facts and reuses unchanged snapshot runs", async ({ page }) => {
+  await page.goto("/#risk-radar");
+  // Dashboard compatibility records the default historical snapshot; Radar reads its receipt.
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(3, { timeout: 30000 });
+  await page.getByText("Rule & recorded run", { exact: false }).first().click();
+  await expect(page.locator(".risk-grid")).toContainText(
+    "at least 25 records and ≥20% count increase"
+  );
+  await expect(page.locator(".risk-grid")).toContainText("Observed: 1091 vs 833");
+  await page.getByRole("button", { name: "Run detection", exact: true }).click();
+  await expect(page.getByText("Existing snapshot reused", { exact: false })).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(3);
+});
+
+test("detection and review retain the selected dataset and month", async ({ page }) => {
+  await page.goto("/#risk-radar");
+  await expect(page.getByLabel("Risk dataset")).toBeEnabled();
+  await page.getByLabel("Risk dataset").selectOption("bankshield");
+  await expect(page.getByLabel("Risk snapshot month")).toHaveValue("2024-06");
+  await expect(page.getByLabel("Risk snapshot month")).toBeEnabled();
+  const operation = page.waitForRequest(
+    (request) => request.method() === "POST" && request.url().endsWith("/api/detectors")
+  );
+  await page.getByRole("button", { name: "Run detection", exact: true }).click();
+  expect((await operation).postDataJSON()).toEqual({ datasetId: "bankshield", period: "2024-06" });
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(1);
+  await expect(page.locator(".radar-method")).toContainText("0 model calls");
+  await expect(page.locator(".radar-checks")).toContainText("Public sample fraud labels");
+  const disposition = page.waitForRequest(
+    (request) => request.method() === "PATCH" && request.url().includes("/api/risk-state")
+  );
+  await page.getByRole("button", { name: "Dismiss", exact: true }).click();
+  expect((await disposition).postDataJSON()).toMatchObject({
+    datasetId: "bankshield",
+    period: "2024-06",
+    action: "dismiss",
+    riskId: "BS-001",
+  });
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByLabel("Risk dataset")).toHaveValue("bankshield");
+  await page.getByRole("button", { name: "Dismissed", exact: true }).click();
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Investigate", exact: true })).toBeDisabled();
+  await page.getByLabel("Risk dataset").selectOption("meridian");
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(3);
+});
+
+test("first source month records missing baselines and shows an honest empty state", async ({
+  page,
+}) => {
+  await page.goto("/#risk-radar");
+  await expect(page.getByLabel("Risk snapshot month")).toBeEnabled();
+  await page.getByLabel("Risk snapshot month").selectOption("2026-04");
+  await expect(page.getByRole("button", { name: "Run detection", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Run detection", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Run detection", exact: true })).toBeEnabled();
+  await expect(page.locator(".radar-checks .radar-check")).toHaveCount(3);
+  await expect(page.locator(".radar-checks")).toContainText("Insufficient data");
+  await expect(page.locator(".radar-checks")).not.toContainText("Signal found");
+  await expect(page.getByRole("heading", { name: "No rules matched this snapshot" })).toBeVisible();
+  await expect(page.locator(".radar-baseline")).toContainText("March 2026 · Unavailable");
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});

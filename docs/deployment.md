@@ -6,15 +6,15 @@ For the receiving agent, read the [complete GCP migration handoff](gcp-handoff.m
 
 Use Node 24 and Python 3.11. Create a fresh virtual environment without `--system-site-packages`. Run `npm ci`, then install `backend/requirements.lock.txt`. Apply `npm run backend:migrate`, then explicitly run `npm run backend:seed`. Start with `npm run dev`. Migration never seeds or clears source records; automatic seeding is disabled unless explicitly enabled in development.
 
-`schema_migrations` records checksummed SQL files. Add a new migration instead of modifying an applied file. A failed upgrade rolls back its schema changes. Back up both the application database and graph checkpoints before upgrades. `scripts/verify_recovery.py` tests preserved edits, pending admin requests and idempotent approval across three fresh processes.
+`schema_migrations` records checksummed SQL files. Add a new migration instead of modifying an applied file. A failed upgrade rolls back its schema changes. Back up both the application database and graph checkpoints before upgrades. `scripts/checks/verify_recovery.py` tests preserved edits, pending admin requests and idempotent approval across three fresh processes.
 
 The `.env.example` documents disabled cloud defaults. Next reads `.env.local`; export backend settings in the process environment. Never put credentials in browser-exposed `NEXT_PUBLIC_*` variables. The Gen AI SDK is installed for adapter contract tests; installation does not activate cloud requests.
 
 ## Private container demo
 
-The frontend Dockerfile packages Next's standalone output. The backend image runs migrations, then FastAPI under an unprivileged user. Health checks and bounded requests are included. `compose.yaml` binds development services to loopback and mounts `/data` for SQLite/checkpoints.
+The `frontend/Dockerfile` packages Next's standalone output. The backend image runs migrations, then FastAPI under an unprivileged user. Health checks and bounded requests are included. `compose.yaml` binds development services to loopback and mounts `/data` for SQLite/checkpoints.
 
-Before the first container seed, export the fixture with `node --import tsx scripts/export-demo.ts`. After building and starting the backend, copy `backend/storage/meridian.json` into `/data/meridian.json` using `docker compose cp`, then run `docker compose exec backend python -m backend.import_data`. Subsequent restarts do not seed. BankShield is fetched only by the explicit seed command.
+Before the first container seed, export the fixture with `node --import tsx scripts/data/export-demo.ts`. After building and starting the backend, copy `backend/storage/meridian.json` into `/data/meridian.json` using `docker compose cp`, then run `docker compose exec backend python -m backend.features.datasets.demo_import`. Subsequent restarts do not seed. BankShield is fetched only by the explicit seed command.
 
 Docker is not installed on the development machine used for these changes. Image build, Linux OCR libraries, compose startup and Cloud Run ingress/streaming need container validation before release. Production backend images reject development identity headers; do not treat a healthy container as an authenticated public product.
 
@@ -29,7 +29,7 @@ The current working directory on the VM is `/home/harshilsangani07/bankweave-sta
 Run the read-only preflight after transfer:
 
 ```bash
-backend/.venv/bin/python scripts/verify_vm_state.py \
+backend/.venv/bin/python scripts/checks/verify_vm_state.py \
   --storage /home/harshilsangani07/bankweave-state/storage
 ```
 
@@ -42,16 +42,16 @@ export PATH="$HOME/.local/bin:$PATH"
 export BANKWEAVE_STORAGE_DIR="$HOME/bankweave-state/storage"
 # Required on the current VM, where OCR libraries were installed under this account:
 export BANKWEAVE_LIBRARY_DIR="$HOME/.local/share/bankweave/system-packages/usr/lib/x86_64-linux-gnu"
-bash scripts/start-private-vm.sh
+bash scripts/runtime/start-private-vm.sh
 ```
 
-This launcher validates restored state first, refuses occupied application ports, disables auto-seeding/Vertex, and binds frontend/backend to `127.0.0.1:3000/8000`. Access is through an SSH tunnel. It is a private development-identity demo and remains a foreground process; service supervision, reboot recovery and Docker image acceptance are not established by this fallback. `npm start` now uses `.next/standalone/server.js` and copies public/static assets into the standalone output. Fixture export honors `RISKLENS_STORAGE_DIR` and preserves an existing fixture byte-for-byte.
+This launcher validates restored state first, refuses occupied application ports, disables auto-seeding/Vertex, and binds frontend/backend to `127.0.0.1:3000/8000`. Access is through an SSH tunnel. It is a private development-identity demo and remains a foreground process; service supervision, reboot recovery and Docker image acceptance are not established by this fallback. `npm start` now uses `frontend/.next/standalone/frontend/server.js` and copies public/static assets into the standalone output. Fixture export honors `RISKLENS_STORAGE_DIR` and preserves an existing fixture byte-for-byte.
 
 The original combined user-level `bankweave-private.service` has been disabled and retained as a rollback option. The VM now uses the independent services below, grouped by the enabled `bankweave-private.target`. User lingering remains enabled. Do not start a foreground launcher or the old combined unit while the new services own ports 3000/8000. Actual VM reboot recovery, Docker image acceptance and public authenticated ingress remain untested/pending. These user services do not require Docker or passwordless sudo.
 
 ### Independent frontend and backend services
 
-On 13 October 2026, the owner requested detached `nohup` hosting. The systemd target was stopped and disabled, and `bash scripts/start-nohup.sh` started the backend on `127.0.0.1:8000` and frontend on `127.0.0.1:3000`, using the existing private environment files and working database. Gemini configuration is preserved. Output appends to `logs/backend.log` and `logs/frontend.log`; PID files are under the same ignored, private directory. Use `tail -f logs/backend.log logs/frontend.log` to follow output. These processes survive SSH disconnects, but do not automatically restart after failure or VM reboot. The owner subsequently configured public ingress for TCP 3000 and requested public frontend binding. The frontend now listens on `0.0.0.0:3000`, with intended URL `http://35.253.137.87:3000`; backend port 8000 stays loopback-only. This demo has development staff identities without sign-in and can modify stored data or make billable Gemini requests. Public HTTP browsers do not expose `crypto.randomUUID()`; browser workspace/request IDs use a shared secure `getRandomValues()` fallback so datasets, session recovery and operations work on this origin. The compatibility frontend build was produced with `npm run build -- --webpack`, with the previous build retained under ignored `artifacts/frontend-deployment/http-session-fix/previous-next`.
+On 13 October 2026, the owner requested detached `nohup` hosting. The systemd target was stopped and disabled, and `bash scripts/runtime/start-nohup.sh` started the backend on `127.0.0.1:8000` and frontend on `127.0.0.1:3000`, using the existing private environment files and working database. Gemini configuration is preserved. Output appends to `logs/backend.log` and `logs/frontend.log`; PID files are under the same ignored, private directory. Use `tail -f logs/backend.log logs/frontend.log` to follow output. These processes survive SSH disconnects, but do not automatically restart after failure or VM reboot. The owner subsequently configured public ingress for TCP 3000 and requested public frontend binding. The frontend now listens on `0.0.0.0:3000`, with intended URL `http://35.253.137.87:3000`; backend port 8000 stays loopback-only. This demo has development staff identities without sign-in and can modify stored data or make billable Gemini requests. Public HTTP browsers do not expose `crypto.randomUUID()`; browser workspace/request IDs use a shared secure `getRandomValues()` fallback so datasets, session recovery and operations work on this origin. The compatibility frontend build was produced with `npm run build -- --webpack`, with the previous build retained under ignored `artifacts/frontend-deployment/http-session-fix/previous-next`.
 
 To return to systemd, stop the nohup backend with `kill "$(cat logs/backend.pid)"` and the frontend process group with `kill -- "-$(cat logs/frontend.pid)"`, then run `systemctl --user enable --now bankweave-private.target`. Do not start a second backend against the working SQLite store.
 
@@ -102,7 +102,7 @@ For rollback, stop writes, restore the application/checkpoint backups as a match
 
 ## Verified staff identity — G05 preparation
 
-`backend/iap_identity.py` implements opt-in signed IAP assertion verification. It remains disabled in the private demo. Configure the same adapter on frontend and backend only when the actual IAP ingress/audience and approved staff grants are ready:
+`backend/core/iap_identity.py` implements opt-in signed IAP assertion verification. It remains disabled in the private demo. Configure the same adapter on frontend and backend only when the actual IAP ingress/audience and approved staff grants are ready:
 
 ```dotenv
 RISKLENS_ENV=production
@@ -136,7 +136,7 @@ Verified identities receive stable `iap-...` actor IDs and separate browser reco
 Run on this VM or from an authorized project-administrator environment:
 
 ```bash
-python3 scripts/gcp_preflight.py --project ai-builders-cup \
+python3 scripts/checks/gcp_preflight.py --project ai-builders-cup \
   --instance instance-20261012-050751 --zone us-central1-a
 ```
 
@@ -170,7 +170,7 @@ After changing only these settings, restart `bankweave-backend.service`; the fro
 The repeatable live API evaluator makes billable requests only when explicitly invoked:
 
 ```bash
-backend/.venv/bin/python -m backend.evaluate_vertex --allow-live \
+backend/.venv/bin/python -m backend.evaluation.vertex --allow-live \
   --storage /home/harshilsangani07/bankweave-state/storage \
   --project ai-builders-cup --location global --model gemini-3.5-flash-lite
 ```
@@ -180,7 +180,7 @@ It uses SQLite's backup API to create a disposable application database and a se
 For frontend acceptance, use the current production build with disposable loopback QA services:
 
 ```bash
-backend/.venv/bin/python scripts/verify_vertex_browser.py --allow-live \
+backend/.venv/bin/python scripts/checks/verify_vertex_browser.py --allow-live \
   --storage /home/harshilsangani07/bankweave-state/storage \
   --project ai-builders-cup --location global --model gemini-3.5-flash-lite
 ```
@@ -226,3 +226,23 @@ Use the Google-hosted Gemini/Vertex route and Cloud Run for the existing backend
 If the $300 balance is the standard Welcome credit, it expires within 90 days and applies to eligible Google Cloud usage. Google's current terms exclude Gemini API costs in AI Studio and partner-model managed APIs. Do not assume every Gemini endpoint uses the credit. Check the actual credit grant, billing project, eligible SKUs and model access before activation; this project has not inspected the user's billing balance. [Google Cloud Free Program](https://docs.cloud.google.com/free/docs/free-cloud-features).
 
 Verified identity, managed persistence, billing controls and live Gemini evaluation remain the deployment roadmap prerequisites. No cloud resource was provisioned or credit spent during this research.
+
+## Card campaign worker
+
+The campaign release uses additive migrations 018–020 and fourteen new tables. Back up the application/checkpoint pair while writers are stopped, apply `npm run backend:migrate`, then explicitly generate the bounded campaign fixtures. Never run the original banking seed during this upgrade.
+
+```bash
+export RISKLENS_STORAGE_DIR="$HOME/bankweave-state/storage"
+export RISKLENS_DB="$RISKLENS_STORAGE_DIR/risklens.sqlite3"
+export RISKLENS_CHECKPOINT_DB="$RISKLENS_STORAGE_DIR/agent-checkpoints.sqlite3"
+npm run campaigns:generate -- --cohort-size 5000 --seed 2026 --period 2026-10
+npm run campaigns:worker
+```
+
+The generator reuses original Meridian IDs and recorded April–September values; the six additional campaign months and credit/holdings/consent observations remain explicitly synthetic and isolated from original ledgers. Its immutable batch and row hashes detect subsequent edits. Replaying the same unchanged generation reuses the batch. A future campaign month needs an explicitly published completed-source batch; schedules never invent new observations.
+
+`scripts/runtime/campaign-supervisor.mjs` supervises the host-process worker, restarts an unexpected exit and forwards shutdown signals. The guarded `scripts/runtime/start-nohup.sh` starts backend, frontend and worker; inspect their PID files/logs before restart. User-service definitions are supplied under `scripts/systemd/`; do not start a second worker supervisor over an existing host-process deployment. The worker leases jobs with heartbeat/fencing, resumes checkpoints, and never seeds or migrates on startup. Its regular loop checks only opted-in schedules. The optional schedule timer is an alternative enqueue trigger; duplicate triggers resolve to the same run.
+
+Default runs make at most one template call per selected demo product (maximum three), with optional up to twenty anonymous sample rewrites. Invalid output, unavailable providers or ungrounded claims fall back to labeled local templates. The canonical report contains call/token usage, sent-field metadata, exact source/catalog versions, reason/count reconciliation, and zero customer emails sent. Report publication and assigned inbox notifications commit atomically. Admin review binds the stored report hash and review revision; request changes opens a new campaign revision without rewriting the old report. Consent withdrawal is checked again before report publication and draft display. The release has no customer-delivery API.
+
+Campaign endpoints are actor-scoped and intentionally ignore chat recovery handles. Live UI smoke checks should strip recovery headers and stub session restoration, preserving existing chats. Full write/approval/Research export acceptance belongs on isolated storage. Preserve old immutable reports and the legacy scenario renderer/API during future deployment migrations.

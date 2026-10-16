@@ -1,0 +1,121 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 24px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.field select,
+.search-input {
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+}
+.field input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.field small {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.simulation-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.scenario-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-top: 35px;
+}
+.scenario-comparison > div {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.scenario-comparison span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.scenario-comparison strong {
+  font-size: 32px;
+  font-weight: 450;
+  letter-spacing: -1px;
+}
+.scenario-comparison small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.scenario-after strong,
+.scenario-after small {
+  color: var(--accent);
+}
+.scenario-bars {
+  margin: 33px 0 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+.scenario-bars > div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 18px;
+  padding-left: 65px;
+  position: relative;
+}
+.scenario-bars span {
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.scenario-bars i {
+  display: block;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--border-strong);
+  transition: width 0.4s;
+}
+.scenario-bars > div:last-child i {
+  background: var(--accent);
+}
+.scenario-details {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+}
+.scenario-details b {
+  color: var(--text);
+  font-weight: 500;
+  margin-right: 4px;
+}
+.assumptions {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+  border-top: 1px solid var(--border);
+  padding-top: 17px;
+}
+.assumptions summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.assumptions ul {
+  padding-left: 17px;
+}

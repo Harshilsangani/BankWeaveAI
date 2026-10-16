@@ -1,0 +1,172 @@
+/* Investigations: keep summary, evidence and staff review in distinct views. */
+.case-purpose {
+  padding: 26px 0 28px;
+  border-block: 1px solid var(--border);
+  margin-top: 28px;
+}
+.case-purpose-intro {
+  max-width: 720px;
+}
+.case-purpose h2 {
+  font-size: 20px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+.case-purpose p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 8px;
+}
+.case-workflow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  list-style: none;
+  margin: 26px 0 0;
+  padding: 0;
+}
+.case-workflow li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.case-workflow li > span {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: 9px;
+  padding: 9px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.case-workflow h3 {
+  font-size: 14px;
+  font-weight: 550;
+  margin-top: 6px;
+}
+.case-workflow p {
+  font-size: 12px;
+}
+.case-content {
+  margin-top: 24px;
+  min-width: 0;
+}
+.case-content > [hidden] {
+  display: none;
+}
+.case-section-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.case-section-intro h3 {
+  font-size: 18px;
+  font-weight: 550;
+}
+.case-section-intro p {
+  max-width: 680px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 7px;
+}
+.case-section-intro .button {
+  flex-shrink: 0;
+}
+.case-findings,
+.case-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.case-summary-grid > * {
+  min-width: 0;
+}
+.case-review-prompt {
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+.case-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+  gap: 36px;
+  align-items: start;
+  margin-top: 24px;
+}
+.case-review-grid .case-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.case-review-grid .case-fields > label:last-child {
+  grid-column: 1 / -1;
+}
+.case-review-guidance section {
+  padding-bottom: 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+.case-review-guidance h3 {
+  font-size: 15px;
+  font-weight: 550;
+  margin-bottom: 12px;
+}
+.case-review-guidance p,
+.case-review-guidance dd {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.case-review-guidance dl > div {
+  margin-top: 14px;
+}
+.case-review-guidance dt {
+  font-size: 12px;
+  font-weight: 550;
+}
+.case-tabs {
+  flex-wrap: wrap;
+  gap: 12px 28px;
+}
+.case-source-receipt .evidence-list {
+  margin-top: 18px;
+}
+@media (max-width: 1000px) {
+  .case-workflow {
+    gap: 20px;
+  }
+  .case-findings,
+  .case-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .case-workflow,
+  .case-review-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+  .case-purpose {
+    padding-block: 20px;
+  }
+  .case-section-intro {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .case-section-intro .button {
+    width: 100%;
+  }
+  .case-review-grid .case-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .case-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+  }
+  .case-tabs button {
+    text-align: left;
+  }
+}

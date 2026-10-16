@@ -1,7 +1,7 @@
 [Unit]
 Description=BankWeave private frontend and backend
-Wants=bankweave-backend.service bankweave-frontend.service
-After=bankweave-backend.service bankweave-frontend.service
+Wants=bankweave-backend.service bankweave-frontend.service bankweave-campaign-worker.service
+After=bankweave-backend.service bankweave-frontend.service bankweave-campaign-worker.service
 
 [Install]
 WantedBy=default.target

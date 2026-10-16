@@ -1,5 +1,5 @@
 node_modules
-.next
+**/.next
 .git
 .env*
 backend/.venv*
@@ -9,3 +9,8 @@ __pycache__
 artifacts
 test-results
 playwright-report
+logs
+.npm-cache
+.ruff_cache
+.code-review-graph
+**/*.tsbuildinfo

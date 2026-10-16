@@ -11,7 +11,7 @@ Type=simple
 WorkingDirectory=%h/BankWeaveAI
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=%h/.config/bankweave/frontend.env
-ExecStartPre=%h/.local/bin/node %h/BankWeaveAI/scripts/wait-backend.mjs
+ExecStartPre=%h/.local/bin/node %h/BankWeaveAI/scripts/runtime/wait-backend.mjs
 ExecStart=%h/.local/bin/npm run frontend:start
 Restart=on-failure
 RestartSec=5

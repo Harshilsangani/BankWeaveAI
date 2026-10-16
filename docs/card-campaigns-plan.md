@@ -1,10 +1,10 @@
 # Card Campaigns: data, pipeline, and employee reporting plan
 
-Prepared 14 October 2026. **Proposal only — implementation has not started.**
+Prepared 14 October 2026. **First release implemented; original design decisions retained below.**
 
 This plan translates the attached Credit Card Recommendation & Outreach Automation proposal into the current BankWeaveAI architecture. The first release replaces the **Scenario Simulator** workspace page with **Card Campaigns** and ends with an employee receiving a campaign report in Command Center, Reports, and the notification inbox. Customer emails are prepared as drafts; customer delivery, card issuance, applications, and reply tracking are later work.
 
-Use this document with [current architecture](architecture.md), [data sources](data-sources.md), [imports](imports.md), and [deployment roadmap](roadmap.md). Sections describing existing behavior are observations from source and read-only database inspection. Everything labeled proposed is future work.
+Use this document with [current architecture](architecture.md), [data sources](data-sources.md), [imports](imports.md), and [deployment roadmap](roadmap.md). Sections describing existing behavior are observations from source and read-only database inspection. The original proposal wording below records the design reference. The first release is implemented in `backend/features/campaigns/`, `frontend/src/features/campaigns/`, and migrations 018–020; current behavior and operational commands are in [architecture](architecture.md#card-campaigns-and-employee-reports) and [deployment](deployment.md#card-campaign-worker).
 
 ## 1. Decisions for the first release
 
@@ -22,7 +22,7 @@ Use this document with [current architecture](architecture.md), [data sources](d
 | Employee decisions?                       | Admin can record Reviewed, Request changes, or Reject against the exact report revision. Reviewed means reviewed for the demo; it does not authorize customer sending or a credit approval.                                |
 | New infrastructure?                       | Use the current VM, FastAPI, Next.js, SQLite, and Vertex/local provider. Add a supervised campaign worker and optional monthly timer; postpone a database/platform migration.                                              |
 
-These defaults make the plan concrete. They can be changed before implementation when the owner specifies a different scope.
+These defaults define the implemented first release. Future changes must retain source/version boundaries and explicit staff permissions.
 
 ## 2. What already exists and what is missing
 
@@ -48,17 +48,17 @@ The inspection confirms that “more data” means missing fields and dated evid
 
 ### Current code to preserve or extend
 
-| Existing reference                                                      | Proposed relationship                                                                                                                      |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `backend/database.py`, `backend/migrations/`                            | Keep SQLite access and append-only migrations; do not edit applied migrations                                                              |
-| `backend/financial_health.py`, `backend/repayments.py`                  | Reuse source reconciliation and calculation conventions; add batch SQL helpers rather than calling per-customer HTTP endpoints 5,000 times |
-| `backend/recommendations.py`                                            | Reuse input hashes, versioned rules, evidence, and optimistic review revisions                                                             |
-| `backend/approvals.py`                                                  | Reuse locked snapshots/atomic audit patterns; keep OCR customer approvals separate                                                         |
-| `backend/providers.py`, `backend/agents.py`                             | Add typed campaign routing/drafting capabilities without giving Gemini SQL or approval tools                                               |
-| `backend/operations.py`, `backend/progress.py`                          | Reuse request validation/progress labels; durable campaign jobs survive HTTP disconnects and restarts                                      |
-| `backend/report_files.py`, `backend/sessions.py`                        | Keep legacy report ownership; add assigned campaign-report access rather than borrowing another employee's session                         |
-| `backend/security.py`, `services/fraud-backend.ts`, `services/index.ts` | Preserve the same-origin gateway and server-side permissions; browser roles/IDs never grant authority                                      |
-| `features/dashboard/dashboard.tsx`, `features/resources/resources.tsx`  | Show assigned campaign reports while preserving existing risk metrics and investigation reports                                            |
+| Existing reference                                                                                                 | Proposed relationship                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `backend/core/database.py`, `backend/migrations/`                                                                  | Keep SQLite access and append-only migrations; do not edit applied migrations                                                              |
+| `backend/features/products/cashflow.py`, `backend/features/products/repayments.py`                                 | Reuse source reconciliation and calculation conventions; add batch SQL helpers rather than calling per-customer HTTP endpoints 5,000 times |
+| `backend/features/products/recommendations.py`                                                                     | Reuse input hashes, versioned rules, evidence, and optimistic review revisions                                                             |
+| `backend/features/forms/approvals.py`                                                                              | Reuse locked snapshots/atomic audit patterns; keep OCR customer approvals separate                                                         |
+| `backend/integrations/ai/__init__.py`, `backend/workflows/analyst.py`                                              | Add typed campaign routing/drafting capabilities without giving Gemini SQL or approval tools                                               |
+| `backend/workflows/operations.py`, `backend/core/progress.py`                                                      | Reuse request validation/progress labels; durable campaign jobs survive HTTP disconnects and restarts                                      |
+| `backend/features/reports/html.py`, `backend/features/workspaces/sessions.py`                                      | Keep legacy report ownership; add assigned campaign-report access rather than borrowing another employee's session                         |
+| `backend/core/security.py`, `frontend/src/shared/api/server.ts`, section `api.ts` modules                          | Preserve the same-origin gateway and server-side permissions; browser roles/IDs never grant authority                                      |
+| `frontend/src/features/dashboard/components/dashboard.tsx`, `frontend/src/features/reports/components/reports.tsx` | Show assigned campaign reports while preserving existing risk metrics and investigation reports                                            |
 
 ## 3. Proposed architecture
 
@@ -235,20 +235,20 @@ Data Workspace gains a read-only campaign readiness/coverage view; Admin configu
 
 ### Proposed backend contracts
 
-| Endpoint                                                      | Behavior                                                                        |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `GET /card-campaigns/readiness`                               | Dataset/cutoff/cohort coverage and missing-input summary                        |
-| `GET /card-campaigns/products`                                | Active authorized catalog versions and demo rule labels                         |
-| `POST /card-campaigns`                                        | Create a validated definition and staff assignment; no run/delivery side effect |
-| `GET /card-campaigns` and `GET /card-campaigns/{id}`          | Authorized campaign list/detail                                                 |
-| `POST /card-campaigns/{id}/runs`                              | Explicit bounded run acceptance with idempotency key; return run ID             |
-| `GET /card-campaigns/{id}/runs/{runId}`                       | Stored progress, counts, errors, and immutable result pointer                   |
-| `POST /card-campaigns/{id}/runs/{runId}/cancel`               | Explicit cancellation request at safe boundaries                                |
-| `GET /card-campaigns/{id}/runs/{runId}/candidates`            | Paginated authorized prospect/evidence/draft detail                             |
-| `GET /campaign-reports` and `GET /campaign-reports/{id}`      | Assigned/authorized report list/detail                                          |
-| `GET /campaign-reports/{id}/download`                         | Hashed canonical HTML with campaign-specific ownership checks                   |
-| `POST /campaign-reports/{id}/review`                          | Revision/hash-bound staff decision and atomic review event                      |
-| `GET /staff-notifications`, `PATCH /staff-notifications/{id}` | Authorized notification list/read status                                        |
+| Endpoint                                                                                                                         | Behavior                                                                                     |
+| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET /card-campaigns/readiness`                                                                                                  | Dataset/cutoff/cohort coverage and missing-input summary                                     |
+| `GET /card-campaigns/products`                                                                                                   | Active authorized catalog versions and demo rule labels                                      |
+| `POST /card-campaigns`                                                                                                           | Create a validated definition and staff assignment; no run/delivery side effect              |
+| `GET /card-campaigns` and `GET /card-campaigns/{id}`                                                                             | Authorized campaign list/detail                                                              |
+| `POST /card-campaigns/{id}/runs`                                                                                                 | Explicit bounded run acceptance with idempotency key; return run ID                          |
+| `GET /card-campaigns/{id}/runs/{runId}`                                                                                          | Stored progress, counts, errors, and immutable result pointer                                |
+| `POST /card-campaigns/{id}/runs/{runId}/cancel`                                                                                  | Explicit cancellation request at safe boundaries                                             |
+| `GET /card-campaigns/{id}/runs/{runId}/candidates`                                                                               | Paginated authorized prospect/evidence/draft detail                                          |
+| `GET /campaign-reports` and `GET /campaign-reports/{id}`                                                                         | Assigned/authorized report list/detail                                                       |
+| `GET /campaign-reports/{id}/download`                                                                                            | Hashed canonical HTML with campaign-specific ownership checks                                |
+| `POST /campaign-reports/{id}/review`                                                                                             | Revision/hash-bound staff decision and atomic review event                                   |
+| `GET /staff-notifications`, `PATCH /staff-notifications/{id}`, `DELETE /staff-notifications`, `DELETE /staff-notifications/{id}` | Authorized notification list, read status, and removal of the signed-in recipient's own rows |
 
 Add admin catalog/schedule configuration endpoints when their UI is implemented; reject unknown fields and inconsistent revisions. Same-origin Next gateways mirror these routes and preserve backend status/error handling. Do not expose a generic browser SQL endpoint or public scheduler trigger.
 
@@ -266,11 +266,11 @@ Chat returns a run link and stored progress, then a report summary/link when com
 
 The removal affects more than a sidebar label. Inspect and update:
 
-- `components/shell.tsx`, `types/index.ts`, `app/page.tsx`: navigation, page types, and rendered page.
-- `hooks/use-workspace.ts`, `features/investigations/investigation.tsx`: new scenario state/actions and investigation CTA.
-- `components/blocks.tsx`, `features/analyst/analyst.tsx`, and provider/analytics responses: generated simulate actions and legacy action rendering.
-- `services/contracts.ts`, `services/index.ts`, relevant API contracts, browser tests, and `hooks/use-webmcp.ts`: navigation/action schemas and integrations.
-- `features/scenarios/simulator.tsx`, scenario-only CSS, Knowledge Library guides, and documentation: remove the active simulator experience.
+- `frontend/src/features/workspace/components/shell.tsx`, `frontend/src/shared/types/scope.ts`, `frontend/src/app/page.tsx`: navigation, page types, and rendered page.
+- `frontend/src/features/workspace/hooks/use-workspace.ts`, `frontend/src/features/investigations/components/investigation.tsx`: new scenario state/actions and investigation CTA.
+- `frontend/src/shared/analytics/blocks.tsx`, `frontend/src/features/analyst/components/analyst.tsx`, and provider/analytics responses: generated simulate actions and legacy action rendering.
+- section-owned types, section `api.ts` modules, relevant API contracts, browser tests, and `frontend/src/features/workspace/hooks/use-webmcp.ts`: navigation/action schemas and integrations.
+- The retired simulator screen and its unused controls are removed; legacy comparison rendering is retained in the Reports feature. Knowledge Library guides and navigation point to Card Campaigns.
 
 New investigations create ordinary reports without the simulator CTA. The old `#scenario-simulator` URL opens Card Campaigns with a brief moved-page notice; it does not reinterpret a saved fraud scenario as a campaign.
 
@@ -293,7 +293,7 @@ End-to-end acceptance: a staff member selects October 2026, sees the September c
 
 Run migration, generator, rule, worker/recovery, permission, API, and affected browser tests against disposable storage. Include customer-link integrity, unchanged old KPI/report hashes, and original saved-work recovery checks. Test worker performance on the actual 5,000-customer cohort and record runtime, query count, peak memory, model calls/tokens, and publication latency; set deployment limits from those measurements rather than claiming an untested SLA.
 
-Before a future production promotion, retain a matched application/checkpoint backup and the previous frontend build; use migrations deliberately, then restart only the changed services. The current frontend on port 3000 and Vertex backend should not be changed during this planning step.
+Before a future production promotion, retain a matched application/checkpoint backup and the previous frontend build; use migrations deliberately, then restart only the changed services. The implementation rollout backs up matched application/checkpoint state, applies additive migrations deliberately, and rebuilds/restarts the existing port 3000 frontend and Vertex backend.
 
 ## 12. Later customer outreach and production prerequisites
 
@@ -303,6 +303,8 @@ The pasted 2022 regulatory reference should not be used as the current productio
 
 Existing roadmap items for managed persistence (G04), verified identity (G05), retained storage (G06), quotas (G07), scheduling (G08), and processing/retention (G09) still apply. Adding this demo does not complete those production tasks. SQLite remains appropriate for the initial bounded VM workflow; reconsider a managed database when measured worker concurrency, retention, availability, or production hosting requires it.
 
-## 13. Implementation authorization boundary
+## 13. Implementation status
 
-This document and its links are the complete planning deliverable. No campaign data was generated, no migrations were created/applied, no feature/runtime code was changed, no Scenario Simulator page was removed, no model workload or scheduler was started, and no employee/customer messages were sent by this planning task. Implementation starts only after the owner instructs it, following the phases above.
+The owner subsequently authorized implementation after checking Research mode. The first release includes the explicit synthetic generator, immutable source/catalog versions, deterministic rules, durable worker, grounded drafts, actor-assigned reports and notifications, Card Campaigns replacement, data-readiness panel, Analyst routing and opt-in monthly scheduling. Admin review does not authorize sending. Customer delivery and the production prerequisites in section 12 remain future work.
+
+Default development assignment includes the requesting staff actor and local Admin. Verified named employee assignment configuration is a later production identity task; the UI does not claim to send email to employees. Campaign employee reports download as HTML; Analyst research briefs download as PDF with charts. Both use stored canonical facts.

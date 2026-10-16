@@ -72,3 +72,17 @@ Publisher descriptions of synthetic generation and production quality are claims
 Do not repair the sample by randomly assigning customers, accounts or devices. If we generate enrichment, retain original source IDs and mark the new relationships as synthetic.
 
 The reproducible source audit is retained in [bankshield-audit.json](data/bankshield-audit.json). Current Meridian integrity can be checked without changing data using the script documented in [README](../README.md).
+
+## Meridian campaign inputs — 14 October 2026
+
+The Card Campaigns pilot uses 5,000 existing Meridian customer identities with October 2025–September 2026 coverage for an October 2026 campaign. Six recorded synthetic months are frozen from the existing source ledger; six earlier months are generated only in the campaign domain. Dated demo credit snapshots, complete obligation components, collateral, existing card holdings and independent email-marketing consent are synthetic. None of these creates new customer identities or rewrites original transactions/repayments. The explicit generator is `scripts/data/generate-campaign-data.py`; normal startup and scheduled jobs never generate missing months.
+
+The fourteen new tables are organized into three domains in the existing application database:
+
+| Domain             | Tables and role                                                                                                                                                                                                                                                   |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inputs/catalog     | `campaign_input_batches`, `campaign_spending_observations`, `campaign_credit_profiles`, `card_product_versions`, `customer_card_holdings`, `marketing_consent_events`: immutable versions, dates, currency, source/row hashes, and independent contact permission |
+| Execution          | `campaign_features`, `card_campaigns`, `campaign_runs`, `campaign_candidates`, `campaign_drafts`: frozen features/rules, durable jobs, reason-coded decisions and staff-only drafts                                                                               |
+| Employee reporting | `campaign_reports`, `campaign_review_events`, `staff_notifications`: canonical report revisions, exact-version reviews and assigned in-app delivery                                                                                                               |
+
+Meridian remains INR and BankShield remains a separate historical USD sample. Campaigns reject BankShield's missing lending/linked-customer coverage and uncovered future cutoffs. Demo prospect/product rules are not bank-approved credit policy. Employee review is distinct from marketing consent, customer sending and card issuance. Readiness appears in Data Workspace; detailed manifests/evidence accompany authorized campaign results.

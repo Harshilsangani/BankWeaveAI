@@ -1,0 +1,67 @@
+.risk-card {
+  padding: 0 0 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.risk-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 13px;
+}
+.risk-id {
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  color: var(--subtle);
+}
+.risk-card h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  font-size: 12px;
+}
+.risk-card h3 > span {
+  font-size: 12px;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+  font-weight: 450;
+}
+.risk-card:nth-child(2) h3 > span {
+  color: var(--amber);
+}
+.risk-card:nth-child(3) h3 {
+  flex-wrap: wrap;
+}
+.risk-card:nth-child(3) h3 > span {
+  font-size: 12px;
+}
+.risk-card > p {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.risk-exposure {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  margin-top: 13px;
+  color: var(--subtle);
+}
+.risk-exposure strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.risk-card-bottom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.risk-card:last-child {
+  margin-bottom: 18px;
+}

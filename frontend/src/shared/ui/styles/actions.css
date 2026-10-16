@@ -1,0 +1,16 @@
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  padding: 0;
+  margin-bottom: 22px;
+  font-size: 12px;
+}

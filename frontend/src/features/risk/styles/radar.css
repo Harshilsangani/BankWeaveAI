@@ -1,0 +1,301 @@
+.radar-page {
+  min-width: 0;
+}
+.radar-page .risk-card h3 {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-height: 65px;
+}
+.radar-page .risk-card h3 > span {
+  margin-left: 0;
+  text-align: left;
+}
+.radar-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  margin-bottom: 10px;
+}
+.radar-scope {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  padding: 22px 24px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.radar-scope label,
+.radar-method {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 0;
+}
+.radar-scope select {
+  width: 100%;
+  height: 42px;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+.radar-method strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 550;
+}
+.radar-method small {
+  font-size: 11px;
+}
+.radar-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding: 30px 0;
+  margin-bottom: 15px;
+}
+.radar-overview > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 24px;
+  border-left: 1px solid var(--border);
+}
+.radar-overview > div:first-child {
+  border: 0;
+  padding-left: 0;
+}
+.radar-overview span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.radar-overview strong {
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+.radar-overview small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.radar-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.radar-section-heading h2 {
+  font-size: 19px;
+  font-weight: 550;
+}
+.radar-section-heading p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.radar-queue-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.radar-queue-controls .filter-tabs {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.radar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding: 9px 4px;
+  width: 190px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.radar-search input {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  width: 100%;
+  min-width: 0;
+  outline: 0;
+  font-size: 12px;
+}
+.radar-search:focus-within {
+  border-color: var(--accent);
+}
+.radar-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--hover);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.radar-methodology {
+  margin-top: 38px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border);
+}
+.radar-baseline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.radar-checks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.radar-check {
+  padding: 18px;
+  background: var(--surface-raised);
+  border-radius: 12px;
+  min-width: 0;
+}
+.radar-check > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.radar-check h3 {
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.5;
+}
+.radar-check p,
+.radar-muted {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin: 12px 0;
+}
+.radar-check > strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 550;
+  margin: 14px 0 8px;
+  flex-wrap: wrap;
+}
+.radar-check > small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  display: block;
+}
+.radar-check details {
+  margin-top: 14px;
+  font-size: 11px;
+}
+.radar-check summary,
+.radar-receipt summary {
+  cursor: pointer;
+  color: var(--text);
+}
+.radar-receipt {
+  padding: 18px 0;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.radar-receipt dl {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+}
+.radar-receipt dt {
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.radar-receipt dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.radar-receipt ul {
+  margin: 18px 0 0;
+  padding-left: 18px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.radar-page .risk-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.8;
+}
+.radar-page .risk-footnote svg {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+@media (max-width: 1100px) {
+  .radar-queue-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .radar-search {
+    width: 100%;
+  }
+}
+@media (max-width: 760px) {
+  .radar-scope {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 18px;
+  }
+  .radar-overview {
+    gap: 10px;
+    padding: 24px 0;
+  }
+  .radar-overview > div {
+    padding: 0 10px;
+  }
+  .radar-overview small {
+    display: none;
+  }
+  .radar-overview strong {
+    font-size: 28px;
+  }
+  .radar-section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .radar-checks,
+  .radar-receipt dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .radar-eyebrow {
+    font-size: 9px;
+  }
+}
