@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { BookOpen, Compass, Search } from "lucide-react";
 import type { Page } from "@/features/workspace/types";
-import type { Policy } from "@/features/knowledge/types";
-import { getPolicies, ingestPolicy } from "@/features/knowledge/api";
+import type { Policy, PolicyMatch, PolicySearch } from "@/features/knowledge/types";
+import { getPolicies, ingestPolicy, searchPolicies } from "@/features/knowledge/api";
 import { getStaffIdentity, type StaffIdentity } from "@/shared/api/client";
 import { Badge, Button, EmptyState } from "@/shared/ui/primitives";
 import { Dialog } from "@/shared/ui/dialog";
@@ -34,6 +34,10 @@ export function Knowledge({
     [selected, setSelected] = useState<Policy>(),
     [query, setQuery] = useState(""),
     [error, setError] = useState("");
+  const [policySearch, setPolicySearch] = useState<PolicySearch>();
+  const [searchError, setSearchError] = useState("");
+  const [searchRevision, setSearchRevision] = useState(0);
+  const [selectedMatch, setSelectedMatch] = useState<PolicyMatch>();
   function loadPolicies() {
     setLoading(true);
     setError("");
@@ -51,6 +55,30 @@ export function Knowledge({
   const search = query.trim().toLowerCase();
   const showGuides = resourceType !== "policies";
   const showPolicies = resourceType !== "guides" && guidePage === "all";
+  const searchQuery = query.trim();
+  useEffect(() => {
+    setSearchError("");
+    if (!searchQuery || !showPolicies) return;
+    const controller = new AbortController();
+    let current = true;
+    const timer = setTimeout(() => {
+      void searchPolicies(searchQuery, controller.signal)
+        .then((result) => {
+          if (current) setPolicySearch(result);
+        })
+        .catch(() => {
+          if (current) setSearchError("Unable to search policies. Try again.");
+        });
+    }, 250);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery, showPolicies, searchRevision]);
+  const matches = policySearch?.query === searchQuery ? policySearch.results : [];
+  const searching =
+    !!searchQuery && showPolicies && policySearch?.query !== searchQuery && !searchError;
   const filteredGuides = workspaceGuides.filter(
     (guide) =>
       (guidePage === "all" || guide.page === guidePage) &&
@@ -58,13 +86,10 @@ export function Knowledge({
         .toLowerCase()
         .includes(search)
   );
-  const filtered = policies.filter((policy) =>
-    `${policy.title} ${policy.category} ${policy.summary} ${policy.sections.join(" ")}`
-      .toLowerCase()
-      .includes(search)
-  );
+  const filtered = search ? [] : policies;
   const resultCount =
-    (showGuides ? filteredGuides.length : 0) + (showPolicies ? filtered.length : 0);
+    (showGuides ? filteredGuides.length : 0) +
+    (showPolicies ? (search ? matches.length : filtered.length) : 0);
   return (
     <div className="animate-in">
       <div className="page-heading">
@@ -73,7 +98,7 @@ export function Knowledge({
           <p>Find help for every workspace page, plus reference policies and procedures.</p>
         </div>
         <div className="page-actions">
-          {identity?.permissions.includes("analyze") && (
+          {identity?.permissions.includes("policy_manage") && (
             <Button onClick={() => setAdding(true)}>Add policy document</Button>
           )}
         </div>
@@ -82,6 +107,7 @@ export function Knowledge({
         <Search size={18} />
         <input
           value={query}
+          maxLength={300}
           onChange={(e) => setQuery(e.target.value)}
           aria-label="Search knowledge library"
           placeholder="Search pages, tasks, policies, or topics…"
@@ -128,6 +154,7 @@ export function Knowledge({
       <p className="knowledge-result-count" role="status">
         {resultCount} {resultCount === 1 ? "resource" : "resources"} found
         {showPolicies && loading ? " · Loading policies…" : ""}
+        {searching ? " · Searching policy sections…" : ""}
       </p>
       {showGuides && filteredGuides.length > 0 && (
         <section className="knowledge-section" aria-labelledby="page-guides-heading">
@@ -154,13 +181,42 @@ export function Knowledge({
       {showPolicies && (
         <section className="knowledge-section" aria-labelledby="policy-library-heading">
           <h2 id="policy-library-heading">Policies & procedures</h2>
-          <p>Read versioned reference documents or ask the analyst about a policy.</p>
-          {error && (
+          <p>
+            {search
+              ? "Relevant sections, ranked by your question and related banking terms."
+              : "Read versioned reference documents or ask the analyst about a policy."}
+          </p>
+          {(search ? searchError : error) && (
             <div className="knowledge-load-error">
-              <p role="alert">{error}</p>
-              <Button disabled={loading} onClick={() => void loadPolicies()}>
-                Retry policies
+              <p role="alert">{search ? searchError : error}</p>
+              <Button
+                disabled={!search && loading}
+                onClick={() => {
+                  if (search) {
+                    setPolicySearch(undefined);
+                    setSearchRevision((value) => value + 1);
+                  } else void loadPolicies();
+                }}
+              >
+                {search ? "Retry search" : "Retry policies"}
               </Button>
+            </div>
+          )}
+          {search && matches.length > 0 && (
+            <div className="policy-search-results">
+              {matches.map((match) => (
+                <article className="panel policy-search-result" key={match.reference}>
+                  <Badge>{match.category}</Badge>
+                  <h3>
+                    {match.title} · {match.section}
+                  </h3>
+                  <p>{match.text}</p>
+                  <small>
+                    {match.documentId} · {match.version}
+                  </small>
+                  <Button onClick={() => setSelectedMatch(match)}>View source section</Button>
+                </article>
+              ))}
             </div>
           )}
           <div className="knowledge-grid">
@@ -177,7 +233,7 @@ export function Knowledge({
               </article>
             ))}
           </div>
-          {!loading && !error && !policies.length && (
+          {!search && !loading && !error && !policies.length && (
             <EmptyState
               title="No policy documents yet"
               text="Added policy documents will appear here. Page guides are available above."
@@ -189,7 +245,7 @@ export function Knowledge({
           </p>
         </section>
       )}
-      {!resultCount && (!showPolicies || (!loading && !error)) && (
+      {!resultCount && !searching && !searchError && (!showPolicies || (!loading && !error)) && (
         <EmptyState
           title="No matching resources"
           text="Try another page, task, or topic, or clear the filters to browse the library."
@@ -244,6 +300,8 @@ export function Knowledge({
             try {
               await ingestPolicy(document);
               setPolicies(await getPolicies());
+              setPolicySearch(undefined);
+              setSearchRevision((value) => value + 1);
               setAdding(false);
             } catch (error) {
               setError(error instanceof Error ? error.message : "Policy import failed.");
@@ -299,6 +357,30 @@ export function Knowledge({
             {saving ? "Saving version…" : "Save policy version"}
           </Button>
         </form>
+      </Dialog>
+      <Dialog
+        open={!!selectedMatch}
+        onOpenChange={(open) => {
+          if (!open) setSelectedMatch(undefined);
+        }}
+        title={
+          selectedMatch ? `${selectedMatch.title} · ${selectedMatch.section}` : "Policy source"
+        }
+        description={`${selectedMatch?.documentId} · ${selectedMatch?.version}`}
+      >
+        <p className="policy-source-text">{selectedMatch?.text}</p>
+        <p className="policy-source-reference">Source reference: {selectedMatch?.reference}</p>
+        {identity?.permissions.includes("analyze") && (
+          <Button
+            variant="primary"
+            onClick={() => {
+              onAsk(`According to the supplied policy, ${searchQuery}`);
+              setSelectedMatch(undefined);
+            }}
+          >
+            Ask the analyst about this question
+          </Button>
+        )}
       </Dialog>
       <Dialog
         open={!!selected}

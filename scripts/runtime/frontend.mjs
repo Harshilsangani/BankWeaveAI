@@ -1,6 +1,10 @@
 import { spawn } from "node:child_process";
 import { prepareFrontend, frontendServer, repositoryRoot, loadRootEnvironment } from "./paths.mjs";
 loadRootEnvironment(false);
+// Demo roles must stay behind a local access path, including on VM restarts.
+const developmentIdentity =
+  (process.env.RISKLENS_IDENTITY_ADAPTER || "development") === "development";
+const host = developmentIdentity ? "127.0.0.1" : process.env.HOSTNAME || "127.0.0.1";
 try {
   prepareFrontend();
 } catch (error) {
@@ -13,7 +17,7 @@ const server = spawn(process.execPath, [frontendServer], {
   env: {
     ...process.env,
     NODE_ENV: "production",
-    HOSTNAME: process.env.HOSTNAME || "127.0.0.1",
+    HOSTNAME: host,
     PORT: process.env.PORT || "3000",
   },
 });

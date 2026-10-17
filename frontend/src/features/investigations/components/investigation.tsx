@@ -22,6 +22,10 @@ import { CaseActivity } from "@/features/investigations/components/case-activity
 import { SourceStatus } from "@/features/investigations/components/source-status";
 import { AnalysisDetails } from "@/shared/analytics/analysis-details";
 import { RelationshipGraph } from "@/features/investigations/components/relationship-graph";
+import {
+  RepaymentEvidence,
+  RelatedPolicyGuidance,
+} from "@/features/investigations/components/repayment-evidence";
 
 const tabs = ["Overview", "Evidence & links", "Review", "Activity"];
 export function Investigation({
@@ -207,7 +211,15 @@ export function Investigation({
               {inv.findings.map((text, index) => (
                 <InsightCard
                   key={text}
-                  title={index === 0 ? "What the records show" : "Contribution to the change"}
+                  title={
+                    index === 0
+                      ? "What the records show"
+                      : inv.repaymentEvidence
+                        ? index === 1
+                          ? "Coverage and missing evidence"
+                          : "Review priority"
+                        : "Contribution to the change"
+                  }
                   text={text}
                 />
               ))}
@@ -257,6 +269,8 @@ export function Investigation({
               <Button onClick={() => chooseTab("Review")}>Record your review</Button>
             </div>
             <SourceStatus key={inv.id} id={inv.id} />
+            {inv.repaymentEvidence && <RepaymentEvidence data={inv.repaymentEvidence} />}
+            {inv.policyGuidance && <RelatedPolicyGuidance data={inv.policyGuidance} />}
             <EvidenceBrowser key={"evidence-" + inv.id} scope={inv.scope} savedAt={inv.createdAt} />
             {inv.relationshipGraph && (
               <RelationshipGraph key={"graph-" + inv.id} data={inv.relationshipGraph} />

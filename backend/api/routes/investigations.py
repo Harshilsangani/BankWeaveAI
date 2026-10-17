@@ -26,7 +26,7 @@ def stream_investigation(request: Request, body: InvestigationRequest):
 def investigation(body: InvestigationRequest):
     value = body.scope.model_dump(exclude_none=True)
     value["riskId"] = body.riskId
-    value["domain"] = "loans" if body.riskId == "RSK-002" else "fraud"
+    value["domain"] = "loans" if body.riskId in ("RSK-002", "RSK-004") else "fraud"
     if body.riskId == "BS-001":
         if value["datasetId"] != "bankshield":
             raise ValueError("Select the BankShield dataset for this investigation.")
@@ -41,6 +41,24 @@ def investigation(body: InvestigationRequest):
 @router.post("/evidence")
 def evidence(body: EvidenceRequest):
     scope = scoped(body.scope)
+    if scope.get("riskId") == "RSK-004":
+        from backend.features.risk.overdue import COLUMNS, current, row_values
+
+        snapshot = current(scope)
+        rows = [
+            row_values(row)
+            for row in snapshot["rows"][body.offset : body.offset + body.limit]
+        ]
+        total = snapshot["affected"]
+        return dict(
+            columns=COLUMNS,
+            rows=rows,
+            total=total,
+            offset=body.offset,
+            nextOffset=body.offset + len(rows)
+            if body.offset + len(rows) < total
+            else None,
+        )
     count = aggregate(scope)["affected"]
     rows = evidence_rows(scope, body.offset, body.limit)
     columns = (

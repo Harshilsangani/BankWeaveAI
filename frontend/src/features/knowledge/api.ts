@@ -1,7 +1,9 @@
-import type { Policy } from "@/features/knowledge/types";
+import type { Policy, PolicySearch } from "@/features/knowledge/types";
 import { request, post } from "@/shared/api/client";
 
 export const getPolicies = () => request<Policy[]>("policies");
+export const searchPolicies = (query: string, signal?: AbortSignal) =>
+  request<PolicySearch>(`policies/search?q=${encodeURIComponent(query)}`, { signal });
 
 export const ingestPolicy = (document: {
   id: string;

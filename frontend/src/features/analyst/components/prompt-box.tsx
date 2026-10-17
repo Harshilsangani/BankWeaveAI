@@ -31,6 +31,7 @@ export function PromptBox({
   chat = false,
   onUpload,
   provider,
+  providerError,
   researchMode = false,
   onResearchMode,
   datasets = [],
@@ -45,6 +46,7 @@ export function PromptBox({
   chat?: boolean;
   onUpload?: (file: File) => void;
   provider?: AIProviderStatus;
+  providerError?: string;
   researchMode?: boolean;
   onResearchMode?: (enabled: boolean) => void;
   datasets?: DatasetInfo[];
@@ -304,11 +306,13 @@ export function PromptBox({
               <span className="composer-mode">
                 BankWeave{" "}
                 <span>
-                  {provider?.provider === "vertex"
-                    ? "Gemini"
-                    : provider?.provider === "local"
-                      ? "Local"
-                      : "AI"}
+                  {providerError
+                    ? "AI status unavailable"
+                    : provider?.provider === "vertex"
+                      ? "Gemini"
+                      : provider?.provider === "local"
+                        ? "Local"
+                        : "AI"}
                 </span>
               </span>
             )}

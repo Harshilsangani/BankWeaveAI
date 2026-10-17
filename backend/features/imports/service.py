@@ -323,7 +323,7 @@ def upload(
     file: UploadFile = File(...),
     datasetId: Literal["meridian", "bankshield"] = Form("meridian"),
 ):
-    require("analyze")
+    require("data_import")
     metadata(datasetId)
     filename = (file.filename or "upload").replace("\\", "/").split("/")[-1][:180]
     try:
@@ -563,7 +563,7 @@ def validate_rows(db, dataset, entity, rows):
 
 
 def review(body: ReviewInput):
-    require("analyze")
+    require("data_import")
     identity = owner()
     with connect() as db:
         upload = owned_upload(db, body.uploadId, identity)
@@ -659,7 +659,7 @@ def review(body: ReviewInput):
 
 
 def apply(body: ApplyInput):
-    require("customer_write")
+    require("data_import")
     identity = owner()
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")

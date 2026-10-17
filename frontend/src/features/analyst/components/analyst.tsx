@@ -58,7 +58,12 @@ export function Analyst({
   onDataset?: (id: DatasetId) => void;
 }) {
   const contextLocked = busy || Boolean(contextStatus) || !ready || !dataReady;
-  const provider = useAIProvider();
+  const {
+    provider,
+    error: providerError,
+    loading: providerLoading,
+    reload: reloadProvider,
+  } = useAIProvider();
   const locked = contextLocked || !canAnalyze;
   const scroller = useRef<HTMLDivElement>(null);
   const latest = useRef<HTMLDivElement>(null);
@@ -77,6 +82,14 @@ export function Analyst({
 
   return (
     <section className="analyst-chat" aria-label="AI Analyst">
+      {providerError && (
+        <p role="alert" className="analyst-notice">
+          {providerError}{" "}
+          <Button variant="ghost" disabled={providerLoading} onClick={reloadProvider}>
+            Retry AI connection
+          </Button>
+        </p>
+      )}
       {notice && (
         <div role="status" className="analyst-notice">
           <CheckCircle2 size={15} />
@@ -175,6 +188,7 @@ export function Analyst({
           busy={busy}
           disabled={locked}
           provider={provider}
+          providerError={providerError}
           chat
           researchMode={researchMode}
           onResearchMode={onResearchMode}

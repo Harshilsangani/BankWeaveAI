@@ -5,6 +5,10 @@ cd "$bankweave_root"
 umask 077
 mkdir -p logs
 export PATH="$HOME/.local/bin:$PATH"
+if systemctl --user is-active --quiet bankweave-private.target; then
+  echo "BankWeave is managed by systemd. Use systemctl --user restart bankweave-private.target." >&2
+  exit 1
+fi
 for component in backend frontend campaign-worker; do
   if [[ -f "logs/$component.pid" ]] && kill -0 "$(cat "logs/$component.pid")" 2>/dev/null; then
     echo "$component is already running; inspect logs/$component.pid before restarting." >&2
@@ -24,7 +28,7 @@ if ! node scripts/runtime/wait-backend.mjs >>logs/frontend.log 2>&1; then
   echo 'Backend did not become ready; inspect logs/backend.log.' >&2
   exit 1
 fi
-nohup setsid bash -c 'set -e; set -a; source "$HOME/.config/bankweave/frontend.env"; set +a; export PORT=3000 HOSTNAME=0.0.0.0 RISKLENS_BACKEND_URL=http://127.0.0.1:8000; exec node scripts/runtime/frontend.mjs' </dev/null >>logs/frontend.log 2>&1 &
+nohup setsid bash -c 'set -e; set -a; source "$HOME/.config/bankweave/frontend.env"; set +a; export PORT=3000 HOSTNAME=127.0.0.1 RISKLENS_BACKEND_URL=http://127.0.0.1:8000; exec node scripts/runtime/frontend.mjs' </dev/null >>logs/frontend.log 2>&1 &
 echo "$!" > logs/frontend.pid
 nohup setsid bash -c 'set -e; set -a; source "$HOME/.config/bankweave/backend.env"; set +a; export RISKLENS_STORAGE_DIR="$HOME/bankweave-state/storage" RISKLENS_DB="$HOME/bankweave-state/storage/risklens.sqlite3" RISKLENS_AUTO_SEED=false; exec node scripts/runtime/campaign-supervisor.mjs' </dev/null >>logs/campaign-worker.log 2>&1 &
 echo "$!" > logs/campaign-worker.pid

@@ -1,10 +1,12 @@
 """Acceptance for readable exports with complete source content and real navigation."""
 
+import struct
 import unittest
+from unittest.mock import patch
 
 import fitz
 
-from backend.features.research.pdf import render
+from backend.features.research.pdf import Document, render
 
 
 def text(pdf):
@@ -30,6 +32,58 @@ def report(
 
 
 class ResearchPdfLayoutTests(unittest.TestCase):
+    def test_shared_font_glyphs_do_not_turn_ascii_into_nbsp_or_soft_hyphen(self):
+        document = Document({})
+        font = document.font
+        raw = bytearray(font.buffer)
+        if raw[:4] != b"\x00\x01\x00\x00":
+            document.doc.close()
+            self.skipTest("A TrueType system font is needed for the alias-font probe")
+        # Reproduce Arial-like aliases in a disposable font buffer, without
+        # requiring Windows or changing any installed font files.
+        mapping = {p: font.has_glyph(p) for p in font.valid_codepoints()}
+        mapping[0xA0] = mapping[0x20]
+        mapping[0xAD] = mapping[0x2D]
+        groups = b"".join(
+            struct.pack(">III", codepoint, codepoint, glyph)
+            for codepoint, glyph in sorted(mapping.items())
+        )
+        subtable = struct.pack(">HHIII", 12, 0, 16 + len(groups), 0, len(mapping)) + groups
+        cmap = struct.pack(">HHHHI", 0, 1, 3, 10, 12) + subtable
+        raw.extend(b"\0" * (-len(raw) % 4))
+        offset = len(raw)
+        raw.extend(cmap)
+        for index in range(struct.unpack_from(">H", raw, 4)[0]):
+            entry = 12 + 16 * index
+            if raw[entry : entry + 4] == b"cmap":
+                struct.pack_into(">II", raw, entry + 8, offset, len(cmap))
+                break
+        document.font = fitz.Font(fontbuffer=bytes(raw))
+        value = "ASCII spaces - HYPHEN-MARKER"
+        document.put(value, 44, 100)
+        self.assertIn("ASCII\u00a0spaces\u00a0\u00ad", document.page.get_text())
+        with fitz.open(stream=document.finish(), filetype="pdf") as pdf:
+            self.assertIn(value, pdf[0].get_text())
+
+    def test_unicode_round_trip_with_system_fonts_and_missing_glyph_fallback(self):
+        value = "ASCII spaces - HYPHEN-MARKER / INR ₹1,234.56 → •"
+        for system_fonts in (True, False):
+            with self.subTest(system_fonts=system_fonts):
+                if system_fonts:
+                    document = Document({})
+                else:
+                    with patch(
+                        "backend.features.research.pdf.Path.is_file", return_value=False
+                    ):
+                        document = Document({})
+                document.put(value, 44, 100)
+                document.put(value, 44, 130, bold=True)
+                with fitz.open(stream=document.finish(), filetype="pdf") as pdf:
+                    output = "\n".join(page.get_text() for page in pdf)
+                self.assertEqual(output.count(value), 2)
+                for unexpected in ("\u00a0", "\u00ad", "\ufffd", "\x00"):
+                    self.assertNotIn(unexpected, output)
+
     def test_dense_saved_prose_gets_reading_breaks_without_losing_words_or_figures(
         self,
     ):

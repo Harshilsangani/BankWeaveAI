@@ -126,7 +126,7 @@ export function ImportWizard({
     if (step === 2) setStep(1);
   }
   async function readFile(file: File) {
-    if (busy || !schema) return;
+    if (busy || !schema || !canPreview) return;
     setError("");
     setReceipt(undefined);
     if (!/\.(csv|xlsx)$/i.test(file.name)) {
@@ -157,7 +157,7 @@ export function ImportWizard({
     }
   }
   async function validate() {
-    if (!upload || busy) return;
+    if (!upload || busy || !canPreview) return;
     setError("");
     setWorking(true);
     setConfirmed(false);
@@ -174,7 +174,7 @@ export function ImportWizard({
     }
   }
   async function save() {
-    if (!preview || !confirmed || busy) return;
+    if (!preview || !confirmed || busy || !canWrite || !canPreview) return;
     setWorking(true);
     setError("");
     try {
@@ -290,7 +290,10 @@ export function ImportWizard({
                   {busy ? "Reading file…" : "Choose CSV or Excel file"}
                 </Button>
                 {!canPreview && (
-                  <small>Your role can view imports. An Analyst or Admin must upload data.</small>
+                  <small>
+                    Only Admin can upload, preview and import banking data. Your role can view
+                    quality and import history.
+                  </small>
                 )}
               </div>
               <div className="import-template-links">

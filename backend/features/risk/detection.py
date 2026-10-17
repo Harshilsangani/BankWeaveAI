@@ -12,8 +12,9 @@ from backend.core.identifiers import identifier, now
 from backend.core.security import actor, require
 from backend.features.analytics.queries import build, risk
 from backend.features.analytics.scope import validate_scope
+from backend.features.risk.overdue import RULE as OVERDUE_RULE
 
-RULES_VERSION = "snapshot-rules-v2"
+RULES_VERSION = "snapshot-rules-v3"
 RULES = {
     "RSK-001": dict(
         name="Flagged-count acceleration",
@@ -37,6 +38,7 @@ RULES = {
         minRateIncreasePp=0.25,
     ),
     "BS-001": dict(name="Public sample fraud labels", minCount=1, minIncreasePct=None),
+    "RSK-004": OVERDUE_RULE,
 }
 
 
@@ -49,7 +51,11 @@ def detection_period(meta, period):
 
 
 def active_rules(dataset):
-    return ["BS-001"] if dataset == "bankshield" else ["RSK-001", "RSK-002", "RSK-003"]
+    return (
+        ["BS-001"]
+        if dataset == "bankshield"
+        else ["RSK-001", "RSK-002", "RSK-003", "RSK-004"]
+    )
 
 
 def evaluate(rule_id, data, baseline_available):
@@ -201,6 +207,9 @@ def run(dataset="meridian", period=None):
                     region="Ahmedabad",
                     newDeviceOnly=True,
                 ),
+                dict(
+                    datasetId=dataset, period=period, domain="loans", riskId="RSK-004"
+                ),
             ]
         run_id = identifier("DETECT")
         created = now()
@@ -211,8 +220,12 @@ def run(dataset="meridian", period=None):
             rule = RULES[scope["riskId"]]
             count = data["current"]["affected"]
             increase = data["delta"]
-            check = evaluate(
-                scope["riskId"], data, previous_period(period) in meta["periods"]
+            check = (
+                data["check"]
+                if scope["riskId"] == "RSK-004"
+                else evaluate(
+                    scope["riskId"], data, previous_period(period) in meta["periods"]
+                )
             )
             checks.append(check)
             if check["status"] != "matched":
@@ -224,6 +237,7 @@ def run(dataset="meridian", period=None):
                 "RSK-002": "Loan default-marker increase",
                 "RSK-003": "Ahmedabad flagged new-device activity",
                 "BS-001": "BankShield labelled transactions",
+                "RSK-004": "Overdue principal requires review",
             }[scope["riskId"]]
             event.update(
                 detection=dict(
@@ -234,7 +248,7 @@ def run(dataset="meridian", period=None):
                     sourceCounts=counts,
                     threshold=rule,
                     currentCount=count,
-                    baselineCount=data["prior"]["affected"],
+                    baselineCount=check["baselineCount"],
                     observedIncreasePct=increase,
                     executedAt=created,
                     scope=scope,
@@ -250,7 +264,7 @@ def run(dataset="meridian", period=None):
                         "Run: " + run_id,
                         "Input SHA-256: " + digest,
                         "Source counts: " + json.dumps(counts),
-                        f"Observed: {count} vs {data['prior']['affected']}",
+                        f"Observed: {count} vs {check['baselineCount']}",
                     ],
                 )
             )

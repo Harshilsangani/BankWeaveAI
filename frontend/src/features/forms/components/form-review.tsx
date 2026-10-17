@@ -5,6 +5,7 @@ import { MarkdownContent } from "@/shared/ui/markdown";
 import { Button } from "@/shared/ui/primitives";
 import {
   getApprovalRequest,
+  getSavedFormReview,
   submitCustomerApproval,
   saveFormCorrection,
 } from "@/features/forms/api";
@@ -52,7 +53,16 @@ export function FormReview({
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const [approval, setApproval] = useState<ApprovalRequest | null>(draft.approval ?? null);
   const [canSubmit, setCanSubmit] = useState(false);
-  const locked = !!approval || draft.status !== "pending" || !!saved;
+  const [reviewStatus, setReviewStatus] = useState(draft.status);
+  const [needsStatusCheck, setNeedsStatusCheck] = useState(false);
+  const [recoveryNotice, setRecoveryNotice] = useState("");
+  const submitting = useRef(false);
+  const locked =
+    !!approval ||
+    draft.status !== "pending" ||
+    reviewStatus !== "pending" ||
+    !!saved ||
+    needsStatusCheck;
   useEffect(() => {
     let active = true;
     void getStaffIdentity()
@@ -64,27 +74,60 @@ export function FormReview({
       active = false;
     };
   }, []);
+  function applyApproval(updated: ApprovalRequest) {
+    setApproval(updated);
+    const status = updated.customerDeleted
+      ? "deleted"
+      : updated.status === "approved"
+        ? "saved"
+        : updated.status === "rejected"
+          ? "rejected"
+          : "submitted";
+    setReviewStatus(status);
+    onStatusChange?.(status);
+    if (updated.customerDeleted) setSaved(undefined);
+    else if (updated.status === "approved" && updated.customerId) {
+      setSaved(updated.customerId);
+      onSaved?.();
+    }
+  }
+  async function recoverSubmission() {
+    const latest = await getSavedFormReview(draft.id);
+    setQuality(latest);
+    setReviewStatus(latest.status);
+    if (latest.approval) {
+      setFields(latest.fields);
+      applyApproval(latest.approval);
+      setNeedsStatusCheck(false);
+      setRecoveryNotice("Saved request status restored.");
+      return true;
+    }
+    if (latest.status === "pending") {
+      setNeedsStatusCheck(false);
+      setRecoveryNotice("No submitted request was found. Review the fields and submit again.");
+      return false;
+    }
+    throw new Error("Reopen the saved form to review its latest status.");
+  }
+  async function checkSavedRequest() {
+    setBusy(true);
+    setError("");
+    try {
+      await recoverSubmission();
+    } catch {
+      setError(
+        "Submission confirmation is unavailable. Check saved request status before trying again."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function refreshApproval() {
     if (!approval) return;
     setBusy(true);
     setError("");
     try {
-      const updated = await getApprovalRequest(approval.id);
-      setApproval(updated);
-      onStatusChange?.(
-        updated.customerDeleted
-          ? "deleted"
-          : updated.status === "approved"
-            ? "saved"
-            : updated.status === "rejected"
-              ? "rejected"
-              : "submitted"
-      );
-      if (updated.customerDeleted) setSaved(undefined);
-      else if (updated.status === "approved" && updated.customerId) {
-        setSaved(updated.customerId);
-        onSaved?.();
-      }
+      applyApproval(await getApprovalRequest(approval.id));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not refresh the request.");
     } finally {
@@ -116,33 +159,57 @@ export function FormReview({
   }
   useEffect(() => {
     if (busy || locked || !canSubmit || fields === draft.fields) return;
+    let active = true;
     const timer = setTimeout(() => {
       void saveFormCorrection(draft.id, fields)
         .then((review) => {
+          if (!active) return;
           setQuality(review);
           setCorrectionStatus("Corrections saved");
         })
-        .catch((e) => setCorrectionStatus(e.message));
+        .catch((e) => {
+          if (active) setCorrectionStatus(e.message);
+        });
     }, 400);
     correctionTimer.current = timer;
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [fields, draft, locked, canSubmit, busy]);
   async function save() {
+    if (submitting.current || locked) return;
+    submitting.current = true;
     setBusy(true);
     setError("");
+    setCorrectionStatus("");
+    setRecoveryNotice("");
     clearTimeout(correctionTimer.current);
+    let submissionStarted = false;
     try {
       const review = await saveFormCorrection(draft.id, fields);
       setQuality(review);
+      submissionStarted = true;
       const result = await submitCustomerApproval(draft, fields, {
         reviewRevision: review.revision,
         ...(duplicateDecision ? { duplicateDecision, duplicateReason } : {}),
       });
-      setApproval(result);
-      onStatusChange?.("submitted");
+      applyApproval(result);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Customer could not be saved.");
+      const message =
+        error instanceof Error ? error.message : "The request could not be submitted.";
+      if (submissionStarted) {
+        setNeedsStatusCheck(true);
+        try {
+          if (!(await recoverSubmission())) setError(message);
+        } catch {
+          setError(
+            "Submission confirmation is unavailable. Check saved request status before trying again."
+          );
+        }
+      } else setError(message);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -274,6 +341,12 @@ export function FormReview({
             {error}
           </p>
         )}
+        {recoveryNotice && <p role="status">{recoveryNotice}</p>}
+        {needsStatusCheck && (
+          <Button disabled={busy} onClick={checkSavedRequest}>
+            {busy ? "Checking saved request…" : "Check saved request status"}
+          </Button>
+        )}
         {approval && (
           <section className="form-approval-status" aria-label="Admin approval status">
             <strong>
@@ -314,9 +387,11 @@ export function FormReview({
               Customer saved: <strong>{saved}</strong> · Verification pending
             </span>
           </div>
-        ) : draft.status === "deleted" || approval?.customerDeleted ? (
+        ) : draft.status === "deleted" ||
+          reviewStatus === "deleted" ||
+          approval?.customerDeleted ? (
           <p className="text-amber">This customer was deleted. Start a new review.</p>
-        ) : approval ? null : (
+        ) : approval || needsStatusCheck ? null : (
           <Button
             variant="primary"
             disabled={

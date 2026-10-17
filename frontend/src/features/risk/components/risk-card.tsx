@@ -33,12 +33,14 @@ export function RiskCard({
       <p>{risk.summary}</p>
       {onEvidence && (
         <p className="risk-confidence">
-          {risk.affectedRecords} affected records ·{" "}
+          {risk.affectedRecords} affected {risk.id === "RSK-004" ? "loans" : "records"} ·{" "}
           {risk.detection?.rulesVersion ?? "Requires human review"}
         </p>
       )}
       <div className="risk-exposure">
-        <span>Exposure under review</span>
+        <span>
+          {risk.id === "RSK-004" ? "Overdue principal under review" : "Exposure under review"}
+        </span>
         <strong>{formatMoney(risk.estimatedExposure, risk.currency)}</strong>
       </div>
       {risk.detection && (
@@ -50,15 +52,22 @@ export function RiskCard({
           <div>
             <p className="mono">{risk.detection.runId}</p>
             <p>
-              {risk.detection.threshold.name}: at least {risk.detection.threshold.minCount} records
+              {risk.detection.threshold.name}: at least {risk.detection.threshold.minCount}{" "}
+              {risk.detection.threshold.recordUnit ?? "records"}
+              {risk.detection.threshold.minDaysPastDue !== undefined
+                ? ` with ≥${risk.detection.threshold.minDaysPastDue} days past due and ${formatMoney((risk.detection.threshold.minOverdueMinor ?? 0) / 100, risk.currency)} unpaid principal`
+                : ""}
               {risk.detection.threshold.minIncreasePct !== null
                 ? ` and ≥${risk.detection.threshold.minIncreasePct}% count increase`
                 : ""}
               .
             </p>
             <p>
-              Observed: {risk.detection.currentCount} vs {risk.detection.baselineCount} ·{" "}
-              {risk.detection.observedIncreasePct?.toFixed(1) ?? "N/A"}% change.
+              Observed: {risk.detection.currentCount} vs{" "}
+              {risk.detection.baselineCount ?? "unavailable"}
+              {risk.id === "RSK-004"
+                ? " · Month-end repayment snapshots; growth is not required."
+                : ` · ${risk.detection.observedIncreasePct?.toFixed(1) ?? "N/A"}% change.`}
             </p>
             <p>
               Sources:{" "}

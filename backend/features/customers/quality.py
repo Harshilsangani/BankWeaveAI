@@ -164,7 +164,7 @@ def validate(db, dataset, rows):
 
 
 def preview(body: PreviewInput):
-    require("analyze")
+    require("data_import")
     identity = owner()
     meta = metadata(body.datasetId)
     reader = csv.DictReader(io.StringIO(body.csv.lstrip("\ufeff")))
@@ -211,7 +211,7 @@ def preview(body: PreviewInput):
 
 
 def confirm(body: ConfirmInput):
-    require("customer_write")
+    require("data_import")
     identity = owner()
     with connect() as db:
         db.execute("BEGIN IMMEDIATE")

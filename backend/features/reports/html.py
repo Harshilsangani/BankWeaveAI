@@ -101,6 +101,79 @@ def render(report):
         )
         + "</tbody></table>"
     )
+    if inv.get("repaymentEvidence"):
+        saved = inv["repaymentEvidence"]
+        parts.append(
+            "<h2>Frozen overdue-principal evidence</h2><p>As of "
+            + text(saved["asOf"])
+            + " · First "
+            + text(len(saved["rows"]))
+            + " of "
+            + text(saved["totalLoans"])
+            + " qualifying loans</p><table><thead><tr>"
+            + "".join("<th>" + text(column) + "</th>" for column in saved["columns"])
+            + "</tr></thead><tbody>"
+            + "".join(
+                "<tr>"
+                + "".join("<td>" + text(cell) + "</td>" for cell in row)
+                + "</tr>"
+                for row in saved["rows"]
+            )
+            + "</tbody></table>"
+        )
+        for loan in saved["loans"]:
+            parts.append(
+                "<h3>"
+                + text(loan["loanId"])
+                + " · Linked installments and payments</h3>"
+            )
+            for installment in loan["installments"]:
+                parts.append(
+                    "<p>"
+                    + text(installment["id"])
+                    + " · Due "
+                    + text(installment["dueOn"])
+                    + " · Scheduled minor units "
+                    + text(installment["dueMinor"])
+                    + " · Paid by cutoff "
+                    + text(installment["paidMinor"])
+                    + " · Unpaid "
+                    + text(installment["unpaidMinor"])
+                    + "</p>"
+                    + listing(
+                        [
+                            payment["id"]
+                            + " · "
+                            + payment["paidOn"]
+                            + " · Minor units "
+                            + str(payment["amountMinor"])
+                            for payment in installment["payments"]
+                        ]
+                    )
+                )
+    if inv.get("policyGuidance"):
+        guidance = inv["policyGuidance"]
+        parts.append(
+            "<h2>Related supplied policy guidance</h2><p>"
+            + text(guidance["limitation"])
+            + "</p>"
+        )
+        for section in guidance["sections"]:
+            parts.append(
+                "<h3>"
+                + text(section["title"])
+                + " · "
+                + text(section["section"])
+                + "</h3><small>"
+                + text(section["documentId"])
+                + " · "
+                + text(section["version"])
+                + " · "
+                + text(section["reference"])
+                + "</small><p>"
+                + text(section["text"])
+                + "</p>"
+            )
     review = report.get("caseReview")
     if review:
         parts.append(

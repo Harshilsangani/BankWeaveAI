@@ -1,6 +1,6 @@
 # BankWeave banking data imports
 
-Open **Command Center → View data → Data quality & imports**. Choose Customers, Accounts, Transactions or Loans, then upload a CSV or Excel workbook. Pick a worksheet, review the suggested column mappings, preview validation results and explicitly confirm the batch. Only an admin confirms writes; analysts can stage/review files and viewers can inspect their accessible history. An admin must upload and review the batch in their own workspace; spreadsheet previews are not part of the OCR approval queue. See [roles and approvals](architecture.md#roles-and-approvals).
+As **Admin**, choose **Command Center → Upload new data**, or open **Manage customer data → Data quality & imports**. Choose Customers, Accounts, Transactions or Loans, then upload a CSV or Excel workbook. Pick a worksheet, review the suggested column mappings, preview validation results and explicitly confirm the batch. Only Admin can upload files, paste CSV, preview/review mappings and confirm imports. Analysts and Viewers can inspect data quality and their accessible import history. An admin must upload and review the batch in their own workspace; spreadsheet previews are not part of the OCR approval queue. See [roles and approvals](architecture.md#roles-and-approvals).
 
 ## Supported files and limits
 

@@ -179,3 +179,36 @@ export interface StaffNotification {
   readAt?: string;
   createdAt: string;
 }
+
+export interface CampaignEmailReceipt {
+  id: string;
+  customerId: string;
+  recipient: string;
+  sender: string;
+  subject: string;
+  messageId: string;
+  status: "sending" | "accepted" | "failed" | "unknown";
+  attempt: number;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+  presentationHash?: string;
+  presentationVersion?: string;
+}
+
+export interface CampaignEmailPreview {
+  subject: string;
+  text: string;
+  html: string;
+  version: string;
+  hash: string;
+}
+
+export interface CampaignEmailState {
+  enabled: boolean;
+  reason: string;
+  recipient?: string;
+  remaining: number;
+  reviewed: boolean;
+  history: CampaignEmailReceipt[];
+}

@@ -362,7 +362,7 @@ export function useWorkspace() {
       {
         riskId: id,
         scope: scope ?? {
-          domain: id === "RSK-002" ? "loans" : "fraud",
+          domain: ["RSK-002", "RSK-004"].includes(id) ? "loans" : "fraud",
           datasetId: id === "BS-001" ? "bankshield" : "meridian",
         },
       },

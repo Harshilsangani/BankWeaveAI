@@ -40,7 +40,7 @@ class RiskDisposition(BaseModel):
     model_config = ConfigDict(extra="forbid")
     datasetId: Literal["meridian", "bankshield"] = "meridian"
     period: str | None = None
-    riskId: Literal["RSK-001", "RSK-002", "RSK-003", "BS-001"] | None = None
+    riskId: Literal["RSK-001", "RSK-002", "RSK-003", "RSK-004", "BS-001"] | None = None
     action: Literal["dismiss", "restore"]
 
 

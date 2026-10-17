@@ -9,6 +9,10 @@ from backend.features.analytics.scope import condition, validate_scope
 
 
 def aggregate(scope, period=None):
+    if scope.get("riskId") == "RSK-004":
+        from backend.features.risk.overdue import current
+
+        return current({**scope, "period": period or scope["period"]})
     if scope.get("domain") == "loans":
         from backend.features.products.loans import aggregate as loan_aggregate
 
@@ -29,6 +33,12 @@ def aggregate(scope, period=None):
 
 
 def evidence_rows(scope, offset=0, limit=8):
+    if scope.get("riskId") == "RSK-004":
+        from backend.features.risk.overdue import current, row_values
+
+        return [
+            row_values(row) for row in current(scope)["rows"][offset : offset + limit]
+        ]
     if scope.get("domain") == "loans":
         from backend.features.products.loans import evidence_rows as loan_rows
 
@@ -57,6 +67,10 @@ def build(scope):
     from backend.core.progress import emit
 
     validate_scope(scope)
+    if scope.get("riskId") == "RSK-004":
+        from backend.features.risk.overdue import build as overdue_build
+
+        return overdue_build(scope)
     emit("Scope validated")
     if scope.get("domain") == "loans":
         from backend.features.products.loans import build as loan_build
@@ -249,6 +263,10 @@ def analysis_metadata(scope, run_id):
 
 
 def risk(scope, data):
+    if scope.get("riskId") == "RSK-004":
+        from backend.features.risk.overdue import event
+
+        return event(scope, data)
     is_sample = scope["datasetId"] == "bankshield"
     loan = scope.get("domain") == "loans"
     return dict(

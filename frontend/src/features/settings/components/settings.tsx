@@ -2,20 +2,41 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { getStaffIdentity, setDevelopmentRole, type StaffIdentity } from "@/shared/api/client";
-import { Badge } from "@/shared/ui/primitives";
+import { Badge, Button } from "@/shared/ui/primitives";
 import { useAIProvider } from "@/shared/hooks/use-ai-provider";
 
 export function Settings({ theme, onTheme }: { theme: string; onTheme: (theme: string) => void }) {
-  const provider = useAIProvider();
+  const {
+    provider,
+    error: providerError,
+    loading: providerLoading,
+    reload: reloadProvider,
+  } = useAIProvider();
   const [identity, setIdentity] = useState<StaffIdentity>();
   const [roleError, setRoleError] = useState("");
+  const [identityError, setIdentityError] = useState("");
+  const [identityAttempt, setIdentityAttempt] = useState(0);
   useEffect(() => {
+    let active = true;
+    setIdentityError("");
     void getStaffIdentity()
-      .then(setIdentity)
-      .catch(() => {});
-  }, []);
+      .then((value) => {
+        if (active) {
+          setIdentity(value);
+          if (identityAttempt > 0) window.location.reload();
+        }
+      })
+      .catch(() => {
+        if (active) setIdentityError("Staff permissions could not be loaded. Try again.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [identityAttempt]);
   const roleCopy = !identity
-    ? "Loading staff permissions…"
+    ? identityError
+      ? "Staff permissions unavailable."
+      : "Loading staff permissions…"
     : identity.role === "admin"
       ? "Analyze data, manage banking records, and review approval requests."
       : identity.role === "analyst"
@@ -26,12 +47,14 @@ export function Settings({ theme, onTheme }: { theme: string; onTheme: (theme: s
       ? `Gemini via Vertex AI${provider.model ? ` · ${provider.model}` : ""}`
       : provider?.provider === "local"
         ? "Local analysis and document reading"
-        : "Checking the AI connection…";
+        : providerError
+          ? "AI connection unavailable."
+          : "Checking the AI connection…";
   return (
     <div className="settings-page settings-panel animate-in">
       <header className="settings-intro">
         <h1>Settings</h1>
-        <p>Appearance, access, and what this workspace keeps on this device.</p>
+        <p>Appearance, access, and saved workspace data.</p>
       </header>
       <section className="settings-group" aria-labelledby="settings-appearance">
         <h2 id="settings-appearance">Appearance</h2>
@@ -75,8 +98,18 @@ export function Settings({ theme, onTheme }: { theme: string; onTheme: (theme: s
             <h3>AI</h3>
             <p>{providerCopy}</p>
           </div>
-          <Badge>{provider ? "Connected" : "Checking connection"}</Badge>
+          <Badge>
+            {provider ? "Connected" : providerError ? "Unavailable" : "Checking connection"}
+          </Badge>
         </div>
+        {providerError && (
+          <p className="settings-note" role="alert">
+            {providerError}{" "}
+            <Button disabled={providerLoading} variant="ghost" onClick={reloadProvider}>
+              Retry AI connection
+            </Button>
+          </p>
+        )}
       </section>
       <section className="settings-group" aria-labelledby="settings-access">
         <h2 id="settings-access">Access</h2>
@@ -119,6 +152,14 @@ export function Settings({ theme, onTheme }: { theme: string; onTheme: (theme: s
             {roleError}
           </p>
         )}
+        {identityError && (
+          <p className="settings-note" role="alert">
+            {identityError}{" "}
+            <Button variant="ghost" onClick={() => setIdentityAttempt((value) => value + 1)}>
+              Retry staff permissions
+            </Button>
+          </p>
+        )}
         <p className="settings-note">
           Only admins can change banking records or approve submitted OCR customers. Analysts can
           review forms and submit requests. Viewers can browse records and available results.
@@ -134,10 +175,12 @@ export function Settings({ theme, onTheme }: { theme: string; onTheme: (theme: s
         </p>
       </section>
       <section className="settings-group" aria-labelledby="settings-retention">
-        <h2 id="settings-retention">Kept on this device</h2>
+        <h2 id="settings-retention">Saved workspace data</h2>
         <p className="settings-note">
-          Conversations, reviewed drafts, customer records and reports are stored in the local
-          database. This browser retains a session recovery key, theme and dismissed alerts.
+          Conversations, reviewed drafts, customer records and reports are stored on the application
+          server. This browser keeps workspace recovery keys, theme preferences and unsaved review
+          drafts. Clearing browser storage can remove your recovery keys; it does not delete server
+          records.
         </p>
       </section>
     </div>

@@ -110,7 +110,7 @@ test("complete banking investigation and saved report flow", async ({ page, requ
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download report" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/RPT-.*-bankweave.html/);
+  expect(download.suggestedFilename()).toMatch(/^BankWeave_Meridian_.*_IST_[a-zA-Z0-9]+\.html$/);
   const file = await download.path();
   const html = fs.readFileSync(file!, "utf-8");
   expect(html).toContain("Supporting evidence & data references");
@@ -133,9 +133,11 @@ test("risk filtering, dismissal, policy search, header navigation and theme", as
   await expect(page.getByRole("heading", { name: "Knowledge library" })).toBeVisible();
   await page.getByRole("button", { name: "Policies & procedures", exact: true }).click();
   await page.getByRole("textbox", { name: "Search knowledge library" }).fill("KYC");
-  await expect(page.locator(".policy-card")).toHaveCount(1);
-  await page.getByRole("button", { name: "Read policy" }).click();
-  await expect(page.getByRole("dialog")).toContainText("Verify the completeness");
+  await expect(page.locator(".policy-search-result").first()).toContainText("POL-KYC-02");
+  const sourceText = await page.locator(".policy-search-result").first().locator("p").innerText();
+  await page.getByRole("button", { name: "View source section" }).first().click();
+  await expect(page.getByRole("dialog")).toContainText(sourceText);
+  await expect(page.getByRole("dialog")).toContainText("Source reference: POL-KYC-02:");
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "Light", exact: true }).click();
@@ -152,14 +154,14 @@ test("tablet dashboard separates risk cards and explains dismissed state", async
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Command Center", exact: true })).toBeVisible();
   const cards = page.locator(".dashboard-aside .risk-list .risk-card");
-  await expect(cards).toHaveCount(3);
+  await expect(cards).toHaveCount(4);
   const widths = await cards.evaluateAll((els) =>
     els.map((el) => getComputedStyle(el).borderTopWidth)
   );
   expect(widths.every((w) => w !== "0px")).toBe(true);
   await page.goto("/#risk-radar");
   await expect(page.getByRole("heading", { name: "Risk Radar", exact: true })).toBeVisible();
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     await page.getByRole("button", { name: "Dismiss", exact: true }).first().click();
   }
   await expect(page.locator(".risk-grid .risk-card")).toHaveCount(0);

@@ -25,7 +25,7 @@ class PolicyInput(BaseModel):
 
 
 def ingest(body: PolicyInput):
-    require("analyze")
+    require("policy_manage")
     digest = hashlib.sha256(body.markdown.encode()).hexdigest()
     chunks = []
     heading = "Overview"
@@ -137,72 +137,42 @@ def policies():
         ]
 
 
-def retrieve(query):
-    stop = {
-        "what",
-        "is",
-        "the",
-        "for",
-        "and",
-        "a",
-        "an",
-        "of",
-        "to",
-        "in",
-        "how",
-        "does",
-        "this",
-        "policy",
-        "policies",
-        "procedure",
-        "documentation",
-        "tell",
-        "me",
-        "about",
-        "bank",
-        "banking",
-    }
-    words = set(re.findall(r"[a-z0-9]+", query.lower())) - stop
-    if not words:
-        return []
-    ranked = []
+def search(query, limit=8):
+    from backend.features.knowledge.search import METHOD, rank
+
+    require("read")
+    if not isinstance(query, str) or not query.strip() or len(query) > 2000:
+        raise ValueError("Enter a policy search question up to 2,000 characters.")
+    chunks = []
     with connect() as db:
+        db.execute("BEGIN")
         for doc in latest(db):
             for chunk in db.execute(
-                "SELECT * FROM policy_chunks WHERE document_id=? AND version=?",
+                "SELECT * FROM policy_chunks WHERE document_id=? AND version=? ORDER BY ordinal",
                 (doc["id"], doc["version"]),
             ):
-                title_words = set(
-                    re.findall(
-                        r"[a-z0-9]+", (doc["title"] + " " + doc["category"]).lower()
+                chunks.append(
+                    dict(
+                        reference=chunk["reference"],
+                        documentId=doc["id"],
+                        version=doc["version"],
+                        title=doc["title"],
+                        category=doc["category"],
+                        section=chunk["section"],
+                        text=chunk["text"],
+                        sha256=doc["sha256"],
                     )
                 )
-                content_words = set(re.findall(r"[a-z0-9]+", chunk["text"].lower()))
-                matches = words & (title_words | content_words)
-                # One coincidental generic match should not support a novel topic.
-                if not matches or len(matches) / len(words) < 0.35:
-                    continue
-                score = 2 * len(words & title_words) + len(words & content_words)
-                ranked.append(
-                    (
-                        score,
-                        dict(
-                            reference=chunk["reference"],
-                            documentId=doc["id"],
-                            version=doc["version"],
-                            title=doc["title"],
-                            section=chunk["section"],
-                            text=chunk["text"],
-                            sha256=doc["sha256"],
-                        ),
-                    )
-                )
-    return [
-        item
-        for _, item in sorted(
-            ranked, key=lambda value: (-value[0], value[1]["reference"])
-        )[:6]
-    ]
+    return dict(
+        query=query.strip(),
+        method=METHOD,
+        results=rank(query, chunks, limit),
+        modelCalls=0,
+    )
+
+
+def retrieve(query):
+    return search(query, limit=6)["results"]
 
 
 def answer(query, scope):
@@ -210,9 +180,9 @@ def answer(query, scope):
     scope = resolve("", scope)
     chunks = retrieve(query)
     emit("Policy chunks retrieved")
-    from backend.integrations.ai import GroundedReply, get_provider
+    from backend.integrations.ai import GroundedReply, LocalProvider, get_provider
 
-    provider = get_provider()
+    provider = get_provider() if chunks else LocalProvider()
     reply = GroundedReply.model_validate(
         provider.answer_policy(sanitize(query), chunks)
     )
@@ -252,9 +222,12 @@ def answer(query, scope):
         datasetVersion=hashlib.sha256(
             json.dumps(chunks, sort_keys=True).encode()
         ).hexdigest(),
-        stages=["Policy chunks retrieved", "Source references validated"],
+        stages=["Policy sections ranked locally", "Source references validated"],
+        policySearch=dict(
+            method="banking-terms-bm25-v1", matchedSections=len(chunks), modelCalls=0
+        ),
         limitations=[
-            "Supplied documents are reference content, not verified regulatory guidance. Local retrieval uses lexical matching."
+            "Supplied documents are reference content, not verified regulatory guidance. Local ranked search uses explicit banking terms and limited typo matching; it can miss unfamiliar wording."
         ],
     )
     return response

@@ -112,6 +112,12 @@ class AnalyticalReply(StrictOutput):
     charts: list[ChartSelection] = Field(default_factory=list, max_length=2)
 
 
+class CaseReviewSelection(StrictOutput):
+    observationIds: list[str] = Field(min_length=1, max_length=4)
+    hypothesisIds: list[str] = Field(min_length=1, max_length=2)
+    checkIds: list[str] = Field(min_length=2, max_length=4)
+
+
 class ProposedFields(StrictOutput):
     fullName: str = Field(default="", max_length=150)
     dateOfBirth: str = Field(default="", max_length=10)
@@ -150,6 +156,7 @@ class Provider(Protocol):
         self, product: dict, reason: str = ""
     ) -> CardOutreachTemplate: ...
     def scope_card_campaign(self, query: str) -> CardCampaignScope: ...
+    def plan_case_review(self, context: dict) -> CaseReviewSelection: ...
 
 
 def is_greeting(query):

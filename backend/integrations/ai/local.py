@@ -6,6 +6,7 @@ from .contracts import (
     AnalyticalReply,
     CardCampaignScope,
     CardOutreachTemplate,
+    CaseReviewSelection,
     FormExtraction,
     GeneralReply,
     GroundedReply,
@@ -17,6 +18,13 @@ from .contracts import (
 
 class LocalProvider:
     name, external = "local", False
+
+    def plan_case_review(self, context):
+        return CaseReviewSelection(
+            observationIds=[item["id"] for item in context["observations"][:3]],
+            hypothesisIds=[item["id"] for item in context["hypotheses"][:2]],
+            checkIds=[item["id"] for item in context["checks"][:3]],
+        )
 
     def route(self, query, scope=None):
         from backend.features.research.service import is_research_question

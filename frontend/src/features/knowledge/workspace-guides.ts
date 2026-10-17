@@ -55,6 +55,7 @@ export const workspaceGuides: WorkspaceGuide[] = [
       "Search the saved-case inbox or filter by status and dataset. Open a case, or start one from a scoped Risk Radar signal.",
       "Use Overview for the saved findings and segments. Evidence & links shows the source references, current record pages, and observed relationship map where links exist.",
       "Check source changes before browsing current records. A case retains its original findings even if the database changes later.",
+      "In Review, use Prepare review brief for evidence-linked observations, untested explanations, missing evidence and suggested checks. Use draft in my review fills an editable note; Save case update remains a separate staff action. Reopening the brief reuses its saved result.",
       "Open Review to set the reviewer and review status, then save a note explaining the evidence and conclusion. Resolving a case requires a resolution note. Activity shows the recorded review history.",
       "Save or discard draft changes before creating a report. The report freezes the case revision, staff notes, source receipt, and saved findings; later edits do not rewrite it.",
     ],

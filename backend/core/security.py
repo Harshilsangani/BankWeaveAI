@@ -15,6 +15,8 @@ PERMISSIONS = {
         "form_submit",
         "customer_write",
         "approval_review",
+        "data_import",
+        "policy_manage",
     },
 }
 PERMISSIONS["viewer"].add("campaign_summary")
@@ -124,6 +126,8 @@ def permission_for(method, path):
             return "read"
         if path.endswith("/review"):
             return "campaign_review"
+        if path.endswith("/test-email"):
+            return "campaign_review"
         if (
             path.endswith("/schedule")
             or path.endswith("/consent")
@@ -133,13 +137,16 @@ def permission_for(method, path):
         return "campaign_run"
     if path in ("/session", "/conversations", "/evidence") or method in ("GET", "HEAD"):
         return "read"
+    if path.startswith("/data/imports/"):
+        return "data_import"
+    if path == "/policies":
+        return "policy_manage"
     if path == "/customers" or path == "/approvals":
         return "form_submit"
     if path.startswith("/approvals/"):
         return "approval_review"
     if (
         path.startswith("/data/customers")
-        or path in ("/data/imports/confirm", "/data/imports/apply")
         or path.startswith("/preferences/")
         or path.startswith("/maintenance/")
         or path.startswith("/kyc/")

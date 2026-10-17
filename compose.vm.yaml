@@ -13,3 +13,15 @@ services:
       RISKLENS_DB: /data/risklens.sqlite3
       RISKLENS_CHECKPOINT_DB: /data/agent-checkpoints.sqlite3
       RISKLENS_AUTO_SEED: "false"
+  campaign-worker:
+    volumes:
+      - type: bind
+        source: ${BANKWEAVE_STORAGE_DIR:?Set BANKWEAVE_STORAGE_DIR to the restored absolute storage path}
+        target: /data
+        bind:
+          create_host_path: false
+    environment:
+      RISKLENS_STORAGE_DIR: /data
+      RISKLENS_DB: /data/risklens.sqlite3
+      RISKLENS_CHECKPOINT_DB: /data/agent-checkpoints.sqlite3
+      RISKLENS_AUTO_SEED: "false"

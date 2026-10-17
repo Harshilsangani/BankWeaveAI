@@ -100,3 +100,34 @@
 .policy-sections li {
   margin: 15px 0;
 }
+.policy-search-results {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+.policy-search-result {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.policy-search-result h3 {
+  font-size: 16px;
+}
+.policy-search-result p,
+.policy-source-text {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 13px;
+}
+.policy-search-result small,
+.policy-source-reference {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.policy-source-reference {
+  margin: 18px 0;
+}

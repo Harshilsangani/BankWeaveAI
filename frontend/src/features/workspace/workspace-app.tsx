@@ -28,6 +28,7 @@ import type { Page } from "@/features/workspace/types";
 import type { RiskEvent } from "@/features/risk/types";
 export default function Home() {
   const workspace = useWorkspace();
+  const [dataEntry, setDataEntry] = useState<"customers" | "quality">("customers");
   const campaignLibrary = useCampaignLibrary();
   const [campaignReportId, setCampaignReportId] = useState<string>();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -117,6 +118,9 @@ export default function Home() {
             workspace.refreshDashboard();
             navigate("Command Center");
           }}
+          initialMode={dataEntry}
+          onPolicies={() => navigate("Knowledge")}
+          onCampaigns={() => navigate("Card Campaigns")}
           onInvestigate={workspace.investigate}
           onAnalyst={() => navigate("AI Analyst")}
         />
@@ -246,12 +250,21 @@ export default function Home() {
                       ),
                     }}
                     onAnalyst={() => navigate("AI Analyst")}
-                    onData={() => navigate("Data Workspace")}
+                    onData={() => {
+                      setDataEntry("customers");
+                      navigate("Data Workspace");
+                    }}
+                    canImport={workspace.identity?.permissions.includes("data_import") ?? false}
+                    onImportData={() => {
+                      if (!workspace.identity?.permissions.includes("data_import")) return;
+                      setDataEntry("quality");
+                      navigate("Data Workspace");
+                    }}
                     onInvestigate={workspace.investigate}
                     onRadar={() => navigate("Risk Radar")}
                     canAnalyze={workspace.canAnalyze}
                   />
-                  <section className="panel dashboard-campaign-reports">
+                  <section className="dashboard-campaign-reports">
                     <div className="campaign-section-heading">
                       <div>
                         <h2>Campaign reports for you</h2>
@@ -303,7 +316,10 @@ export default function Home() {
                   onDataset={workspace.selectDataset}
                 />
               )}
-              {workspace.page === "Risk Radar" && data && (
+              {workspace.page === "Risk Radar" && data && workspace.datasets.length === 0 && (
+                <Skeleton />
+              )}
+              {workspace.page === "Risk Radar" && data && workspace.datasets.length > 0 && (
                 <Radar
                   onRefresh={workspace.refreshDashboard}
                   datasets={workspace.datasets}

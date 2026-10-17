@@ -7,8 +7,8 @@ const routes: Record<string, Record<string, RegExp>> = {
     POST: /^(?:|\/(?:products|consent)|\/[a-zA-Z0-9-]+\/(?:runs|schedule)|\/[a-zA-Z0-9-]+\/runs\/[a-zA-Z0-9-]+\/cancel)$/,
   },
   "campaign-reports": {
-    GET: /^(?:|\/[a-zA-Z0-9-]+(?:\/download)?)$/,
-    POST: /^\/[a-zA-Z0-9-]+\/review$/,
+    GET: /^(?:|\/[a-zA-Z0-9-]+(?:\/(?:download|email-deliveries|email-preview))?)$/,
+    POST: /^\/[a-zA-Z0-9-]+\/(?:review|test-email)$/,
   },
   "staff-notifications": {
     GET: /^$/,
@@ -22,7 +22,7 @@ export async function campaignGateway(request: Request, prefix: string) {
   if (!routes[prefix]?.[request.method]?.test(suffix))
     return badRequest("Unsupported campaign operation.");
   const query = new URLSearchParams();
-  for (const name of ["datasetId", "period", "status", "offset", "limit"])
+  for (const name of ["datasetId", "period", "status", "offset", "limit", "customerId"])
     if (url.searchParams.has(name)) query.set(name, url.searchParams.get(name)!);
   try {
     let body: string | undefined;
@@ -32,13 +32,17 @@ export async function campaignGateway(request: Request, prefix: string) {
       if (body && !body.trim().startsWith("{"))
         return badRequest("Supply a campaign configuration object.");
     }
-    const response = await backendRequest(`${prefix}${suffix}${query.size ? `?${query}` : ""}`, {
-      method: request.method,
-      body: body || (request.method === "PATCH" ? "{}" : undefined),
-      headers:
-        body || request.method === "PATCH" ? { "Content-Type": "application/json" } : undefined,
-      signal: request.signal,
-    });
+    const response = await backendRequest(
+      `${prefix}${suffix}${query.size ? `?${query}` : ""}`,
+      {
+        method: request.method,
+        body: body || (request.method === "PATCH" ? "{}" : undefined),
+        headers:
+          body || request.method === "PATCH" ? { "Content-Type": "application/json" } : undefined,
+        signal: request.signal,
+      },
+      suffix.endsWith("/test-email") ? 85000 : 20000
+    );
     if (!response.ok) await readBackendJson(response);
     if (suffix.endsWith("/download")) {
       const headers = new Headers();

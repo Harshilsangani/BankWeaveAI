@@ -12,7 +12,7 @@ files = [
     if not any(part in (".venv", "__pycache__", "storage") for part in path.parts)
 ]
 for path in files:
-    tree = ast.parse(path.read_text(), filename=str(path))
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     for node in ast.walk(tree):
         modules = (
             [node.module]

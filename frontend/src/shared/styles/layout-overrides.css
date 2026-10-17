@@ -398,6 +398,13 @@
   .dialog-header {
     padding: 20px 20px 16px;
   }
+  .dialog-with-action .dialog-title {
+    padding-right: 30px;
+  }
+  .dialog-header-action {
+    position: static;
+    margin-top: 12px;
+  }
   .dialog-body {
     padding: 20px;
   }

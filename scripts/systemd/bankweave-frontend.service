@@ -3,8 +3,8 @@ Description=BankWeave Next.js production frontend
 Wants=bankweave-backend.service
 After=bankweave-backend.service
 PartOf=bankweave-private.target
-StartLimitIntervalSec=60
-StartLimitBurst=3
+StartLimitIntervalSec=120
+StartLimitBurst=6
 
 [Service]
 Type=simple
@@ -12,9 +12,10 @@ WorkingDirectory=%h/BankWeaveAI
 Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=%h/.config/bankweave/frontend.env
 ExecStartPre=%h/.local/bin/node %h/BankWeaveAI/scripts/runtime/wait-backend.mjs
-ExecStart=%h/.local/bin/npm run frontend:start
-Restart=on-failure
-RestartSec=5
+ExecStart=%h/.local/bin/node %h/BankWeaveAI/scripts/runtime/frontend.mjs
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
 TimeoutStopSec=30
 KillMode=control-group
 UMask=0077

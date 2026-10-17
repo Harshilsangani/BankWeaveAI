@@ -463,3 +463,18 @@
   color: var(--text);
   background: var(--surface);
 }
+
+.admin-tasks {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.admin-tasks h2 {
+  font-size: 18px;
+}
+.admin-tasks p {
+  margin: 8px 0;
+}
+.admin-tasks .page-actions {
+  flex-wrap: wrap;
+  margin: 16px 0;
+}

@@ -1,16 +1,16 @@
 [Unit]
 Description=BankWeave FastAPI backend
 PartOf=bankweave-private.target
-StartLimitIntervalSec=60
-StartLimitBurst=3
+StartLimitIntervalSec=120
+StartLimitBurst=6
 
 [Service]
 Type=simple
 WorkingDirectory=%h/BankWeaveAI
 EnvironmentFile=%h/.config/bankweave/backend.env
 ExecStart=/usr/bin/bash %h/BankWeaveAI/scripts/runtime/start-vm-backend.sh
-Restart=on-failure
-RestartSec=5
+Restart=always
+RestartSec=10
 TimeoutStopSec=30
 KillMode=control-group
 UMask=0077

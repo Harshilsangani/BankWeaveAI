@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 test("a versioned policy document produces inline cited answers and restores after reload", async ({
   page,
 }) => {
+  await page.addInitScript(() => localStorage.setItem("risklens-role", "admin"));
   await page.goto("/#knowledge");
   await page.getByRole("button", { name: "Add policy document" }).click();
   const dialog = page.getByRole("dialog");
@@ -17,8 +18,8 @@ test("a versioned policy document produces inline cited answers and restores aft
   await dialog.getByRole("button", { name: "Save policy version" }).click();
   await expect(dialog).toHaveCount(0);
   await page.getByLabel("Search knowledge library").fill(title);
-  await page.getByRole("button", { name: "Read policy" }).click();
-  await page.getByRole("button", { name: "Ask the analyst about this policy" }).click();
+  await page.getByRole("button", { name: "View source section" }).click();
+  await page.getByRole("button", { name: "Ask the analyst about this question" }).click();
   await expect(page.getByRole("heading", { name: "Policy evidence" })).toBeVisible({
     timeout: 20000,
   });

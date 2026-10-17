@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 test("standalone quality dashboard exposes sample gaps and blocks malformed import", async ({
   page,
 }) => {
+  await page.addInitScript(() => localStorage.setItem("risklens-role", "admin"));
   await page.goto("/#data-workspace");
   await page.getByRole("button", { name: "Data quality & imports" }).click();
   const current = await (await page.request.get("/api/data-quality?dataset=meridian")).json();

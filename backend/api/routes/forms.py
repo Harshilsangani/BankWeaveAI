@@ -65,6 +65,13 @@ def correct_form(draft_id: str, body: CustomerFields):
     return save_correction(draft_id, body.model_dump())
 
 
+@router.get("/forms/{draft_id}")
+def saved_form_review(draft_id: str):
+    from backend.features.forms.quality import saved_review
+
+    return saved_review(draft_id)
+
+
 @router.get("/customers")
 def customer_profiles():
     # Local demo profile directory only. Source identity tables are not exposed.

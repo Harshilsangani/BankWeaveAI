@@ -1,6 +1,12 @@
 import type { Investigation } from "@/features/investigations/types";
 import type { QueryContext } from "@/shared/types/scope";
 import { request, post } from "@/shared/api/client";
+import type { CaseBriefState } from "@/features/investigations/types/brief";
+
+export const getCaseReviewBrief = (id: string) =>
+  request<CaseBriefState>(`cases/brief?id=${encodeURIComponent(id)}`);
+export const prepareCaseReviewBrief = (id: string, retry = false) =>
+  post<CaseBriefState>("cases/brief", { id, retry });
 
 export const getInvestigationCase = (id: string) =>
   request<import("@/features/investigations/types/cases").InvestigationCase>(

@@ -69,6 +69,35 @@ export const getCampaignReport = (id: string) =>
     `campaign-reports/${encodeURIComponent(id)}`
   );
 
+export const getCampaignEmailDeliveries = (id: string) =>
+  request<import("@/features/campaigns/types").CampaignEmailState>(
+    `campaign-reports/${encodeURIComponent(id)}/email-deliveries`
+  );
+
+export const getCampaignEmailPreview = (id: string, customerId: string) =>
+  request<import("@/features/campaigns/types").CampaignEmailPreview>(
+    `campaign-reports/${encodeURIComponent(id)}/email-preview?customerId=${encodeURIComponent(customerId)}`
+  );
+
+export const sendCampaignTestEmail = (
+  id: string,
+  input: {
+    customerId: string;
+    revision: number;
+    contentHash: string;
+    retry?: boolean;
+    presentationHash?: string;
+  }
+) =>
+  request<import("@/features/campaigns/types").CampaignEmailReceipt>(
+    `campaign-reports/${encodeURIComponent(id)}/test-email`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }
+  );
+
 export const reviewCampaignReport = (
   id: string,
   input: { revision: number; contentHash: string; decision: string; note: string }

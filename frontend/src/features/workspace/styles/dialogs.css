@@ -104,6 +104,10 @@
 .notification-item h3 {
   font-size: 13px;
   margin-bottom: 7px;
+  overflow-wrap: anywhere;
+}
+.notification-item > div {
+  min-width: 0;
 }
 .notification-item p {
   color: var(--muted);
@@ -111,6 +115,19 @@
 }
 .notification-item > .button {
   align-self: center;
+}
+@media (max-width: 760px) {
+  .notification-item {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .notification-actions {
+    justify-content: space-between;
+  }
+  .notification-actions > .button {
+    min-width: 0;
+    white-space: normal;
+  }
 }
 .toast {
   position: fixed;

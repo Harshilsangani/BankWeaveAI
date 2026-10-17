@@ -12,6 +12,67 @@
   padding: 24px;
   margin-bottom: 24px;
 }
+.dashboard-campaign-reports {
+  margin: 36px 0 8px;
+  padding: 22px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  border-top: 3px solid var(--text);
+}
+.dashboard-campaign-reports .campaign-section-heading h2 {
+  color: var(--subtle);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dashboard-campaign-reports .campaign-report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.dashboard-campaign-reports .campaign-report-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 24px;
+  align-items: baseline;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.dashboard-campaign-reports .campaign-report-card h3,
+.dashboard-campaign-reports .campaign-card-meta,
+.dashboard-campaign-reports .campaign-report-card > p,
+.dashboard-campaign-reports .campaign-card-counts {
+  grid-column: 1;
+}
+.dashboard-campaign-reports .campaign-report-card .button,
+.dashboard-campaign-reports .campaign-section-heading .button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  align-self: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dashboard-campaign-reports .badge {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--subtle);
+}
 .campaign-section-heading {
   display: flex;
   justify-content: space-between;
@@ -450,6 +511,9 @@
   }
 }
 @media (max-width: 760px) {
+  .campaign-setup-icon {
+    display: none;
+  }
   .campaign-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
@@ -475,9 +539,19 @@
   .campaign-candidates,
   .campaign-progress,
   .campaign-run-history,
-  .campaign-readiness,
-  .dashboard-campaign-reports {
+  .campaign-readiness {
     padding: 18px;
+  }
+  .dashboard-campaign-reports {
+    padding: 18px 0 0;
+  }
+  .dashboard-campaign-reports .campaign-report-card {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-campaign-reports .campaign-report-card .button {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
   }
   .campaign-candidates table {
     min-width: 660px;
@@ -485,4 +559,32 @@
   .campaign-history-row .page-actions {
     justify-content: flex-start;
   }
+}
+.campaign-email-delivery {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+}
+.campaign-email-delivery p,
+.campaign-email-delivery small {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 12px;
+}
+.campaign-email-history {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.campaign-email-preview {
+  width: 100%;
+  height: 740px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
 }

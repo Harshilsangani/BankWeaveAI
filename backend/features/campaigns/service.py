@@ -1,4 +1,4 @@
-"""Actor-assigned card campaigns and employee reports. No customer delivery API."""
+"""Actor-assigned card campaigns, employee reports and staff review."""
 
 import json
 import re

@@ -119,7 +119,7 @@ There are exactly **three canonical/selectable roles**:
 | Analyst | Analyse/investigate, extract/correct forms, submit admin requests and record permitted analytical discussion notes. |
 | Admin   | Analyst capabilities plus approval decisions and active banking record maintenance.                                 |
 
-Only Admin changes customer records, confirms imports, maintains account/policy/payment observations, changes customer declarations or updates KYC reviews. Analyst cannot bypass approval by calling a write endpoint or agent node directly. The graph's customer node reflects an already-approved result; only the admin endpoint commits a customer write.
+Only Admin changes customer records, uploads/previews/applies banking imports, publishes shared policy documents, maintains account/policy/payment observations, changes customer declarations or updates KYC reviews. Analyst cannot bypass approval by calling a write endpoint or agent node directly. The graph's customer node reflects an already-approved result; only the admin endpoint commits a customer write.
 
 The old `customer_operator` input is an **Analyst compatibility alias**, preserving original actor `local-customer_operator` and its workspace. Do not rename stored owners or erase sessions to simplify naming. Preserve historical audit attribution and artifact provenance.
 

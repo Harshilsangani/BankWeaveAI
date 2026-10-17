@@ -24,5 +24,23 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+  campaign-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      RISKLENS_ENV: development
+      RISKLENS_PROVIDER: local
+      RISKLENS_ENABLE_VERTEX: "false"
+      RISKLENS_STORAGE_DIR: /data
+    volumes:
+      - risklens-data:/data
+    command: ["python", "-m", "backend.features.campaigns.worker"]
+    healthcheck:
+      disable: true
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 volumes:
   risklens-data:

@@ -242,27 +242,35 @@ def seed_meridian():
             "INSERT OR REPLACE INTO datasets VALUES(?,?)",
             ("meridian", json.dumps(meta)),
         )
+    from backend.core.security import Identity, current_identity
     from backend.features.knowledge.service import PolicyInput, ingest
 
-    for policy in fixture.get("policies", []):
-        with connect() as db:
-            exists = db.execute(
-                "SELECT 1 FROM policy_documents WHERE id=? AND version=?",
-                (policy["id"], policy["version"]),
-            ).fetchone()
-        if not exists:
-            ingest(
-                PolicyInput(
-                    id=policy["id"],
-                    version=policy["version"],
-                    title=policy["title"],
-                    category=policy["category"],
-                    markdown="\n\n".join(
-                        f"## Section {i + 1}\n{text}"
-                        for i, text in enumerate(policy["sections"])
-                    ),
+    # Explicit CLI/demo fixture setup publishes only the bundled reference policies.
+    # Runtime staff publication still requires policy_manage at the tool boundary.
+
+    seed_identity = current_identity.set(Identity("system-demo-seed", "admin"))
+    try:
+        for policy in fixture.get("policies", []):
+            with connect() as db:
+                exists = db.execute(
+                    "SELECT 1 FROM policy_documents WHERE id=? AND version=?",
+                    (policy["id"], policy["version"]),
+                ).fetchone()
+            if not exists:
+                ingest(
+                    PolicyInput(
+                        id=policy["id"],
+                        version=policy["version"],
+                        title=policy["title"],
+                        category=policy["category"],
+                        markdown="\n\n".join(
+                            f"## Section {i + 1}\n{text}"
+                            for i, text in enumerate(policy["sections"])
+                        ),
+                    )
                 )
-            )
+    finally:
+        current_identity.reset(seed_identity)
     from backend.features.products.repayments import seed
 
     seed()

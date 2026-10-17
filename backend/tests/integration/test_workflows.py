@@ -763,7 +763,7 @@ class FraudFeatureTests(unittest.TestCase):
 
         from backend.features.customers.quality import COLUMNS
 
-        headers = {"x-risklens-session": str(uuid.uuid4())}
+        headers = {"x-risklens-session": str(uuid.uuid4()), "x-risklens-role": "admin"}
         with database.connect() as db:
             account = dict(
                 db.execute(
@@ -890,13 +890,13 @@ class FraudFeatureTests(unittest.TestCase):
     def test_19_recorded_detector_runs_thresholds_and_idempotence(self):
         body = dict(datasetId="meridian", period="2026-09")
         first = self.client.post("/detectors/run", json=body).json()
-        self.assertEqual(len(first["events"]), 3)
+        self.assertEqual(len(first["events"]), 4)
         repeated = self.client.post("/detectors/run", json=body).json()
         self.assertEqual(first["id"], repeated["id"])
         self.assertTrue(repeated["replayed"])
         radar = self.client.get("/risk-radar").json()
         self.assertEqual(
-            [event["detection"]["runId"] for event in radar], [first["id"]] * 3
+            [event["detection"]["runId"] for event in radar], [first["id"]] * 4
         )
         self.assertEqual(first["sourceCounts"]["currentTransactions"], 20000)
         self.assertEqual(first["sourceCounts"]["loans"], 8000)
@@ -1024,16 +1024,17 @@ class FraudFeatureTests(unittest.TestCase):
         from backend.features.risk.detection import evaluate, latest_view, run
 
         first = run("meridian", "2026-04")
-        self.assertEqual(first["events"], [])
+        self.assertEqual([event["id"] for event in first["events"]], ["RSK-004"])
         self.assertEqual(
-            [check["status"] for check in first["checks"]], ["insufficient"] * 3
+            [check["status"] for check in first["checks"]],
+            ["insufficient"] * 3 + ["matched"],
         )
         self.assertTrue(
             all(check["baselineCount"] is None for check in first["checks"])
         )
         full = run("meridian", "all")
         self.assertEqual(full["period"], "2026-09")
-        self.assertEqual(len(full["events"]), 3)
+        self.assertEqual(len(full["events"]), 4)
         self.assertEqual(full["modelCalls"], 0)
         sample = run("bankshield", "2024-06")
         self.assertEqual([check["id"] for check in sample["checks"]], ["BS-001"])
@@ -1054,7 +1055,7 @@ class FraudFeatureTests(unittest.TestCase):
     def test_18_policy_ingestion_versions_citations_and_coverage_gap(self):
         import uuid
 
-        headers = {"x-risklens-session": str(uuid.uuid4())}
+        headers = {"x-risklens-session": str(uuid.uuid4()), "x-risklens-role": "admin"}
         document = dict(
             id="POL-TEST-AML",
             version="v1",
@@ -1330,7 +1331,7 @@ class FraudFeatureTests(unittest.TestCase):
 
             stream = start(Request(), fingerprint("test", {}), work)
             iterator = stream.body_iterator
-            first = await anext(iterator)
+            await anext(iterator)
             await asyncio.to_thread(reached.wait, 5)
             from backend.workflows.operations import owner
 

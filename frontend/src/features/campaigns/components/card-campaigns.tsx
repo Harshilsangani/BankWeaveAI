@@ -13,6 +13,7 @@ import {
 import { Badge, Button, EmptyState } from "@/shared/ui/primitives";
 import { Dialog } from "@/shared/ui/dialog";
 import { ChartCard } from "@/shared/analytics/blocks";
+import { CampaignEmailDelivery } from "@/features/campaigns/components/campaign-email";
 import { randomId } from "@/shared/lib/random-id";
 import type { StaffIdentity } from "@/shared/api/client";
 import {
@@ -361,7 +362,7 @@ export function CardCampaigns({
                 Manage demo catalog
               </Button>
             ) : (
-              <CreditCard size={25} />
+              <CreditCard className="campaign-setup-icon" size={25} aria-hidden="true" />
             )}
           </div>
           <div className="campaign-form-row">
@@ -797,6 +798,7 @@ export function CardCampaigns({
                 ))}
               </div>
             )}
+            {report.canReview && <CampaignEmailDelivery report={report} />}
           </section>
         ) : (
           <p role="status">Loading the assigned employee report…</p>
@@ -918,6 +920,13 @@ export function CardCampaigns({
                     ? "AI template · Staff review required"
                     : "Local template · Staff review required"}
                 </Badge>
+                {canAdmin && report && (
+                  <CampaignEmailDelivery
+                    key={`${report.id}-${selectedCandidate.customerId}`}
+                    report={report}
+                    customerId={selectedCandidate.customerId}
+                  />
+                )}
               </div>
             ) : (
               <p>No contactable draft is available for this customer.</p>

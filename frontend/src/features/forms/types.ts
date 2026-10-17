@@ -1,5 +1,17 @@
 import type { CustomerFields } from "@/features/customers/types";
 
+export type SavedFormReview = Pick<
+  FormDraft,
+  | "id"
+  | "fields"
+  | "status"
+  | "customerId"
+  | "approval"
+  | "revision"
+  | "provenance"
+  | "possibleDuplicates"
+>;
+
 export interface FormDraft {
   approval?: import("@/features/forms/types/approvals").ApprovalRequest | null;
   revision?: number;

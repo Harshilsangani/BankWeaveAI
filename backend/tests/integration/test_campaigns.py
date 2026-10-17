@@ -6,6 +6,7 @@ import sqlite3
 import tempfile
 import unittest
 import uuid
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -41,10 +42,12 @@ class CampaignTests(unittest.TestCase):
         cls.original_path = database.DB_PATH
         target = Path(cls.directory.name) / "application.sqlite3"
         with (
-            sqlite3.connect(
-                cls.original_path.resolve().as_uri() + "?mode=ro", uri=True
+            closing(
+                sqlite3.connect(
+                    cls.original_path.resolve().as_uri() + "?mode=ro", uri=True
+                )
             ) as source,
-            sqlite3.connect(target) as dest,
+            closing(sqlite3.connect(target)) as dest,
         ):
             source.backup(dest)
         database.DB_PATH = target

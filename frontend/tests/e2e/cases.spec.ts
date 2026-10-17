@@ -16,7 +16,8 @@ test("case ownership, notes and risk dismissal survive reload", async ({ page })
   await page.getByRole("button", { name: "Dismiss", exact: true }).first().click();
   await expect(page.getByRole("status")).toContainText("Risk dismissal saved");
   await page.reload();
-  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(2);
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(3);
   await page.getByRole("button", { name: "Restore dismissed" }).click();
   await expect(page.getByRole("status")).toContainText("Risk signals reopened");
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(4);
 });

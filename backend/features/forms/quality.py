@@ -146,6 +146,30 @@ def save_correction(draft_id, fields):
         return quality(db, draft_id, fields)
 
 
+def saved_review(draft_id):
+    """Recover a draft's canonical state after an interrupted browser submission."""
+    from backend.core.security import require
+    from backend.features.forms.approvals import for_draft
+    from backend.features.workspaces.sessions import form_access, session_key
+
+    require("form_read")
+    if not session_key.get():
+        raise ValueError("Open the staff workspace before checking a saved form.")
+    form_access(draft_id)
+    with connect() as db:
+        row = db.execute("SELECT * FROM form_drafts WHERE id=?", (draft_id,)).fetchone()
+        if not row:
+            raise ValueError("Form draft not found.")
+        return dict(
+            id=row["id"],
+            fields=json.loads(row["fields"]),
+            status=row["status"],
+            customerId=row["customer_id"],
+            approval=for_draft(db, draft_id),
+            **quality(db, draft_id),
+        )
+
+
 def record_confirmed(db, draft, fields, review, reason):
     from backend.core.identifiers import now
     from backend.core.security import actor

@@ -144,6 +144,8 @@ def main():
                         "test",
                         "--config",
                         "frontend/playwright.config.ts",
+                        "--output",
+                        str(artifacts / "browser-traces"),
                         "vertex-live.spec.ts",
                     ],
                     cwd=ROOT,

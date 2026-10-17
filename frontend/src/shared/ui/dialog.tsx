@@ -1,7 +1,7 @@
 "use client";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 export function Dialog({
   open,
   onOpenChange,
@@ -19,12 +19,30 @@ export function Dialog({
   wide?: boolean;
   headerAction?: ReactNode;
 }) {
+  const returnFocus = useRef<HTMLElement | null>(null);
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="dialog-overlay" />
         <DialogPrimitive.Content
           className={`dialog-content ${wide ? "dialog-wide" : ""} ${headerAction ? "dialog-with-action" : ""}`}
+          onOpenAutoFocus={(event) => {
+            returnFocus.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            const initialFocus = (event.target as HTMLElement).querySelector<HTMLElement>(
+              "[data-dialog-autofocus]"
+            );
+            if (initialFocus) {
+              event.preventDefault();
+              initialFocus.focus({ preventScroll: true });
+            }
+          }}
+          onCloseAutoFocus={(event) => {
+            if (returnFocus.current?.isConnected) {
+              event.preventDefault();
+              returnFocus.current.focus({ preventScroll: true });
+            }
+          }}
         >
           <div className="dialog-header">
             <DialogPrimitive.Title className="dialog-title">{title}</DialogPrimitive.Title>

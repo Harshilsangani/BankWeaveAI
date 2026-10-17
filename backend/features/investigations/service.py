@@ -97,5 +97,26 @@ def investigate(scope):
                 "Obtain repayment and outstanding-balance evidence before a credit decision.",
                 "No loan restriction or collection action is executed by this workspace.",
             ]
+        if scope.get("riskId") == "RSK-004":
+            from backend.features.knowledge.service import search
+
+            result["repaymentEvidence"] = data["repaymentEvidence"]
+            result["analysis"]["baseline"] = "Not required for the overdue threshold"
+            result["analysis"]["limitations"] = [
+                *result["analysis"]["limitations"],
+                *data["limitations"],
+                "Related policy excerpts are frozen reference guidance. Banking source checks do not track later policy-library revisions.",
+            ]
+            result["policyGuidance"] = dict(
+                query="credit risk monitoring",
+                sections=search("credit risk monitoring", limit=3)["results"],
+                limitation="These supplied reference sections do not define the overdue thresholds or authorize collections. The detector uses published demonstration criteria.",
+            )
+            result["actions"] = [
+                "Reconcile the saved due dates and linked payment IDs at the stated cutoff, including partial payments.",
+                "Check incomplete schedules, corrections and any authorized payment evidence before escalation.",
+                "Review the supplied policy references and record their limitations; obtain an applicable overdue policy if needed.",
+                "Record the checks, conclusion and follow-up owner. No credit or collection action is performed automatically.",
+            ]
     persist("investigation", result, scope)
     return result

@@ -46,8 +46,10 @@ function CustomerOverview({
   id,
   onClose,
   onInvestigate,
+  canAnalyze,
 }: {
   id: string;
+  canAnalyze: boolean;
   onClose: () => void;
   onInvestigate: (id: string, scope: QueryContext) => void;
 }) {
@@ -91,6 +93,7 @@ function CustomerOverview({
         <div className="customer-overview">
           <div className="page-actions">
             <Button
+              disabled={!canAnalyze}
               onClick={() =>
                 onInvestigate("RSK-001", { datasetId: "meridian", domain: "fraud", customerId: id })
               }
@@ -98,7 +101,7 @@ function CustomerOverview({
               Investigate customer transactions
             </Button>
             <Button
-              disabled={!customer.links?.loans}
+              disabled={!canAnalyze || !customer.links?.loans}
               onClick={() =>
                 onInvestigate("RSK-002", { datasetId: "meridian", domain: "loans", customerId: id })
               }
@@ -269,7 +272,7 @@ function CustomerEditor({
               {(key === "fullName" || key === "dateOfBirth") && " *"}
               <input
                 aria-label={labels[key]}
-                autoFocus={key === "fullName"}
+                data-dialog-autofocus={key === "fullName" ? "" : undefined}
                 required={key === "fullName" || key === "dateOfBirth"}
                 type={key === "dateOfBirth" ? "date" : key === "email" ? "email" : "text"}
                 maxLength={lengths[key]}
@@ -303,17 +306,26 @@ export function DataWorkspace({
   onAnalyst,
   onBack,
   onInvestigate,
+  onPolicies,
+  onCampaigns,
+  initialMode = "customers",
 }: {
+  onPolicies: () => void;
+  onCampaigns: () => void;
+  initialMode?: "customers" | "quality";
   onAnalyst: () => void;
   onBack: () => void;
   onInvestigate: (id: string, scope: QueryContext) => void;
 }) {
-  const [mode, setMode] = useState<"customers" | "records" | "quality" | "approvals">("customers");
+  const [mode, setMode] = useState<"customers" | "records" | "quality" | "approvals">(initialMode);
   const [filters, setFilters] = useState({ branch: "", source: "", status: "", product: "" });
-  const [canWrite, setCanWrite] = useState(false);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const canWrite = permissions.includes("customer_write");
+  const canAnalyze = permissions.includes("analyze");
+  const canImport = permissions.includes("data_import");
   useEffect(() => {
     void getStaffIdentity()
-      .then((i) => setCanWrite(i.permissions.includes("customer_write")))
+      .then((identity) => setPermissions(identity.permissions))
       .catch((e) => setError(e.message));
   }, []);
   const [dataset, setDataset] = useState<DatasetId>("meridian"),
@@ -393,6 +405,24 @@ export function DataWorkspace({
           <span className="status-dot" /> Local database
         </Badge>
       </div>
+      {permissions.includes("approval_review") && (
+        <section className="panel admin-tasks" aria-label="Admin tasks">
+          <h2>Admin tasks</h2>
+          <p>Review employee requests and manage shared banking data.</p>
+          <div className="page-actions">
+            <Button onClick={() => changeMode("approvals")}>Review customer requests</Button>
+            <Button disabled={!canImport} onClick={() => changeMode("quality")}>
+              Upload new data
+            </Button>
+            <Button onClick={onPolicies}>Manage policy documents</Button>
+            <Button onClick={onCampaigns}>Review campaigns & settings</Button>
+          </div>
+          <p className="muted">
+            Customer directory also provides profile editing, KYC review and recorded maintenance.
+            Campaigns includes report review, catalog versions, schedules and reviewed test email.
+          </p>
+        </section>
+      )}
       <div className="data-summary-grid">
         <div className="data-summary">
           <Users size={19} />
@@ -659,7 +689,9 @@ export function DataWorkspace({
                       : "Choose another table or dataset. Missing source records are not generated."}
                 </p>
                 {!query && mode === "customers" && (
-                  <Button onClick={onAnalyst}>Read a form in AI Analyst</Button>
+                  <Button disabled={!canAnalyze} onClick={onAnalyst}>
+                    Read a form in AI Analyst
+                  </Button>
                 )}
               </div>
             ) : mode === "customers" ? (
@@ -789,6 +821,7 @@ export function DataWorkspace({
       {selectedCustomer && (
         <CustomerOverview
           id={selectedCustomer}
+          canAnalyze={canAnalyze}
           onInvestigate={onInvestigate}
           onClose={() => setSelectedCustomer(undefined)}
         />

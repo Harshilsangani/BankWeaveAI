@@ -2,9 +2,25 @@
 
 from fastapi import APIRouter
 
+import backend.features.campaigns.delivery as delivery
 import backend.features.campaigns.service as service
 
 router = APIRouter()
+
+router.add_api_route(
+    "/campaign-reports/{report_id}/email-preview", delivery.get_preview, methods=["GET"]
+)
+
+router.add_api_route(
+    "/campaign-reports/{report_id}/test-email",
+    delivery.send_test_email,
+    methods=["POST"],
+)
+router.add_api_route(
+    "/campaign-reports/{report_id}/email-deliveries",
+    delivery.get_deliveries,
+    methods=["GET"],
+)
 
 router.add_api_route(
     "/card-campaigns/readiness", service.get_readiness, methods=["GET"]

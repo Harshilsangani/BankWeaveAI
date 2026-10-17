@@ -236,6 +236,91 @@
   line-height: 1.8;
   color: var(--muted);
 }
+.case-review-assistant {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  min-width: 0;
+}
+.brief-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.brief-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.brief-heading p,
+.brief-content p,
+.brief-source small {
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.brief-heading p,
+.brief-snapshot,
+.brief-source small {
+  color: var(--muted);
+  margin-top: 8px;
+}
+.brief-content {
+  margin-top: 18px;
+}
+.brief-section {
+  margin: 20px 0;
+}
+.brief-section h4 {
+  font-size: 13px;
+  font-weight: 550;
+}
+.brief-section ul {
+  padding-left: 18px;
+}
+.brief-section li {
+  margin-top: 12px;
+}
+.brief-references {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.brief-references button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 7px;
+  cursor: pointer;
+  font-size: 10px;
+}
+.brief-source {
+  border-left: 2px solid var(--accent);
+  padding: 12px;
+  margin-bottom: 16px;
+  background: var(--hover);
+  font-size: 12px;
+}
+.brief-draft {
+  margin: 20px 0;
+  font-size: 12px;
+}
+.brief-draft summary {
+  cursor: pointer;
+}
+.brief-draft p {
+  white-space: pre-wrap;
+  padding: 14px 0;
+}
 .case-evidence-preview h3 {
   font-size: 17px;
   margin-bottom: 12px;
@@ -394,4 +479,25 @@
   .investigation-page .page-actions {
     flex-wrap: wrap;
   }
+}
+.repayment-evidence {
+  padding: 22px;
+  min-width: 0;
+}
+.repayment-source-loan {
+  margin-top: 20px;
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.repayment-source-loan > div {
+  margin: 12px 0;
+}
+.repayment-source-loan ul {
+  padding-left: 20px;
+}
+.repayment-reference {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  color: var(--muted);
 }

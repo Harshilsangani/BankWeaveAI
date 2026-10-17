@@ -30,7 +30,7 @@ export function DataQuality({ onImported }: { onImported: () => void }) {
     void getStaffIdentity()
       .then((identity) => {
         setCanWrite(identity.permissions.includes("customer_write"));
-        setCanPreview(identity.permissions.includes("analyze"));
+        setCanPreview(identity.permissions.includes("data_import"));
       })
       .catch((error) => setError(error.message));
   }, []);

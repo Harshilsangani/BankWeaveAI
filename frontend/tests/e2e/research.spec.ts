@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
 
 test("research scopes database series, renders modern charts, restores and exports the saved PDF", async ({
   page,
@@ -119,8 +118,9 @@ test("cashflow research honors the relative window and downloads an intact struc
     response.headers()["x-content-sha256"]
   );
   const output = execFileSync(
-    resolve("backend/.venv/bin/python"),
+    process.execPath,
     [
+      "scripts/runtime/python.mjs",
       "-c",
       "import fitz,sys,json; p=fitz.open(sys.argv[1]); print(json.dumps(dict(pages=len(p),text=' '.join(' '.join(page.get_text().split()) for page in p))))",
       file,

@@ -60,7 +60,7 @@ export function Reports({
               <ReportPreview report={r} key={r.id} />
             ))}
           </div>
-        ) : (
+        ) : tab === "investigations" || !campaignReports.length ? (
           <EmptyState
             icon={<FileText size={28} />}
             title="Your next insight deserves a report."
@@ -71,7 +71,7 @@ export function Reports({
               Explore investigations
             </Button>
           </EmptyState>
-        ))}
+        ) : null)}
     </div>
   );
 }

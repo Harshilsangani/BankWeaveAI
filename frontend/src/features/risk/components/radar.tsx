@@ -401,7 +401,7 @@ export function Radar({
           <div className="radar-section-heading">
             <div>
               <h2 id="radar-method-heading">How this snapshot was checked</h2>
-              <p>Published demo rules, compared against the preceding source month.</p>
+              <p>Published demo checks: monthly growth and dated overdue-principal review.</p>
             </div>
             <Badge>{view.rulesVersion}</Badge>
           </div>
@@ -427,7 +427,8 @@ export function Radar({
                   <p>{check.reason}</p>
                   <strong>
                     {check.baselineCount === null ? "No baseline" : count(check.baselineCount)}{" "}
-                    <ArrowRight size={14} /> {count(check.currentCount)} records
+                    <ArrowRight size={14} /> {count(check.currentCount)}{" "}
+                    {check.threshold.recordUnit ?? "records"}
                   </strong>
                   <small>
                     {check.baselineRate === null
@@ -435,10 +436,20 @@ export function Radar({
                       : check.baselineRate.toFixed(2) + "% baseline rate"}{" "}
                     · {check.currentRate.toFixed(2)}% current rate
                   </small>
+                  {check.asOf && (
+                    <p>
+                      As of {check.asOf} · {check.missingLoans ?? 0} loans without due observations
+                      · {check.invalidLoans ?? 0} invalid loan ledgers · {check.orphanRecords ?? 0}{" "}
+                      unlinked records
+                    </p>
+                  )}
                   <details>
                     <summary>Thresholds</summary>
                     <p>
-                      At least {check.threshold.minCount} positive records
+                      At least {check.threshold.minCount} positive{" "}
+                      {check.threshold.recordUnit ?? "records"}
+                      {check.threshold.minDaysPastDue !== undefined &&
+                        ` with at least ${check.threshold.minDaysPastDue} days past due and INR ${(check.threshold.minOverdueMinor! / 100).toLocaleString("en-IN")} unpaid principal. This point-in-time check does not require a previous month`}
                       {check.threshold.minIncreasePct !== null &&
                         ", " +
                           check.threshold.minIncreasePct +

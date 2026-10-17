@@ -139,3 +139,145 @@ test("success notices stay above the analyst conversation without covering its c
     await expect(notice).toHaveCount(0);
   }
 });
+
+test("All reports shows saved campaigns without an unrelated empty-state message", async ({
+  page,
+}) => {
+  await page.route("**/api/session", async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ json: { ...(await response.json()), reports: [] } });
+  });
+  await page.route("**/api/campaign-reports", (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: "REPORT-layout",
+          period: "2026-10",
+          cutoff: "2026-09-30",
+          title: "Saved campaign layout example",
+          reviewStatus: "pending_review",
+          counts: { prospects: 12, drafts: 8, emailsSent: 0 },
+        },
+      ],
+    })
+  );
+  await page.goto("/#reports");
+  await expect(page.getByRole("heading", { name: "Saved campaign layout example" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open campaign report" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Your next insight deserves a report." })
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Investigation reports", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your next insight deserves a report." })
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open campaign report" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Card campaigns", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Open campaign report" })).toBeVisible();
+});
+
+for (const theme of ["light", "dark"]) {
+  test(`short ${theme} screens keep dialog fields, dismissal and analyst tools reachable`, async ({
+    page,
+  }) => {
+    await page.addInitScript((selectedTheme) => {
+      localStorage.setItem("risklens-role", "admin");
+      localStorage.setItem("risklens-workspace-v1", JSON.stringify({ theme: selectedTheme }));
+    }, theme);
+    for (const size of [
+      { width: 320, height: 568 },
+      { width: 844, height: 390 },
+    ]) {
+      await page.setViewportSize(size);
+      await page.goto("/#data-workspace");
+      await page.getByRole("button", { name: "Add customer", exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      await expect(page.getByLabel("Full name", { exact: true })).toBeFocused();
+      await page.getByLabel("Full name", { exact: true }).fill("Unsaved layout check");
+      const lastField = page.getByLabel("PIN / postal code", { exact: true });
+      await lastField.scrollIntoViewIfNeeded();
+      await lastField.click();
+      await expect(lastField).toBeFocused();
+      await lastField.fill("380001");
+      await expect(page.getByRole("button", { name: "Close dialog" })).toBeInViewport();
+      const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+      await cancel.click();
+      await expect(dialog).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Add customer", exact: true })).toBeFocused();
+      await page.goto("/#ai-analyst");
+      await expect(page.getByLabel("Analysis dataset")).toBeEnabled();
+      await page.locator(".composer-tools summary").click();
+      const tools = (await page.locator(".composer-tools-popover").boundingBox())!;
+      expect(tools.x).toBeGreaterThanOrEqual(0);
+      expect(tools.y).toBeGreaterThanOrEqual(0);
+      expect(tools.x + tools.width).toBeLessThanOrEqual(size.width);
+      expect(tools.y + tools.height).toBeLessThanOrEqual(size.height);
+      await page.keyboard.press("Escape");
+      await expect(page.locator(".composer-tools-popover")).toBeHidden();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        size.width
+      );
+    }
+  });
+}
+
+for (const theme of ["light", "dark"]) {
+  test(`small ${theme} notification dialog gives its title room beside the close control`, async ({
+    page,
+  }) => {
+    const notificationTitle = "October 2026 employee card campaign report is ready for review";
+    let removed = false;
+    await page.route("**/api/staff-notifications", (route) =>
+      route.fulfill({
+        json: removed
+          ? []
+          : [{ id: "NOTICE-layout", reportId: "REPORT-layout", title: notificationTitle }],
+      })
+    );
+    await page.route("**/api/staff-notifications/NOTICE-layout", async (route) => {
+      expect(route.request().method()).toBe("DELETE");
+      removed = true;
+      await route.fulfill({ json: { id: "NOTICE-layout", removed: true } });
+    });
+    await page.addInitScript(
+      (value) => localStorage.setItem("risklens-workspace-v1", JSON.stringify({ theme: value })),
+      theme
+    );
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto("/#command-center");
+    await page.getByRole("button", { name: "Notifications", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    const title = dialog.getByRole("heading", { name: "Workspace notifications", exact: true });
+    await expect(title).toBeVisible();
+    const metrics = await title.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        height: element.getBoundingClientRect().height,
+        lineHeight: parseFloat(style.lineHeight),
+      };
+    });
+    expect(metrics.height / metrics.lineHeight).toBeLessThanOrEqual(2.1);
+    const clear = dialog.getByRole("button", { name: "Clear all", exact: true });
+    await expect(clear).toBeInViewport();
+    const titleBounds = (await title.boundingBox())!;
+    const clearBounds = (await clear.boundingBox())!;
+    expect(clearBounds.y).toBeGreaterThanOrEqual(titleBounds.y + titleBounds.height);
+    const notice = dialog.locator(".notification-item").filter({ hasText: notificationTitle });
+    const openReport = notice.getByRole("button", { name: "Open employee report", exact: true });
+    const remove = notice.getByRole("button", { name: `Remove notification ${notificationTitle}` });
+    await expect(openReport).toBeVisible();
+    await remove.scrollIntoViewIfNeeded();
+    const dialogBounds = (await dialog.boundingBox())!;
+    for (const control of [openReport, remove]) {
+      const bounds = (await control.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(dialogBounds.x);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(dialogBounds.x + dialogBounds.width);
+    }
+    await remove.click();
+    await expect(notice).toHaveCount(0);
+    expect(removed).toBe(true);
+    await dialog.getByRole("button", { name: "Close dialog" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Notifications", exact: true })).toBeFocused();
+  });
+}

@@ -1,5 +1,13 @@
 # Local packaging and GCP handoff
 
+Current form-recovery release (18 October): build `-N_f4nbx2y-xYm-ZmUXHi`, unchanged schema `023_campaign_email_presentation`. Interrupted employee submissions recover the saved request before permitting another submission; offline recovery exposes **Check saved request status**. All 188 backend tests and 14 browser flows pass. Working records, saved work, checkpoints and runtime configuration were preserved. Paired backup and prior build: `/home/harshilsangani07/bankweave-state/backups/form-pipeline-20261018-skycqj__`. See [pipeline and acceptance](roadmap.md#form-submission-recovery--18-october-2026).
+
+Previous UI release (17 October): build `fk8_rwopsIs7eHgNezf01`, unchanged schema `023_campaign_email_presentation`. Notification headers and populated phone rows, dialog focus restoration, report empty states and the mobile campaign header are corrected. All 44 affected browser flows pass, with 16 repeated against the exact release. No cloud configuration, seed or migration changes. Paired backup and prior build: `/home/harshilsangani07/bankweave-state/backups/ui-audit-20261017-ts8qwusb`. See [visual audit and coverage](roadmap.md#visual-ui-audit--17-october-2026).
+
+Previous all-feature release (17 October): build `22r2bDXgQgOJ3J0Tf-su9`, unchanged schema `023_campaign_email_presentation`. Settings/Analyst connection recovery, complete local worker startup and the submission walkthrough are deployed. Existing private systemd supervision, Vertex and SMTP configuration remain unchanged. Matched storage backups and prior build: `/home/harshilsangani07/bankweave-state/backups/release-audit-20261017-h3uo53lg`. See [full audit and limits](roadmap.md#full-feature-submission-audit--17-october-2026).
+
+Overdue-risk release (17 October): build `dTpm2uC1pZll0dKhLYUw0`, detector rules `snapshot-rules-v3`, unchanged schema `023_campaign_email_presentation`. Dated overdue-principal detection uses existing repayment tables and optional saved-case fields; no migration, reseed, cloud processor or SMTP configuration change is needed. Promotion retained paired database backups, the previous frontend build and private runtime configuration at `/home/harshilsangani07/bankweave-state/backups/overdue-risk-20261017-sqner3fm`. Original financial/detector rows, saved work and checkpoints were verified unchanged at activation. Evidence and test results: ignored `artifacts/overdue-risk/`; [current acceptance](roadmap.md#dated-overdue-risk-and-saved-review-evidence--17-october-2026).
+
 For the receiving agent, read the [complete GCP migration handoff](gcp-handoff.md) first. It records current features, source/state transfer requirements, private-VM restore, authentication/provider blockers and acceptance checks. This document supplies the detailed packaging and future managed-deployment reference.
 
 ## Repeatable local setup
@@ -12,7 +20,7 @@ The `.env.example` documents disabled cloud defaults. Next reads `.env.local`; e
 
 ## Private container demo
 
-The `frontend/Dockerfile` packages Next's standalone output. The backend image runs migrations, then FastAPI under an unprivileged user. Health checks and bounded requests are included. `compose.yaml` binds development services to loopback and mounts `/data` for SQLite/checkpoints.
+The `frontend/Dockerfile` packages Next's standalone output. The backend image runs migrations, then FastAPI under an unprivileged user. Health checks and bounded requests are included. `compose.yaml` binds development services to loopback and mounts `/data` for SQLite/checkpoints. It now includes a separate campaign worker using the backend image and the same store; the VM override applies the same restored bind mount to both. The worker waits for backend health and does not run migrations or seed. YAML/volume checks pass; actual Docker execution remains unverified on this VM because Docker is unavailable.
 
 Before the first container seed, export the fixture with `node --import tsx scripts/data/export-demo.ts`. After building and starting the backend, copy `backend/storage/meridian.json` into `/data/meridian.json` using `docker compose cp`, then run `docker compose exec backend python -m backend.features.datasets.demo_import`. Subsequent restarts do not seed. BankShield is fetched only by the explicit seed command.
 
@@ -51,38 +59,63 @@ The original combined user-level `bankweave-private.service` has been disabled a
 
 ### Independent frontend and backend services
 
-On 13 October 2026, the owner requested detached `nohup` hosting. The systemd target was stopped and disabled, and `bash scripts/runtime/start-nohup.sh` started the backend on `127.0.0.1:8000` and frontend on `127.0.0.1:3000`, using the existing private environment files and working database. Gemini configuration is preserved. Output appends to `logs/backend.log` and `logs/frontend.log`; PID files are under the same ignored, private directory. Use `tail -f logs/backend.log logs/frontend.log` to follow output. These processes survive SSH disconnects, but do not automatically restart after failure or VM reboot. The owner subsequently configured public ingress for TCP 3000 and requested public frontend binding. The frontend now listens on `0.0.0.0:3000`, with intended URL `http://35.253.137.87:3000`; backend port 8000 stays loopback-only. This demo has development staff identities without sign-in and can modify stored data or make billable Gemini requests. Public HTTP browsers do not expose `crypto.randomUUID()`; browser workspace/request IDs use a shared secure `getRandomValues()` fallback so datasets, session recovery and operations work on this origin. The compatibility frontend build was produced with `npm run build -- --webpack`, with the previous build retained under ignored `artifacts/frontend-deployment/http-session-fix/previous-next`.
+**Email presentation, 17 October 2026:** Current build is `cJW8PTrc0QTkOeibuJiXg` with migration `023_campaign_email_presentation`. Admin previews and sends a short HTML email with a plain-text alternative. One revised test was accepted by Gmail with receipt `MAIL-be0156156612`. The original receipt remains intact. Backup: `/home/harshilsangani07/bankweave-state/backups/email-layout-20261017-kvl9fz9c`. See [presentation acceptance](roadmap.md#concise-html-campaign-email--17-october-2026).
 
-To return to systemd, stop the nohup backend with `kill "$(cat logs/backend.pid)"` and the frontend process group with `kill -- "-$(cat logs/frontend.pid)"`, then run `systemctl --user enable --now bankweave-private.target`. Do not start a second backend against the working SQLite store.
+**Campaign test delivery, 17 October 2026:** Current build is `R7s9RZXmGH1eB6HtD1wK4` with additive migration `022_campaign_email_deliveries`. User-authorized live acceptance submitted one saved Gemini draft to the configured test inbox, accepted by Gmail with receipt `MAIL-8c364bed5b2e`. Both application services and the worker retain private systemd supervision and Vertex settings. Matched backups and the previous build are at `/home/harshilsangani07/bankweave-state/backups/campaign-email-20261017-y523eob0`. See [email configuration](#campaign-test-email-configuration) and [acceptance](roadmap.md#reviewed-campaign-test-email--17-october-2026).
 
-| Service                      | Runtime                                                                  | Listener         |
-| ---------------------------- | ------------------------------------------------------------------------ | ---------------- |
-| `bankweave-frontend.service` | `npm run frontend:start` → Next standalone production server             | `127.0.0.1:3000` |
-| `bankweave-backend.service`  | Python virtual environment → FastAPI/Uvicorn, one ASGI worker, no reload | `127.0.0.1:8000` |
+**Policy search, verified 17 October 2026:** Current build is `UAfvarJGVSKhR4kUy4d2G`. The ranked policy-section search is live through `/api/policies/search?q=…` and shared with Analyst policy retrieval. Both health paths and plain-language search probes passed. Protected data and Vertex settings were preserved; no migration, seed or search model call was introduced. The previous build and matched database backups are at `/home/harshilsangani07/bankweave-state/backups/policy-search-20261016-1vbzv42g`. Historical build references below describe earlier rollouts. See [acceptance details](roadmap.md#ranked-policy-search--verified-17-october-2026).
 
-The services have separate processes, logs, environment files and restart policies. Frontend startup waits for backend readiness; restarting the backend does not stop the frontend. Restarting the frontend does not touch the backend or banking store. The same-origin browser → Next gateway → FastAPI request boundary remains in place. Port separation itself is not a measured request-speed improvement; independent deployment/restart control is the verified improvement.
+**Managed startup and recovery, 16 October 2026:** The frontend, backend and campaign worker now run under user systemd, replacing the detached host processes. `bankweave-private.target` is enabled and user lingering is enabled, so the group is configured to start without an SSH session. Each service restarts after an unexpected exit, including a clean exit, after 10 seconds; startup is limited to six attempts per 120 seconds. An explicit systemctl stop stays stopped. The frontend's normal SIGTERM exit code 143 is accepted. Backend readiness gates frontend and worker startup. The worker refuses a missing application store and never seeds or migrates. Backend preflight refuses pending migrations, and automatic seeding remains disabled. This configures boot startup; an actual VM reboot remains untested.
 
-Unit templates live in `scripts/systemd/` and are installed under `~/.config/systemd/user/`. They assume the checkout is at `$HOME/BankWeaveAI`; adjust the paths for a different checkout. The enabled `bankweave-private.target` starts both services when the user's systemd manager starts. The child services are static units wanted by that target, so their `static` installation status is expected.
+Matched database backups and the previous host-process environment are retained at `/home/harshilsangani07/bankweave-state/backups/service-handoff-20261016-su8r8yak`. The current frontend build remains `FjKuzQAocsPFOynPfaTDR`. Old `logs/*.pid` files were archived during handoff; systemd owns current PIDs and logs. Do not use the historical PID-based restart instructions below. Recovery evidence is under ignored `artifacts/service-recovery/`; the checks make no model calls.
+
+**Case Review Assistant rollout, 16 October 2026:** Current build `FjKuzQAocsPFOynPfaTDR` includes the saved-case Review action and readable frozen-source references. Backend startup applied additive migration `021_case_review_briefs` (64 tables); no QA cases/briefs were promoted. Existing table counts, customer IDs, checkpoints, fixture hash and prior migration checksums passed preservation checks. Matched backups and the previous frontend build are at `/home/harshilsangani07/bankweave-state/backups/case-review-20261016-ccjzl8uw`. That rollout used component logs/PID files under `logs/`; current supervision uses the journal as described above. Gemini selection uses the existing Vertex profile; refresh/reopen makes no inference call. Keep the new additive table during a code rollback, and preserve any later staff briefs rather than restoring an old database over new activity.
+
+**Current access, 16 October 2026:** Both services listen on localhost: frontend `127.0.0.1:3000`, backend `127.0.0.1:8000`. Use VS Code Remote SSH → Ports → Forward a Port → `3000`, then open its local URL. Development-role frontend startup enforces localhost; the private environment and nohup launcher also select localhost. The public cloud firewall rule remains present, but there is no public frontend listener. The access-only restart preserved the existing frontend build, Vertex backend process and all application table counts. Access-change rollback receipts are under `~/bankweave-state/backups/private-access-20261016-7bioxqni/`. The earlier tested Radar/PDF deployment used build `uTMKYGcFpcXgAOvoKeq9Z`; its previous build and matched database backups are under `~/bankweave-state/backups/regression-fixes-20261016-abrxb1kt/`. Both components retain their private environment settings; the subsequent managed handoff above replaces the host logs/PID files. Whole-machine recovery and verified staff sign-in remain pending.
+
+On 13 October 2026, the owner requested detached `nohup` hosting. The systemd target was stopped and disabled, and `bash scripts/runtime/start-nohup.sh` started the backend on `127.0.0.1:8000` and frontend on `127.0.0.1:3000`, using the existing private environment files and working database. Gemini configuration is preserved. Output appends to `logs/backend.log` and `logs/frontend.log`; PID files are under the same ignored, private directory. Use `tail -f logs/backend.log logs/frontend.log` to follow output. These processes survive SSH disconnects, but do not automatically restart after failure or VM reboot. The owner subsequently configured public ingress for TCP 3000 and requested public frontend binding. That historical setup used `0.0.0.0:3000`; it was replaced by the private access setup described above on 16 October. Backend port 8000 remains loopback-only. This demo has development staff identities without sign-in and can modify stored data or make billable Gemini requests. Public HTTP browsers do not expose `crypto.randomUUID()`; browser workspace/request IDs use a shared secure `getRandomValues()` fallback so datasets, session recovery and operations work on this origin. The compatibility frontend build was produced with `npm run build -- --webpack`, with the previous build retained under ignored `artifacts/frontend-deployment/http-session-fix/previous-next`.
+
+The 16 October handoff stopped all three detached processes before starting the target. `start-nohup.sh` now refuses an active managed target. Do not start a second backend or campaign worker against the working SQLite store.
+
+| Service                             | Runtime                                                                  | Listener         |
+| ----------------------------------- | ------------------------------------------------------------------------ | ---------------- |
+| `bankweave-frontend.service`        | Node frontend launcher → Next standalone production server               | `127.0.0.1:3000` |
+| `bankweave-backend.service`         | Python virtual environment → FastAPI/Uvicorn, one ASGI worker, no reload | `127.0.0.1:8000` |
+| `bankweave-campaign-worker.service` | Python campaign worker, existing private backend environment             | None             |
+
+The services have separate processes, journals and restart policies; the worker shares the private backend environment. Frontend and worker startup wait for backend readiness; restarting any one component leaves the others running. The same-origin browser → Next gateway → FastAPI request boundary remains in place. Port separation itself is not a measured request-speed improvement; independent deployment/restart control is the verified improvement.
+
+Unit templates live in `scripts/systemd/` and are installed under `~/.config/systemd/user/`. They assume the checkout is at `$HOME/BankWeaveAI`. `bash scripts/runtime/install-user-services.sh` validates prerequisites and unit definitions, backs up existing units, installs them and enables the target; it does not start services or rewrite private environment files. A first handoff must stop existing processes before starting the target. The enabled target starts all three services when the user's systemd manager starts; the target's Wants declarations supply their dependencies.
 
 Private runtime configuration is separate from source:
 
 - `~/.config/bankweave/frontend.env`: `HOSTNAME`, `PORT`, `RISKLENS_BACKEND_URL`, `RISKLENS_IDENTITY_ADAPTER`, `NEXT_TELEMETRY_DISABLED`.
 - `~/.config/bankweave/backend.env`: persistent storage/library paths, backend port and backend identity/provider settings. Auto-seeding is disabled by the launcher. Backend credentials/grants belong here or in approved private credential stores, not frontend configuration.
 
-Current settings retain local provider/development identity for the private demo. The Node production build and Uvicorn runtime do not establish verified public authentication; configure/test G05 before public ingress. Keep one worker for the current SQLite/checkpoint store until persistence/concurrency changes have been evaluated.
+Current settings retain Vertex `gemini-3.5-flash-lite` at `global` and development identity for the private demo. The Node production build and Uvicorn runtime do not establish verified public authentication; configure/test G05 before public ingress. Keep one ASGI worker and one campaign worker for the current SQLite/checkpoint store until persistence/concurrency changes have been evaluated.
 
 ```bash
-# Inspect the running pair
-systemctl --user status bankweave-backend.service bankweave-frontend.service
+# Inspect all three services
+systemctl --user status bankweave-backend.service bankweave-frontend.service bankweave-campaign-worker.service
 # Restart just the interface
 systemctl --user restart bankweave-frontend.service
 # Restart just FastAPI
 systemctl --user restart bankweave-backend.service
-# Start/stop/restart the whole pair using the explicit target name
+# Start/stop/restart the whole group using the explicit target name
 systemctl --user restart bankweave-private.target
 # Inspect a component's logs
 journalctl --user -u bankweave-backend.service
+# Follow all component logs
+journalctl --user -f -u bankweave-backend.service -u bankweave-frontend.service -u bankweave-campaign-worker.service
 ```
+
+For a read-only status, health, private-listener and storage verification:
+
+```bash
+python3 scripts/checks/verify_user_services.py --storage "$HOME/bankweave-state/storage"
+```
+
+During an idle maintenance window, add `--exercise-restarts --output artifacts/service-recovery/recovery.json` to terminate each component and verify automatic recovery, then stop/start the complete group. It checks peer PIDs, the unchanged provider profile, every table count, saved-work/customer/checkpoint hashes and fixture bytes. The group check always attempts startup in its cleanup path. This temporarily interrupts access and is not a VM reboot test. It does not enable campaign schedules or make model calls.
 
 The independent npm commands are `npm run frontend:start` and `npm run backend:start` (the backend shell launcher is Linux/VM-specific). For manual use, export the corresponding runtime settings first; avoid launching duplicates of the managed services. `npm run dev` and the combined `npm start` remain local convenience launchers. Only frontend startup copies built public/static assets; it never migrates/seeds banking data. The backend validates the selected persistent store before executing Uvicorn. The port probe permits closed-connection reuse while still rejecting a live listener.
 
@@ -227,6 +260,14 @@ If the $300 balance is the standard Welcome credit, it expires within 90 days an
 
 Verified identity, managed persistence, billing controls and live Gemini evaluation remain the deployment roadmap prerequisites. No cloud resource was provisioned or credit spent during this research.
 
+## Campaign test email configuration
+
+Keep SMTP credentials in `~/.config/bankweave/backend.env` with mode 0600. The user service reads this file; a standalone Python backend must receive the same variables in its environment. A project `.env` alone is not automatically loaded by Uvicorn. `.env` is ignored by Git, and `.env.example` contains only blank/default values. Never use frontend `NEXT_PUBLIC_` variables for mail credentials.
+
+Required backend settings are `BANKWEAVE_EMAIL_ENABLED=true`, `BANKWEAVE_EMAIL_TEST_RECIPIENT`, `BANKWEAVE_EMAIL_TEST_DAILY_LIMIT` (1–20), `SMTP_HOST`, `SMTP_PORT=587`, `SMTP_STARTTLS=true`, `SMTP_USERNAME`, `SMTP_FROM` and `SMTP_PASSWORD`. `BANKWEAVE_EMAIL_TEST_NAME` selects the greeting for the fixed test inbox; `BANKWEAVE_EMAIL_SIGNATURE` sets the Kind regards signature. The current VM uses Gmail and an App Password, with a two-submission daily allowance consumed by the original and revised test. Keep secrets out of shell history and screenshots. Changing private settings requires restarting the backend service. Setting `BANKWEAVE_EMAIL_ENABLED=false` disables new sends while preserving receipts.
+
+Admin opens a completed assigned report, records a review note and selects Mark reviewed. In Email drafts, Read email draft exposes the fixed destination and Send test email button. The button submits the saved draft; the server checks review revision, consent and content before SMTP. Email history is separate from the immutable original employee report's delivery counts. Accepted means SMTP acceptance; check the receiving inbox/Spam for arrival. Unknown confirmation requires manual inspection and cannot be automatically retried. A failed receipt allows an explicit retry only within attempt/daily limits. Test deliveries use the configured inbox rather than stored synthetic customer email addresses.
+
 ## Card campaign worker
 
 The campaign release uses additive migrations 018–020 and fourteen new tables. Back up the application/checkpoint pair while writers are stopped, apply `npm run backend:migrate`, then explicitly generate the bounded campaign fixtures. Never run the original banking seed during this upgrade.
@@ -241,8 +282,16 @@ npm run campaigns:worker
 
 The generator reuses original Meridian IDs and recorded April–September values; the six additional campaign months and credit/holdings/consent observations remain explicitly synthetic and isolated from original ledgers. Its immutable batch and row hashes detect subsequent edits. Replaying the same unchanged generation reuses the batch. A future campaign month needs an explicitly published completed-source batch; schedules never invent new observations.
 
-`scripts/runtime/campaign-supervisor.mjs` supervises the host-process worker, restarts an unexpected exit and forwards shutdown signals. The guarded `scripts/runtime/start-nohup.sh` starts backend, frontend and worker; inspect their PID files/logs before restart. User-service definitions are supplied under `scripts/systemd/`; do not start a second worker supervisor over an existing host-process deployment. The worker leases jobs with heartbeat/fencing, resumes checkpoints, and never seeds or migrates on startup. Its regular loop checks only opted-in schedules. The optional schedule timer is an alternative enqueue trigger; duplicate triggers resolve to the same run.
+For an ordinary new local `npm run dev` or `npm start`, `scripts/runtime/dev.mjs` now starts the worker supervisor after starting its own backend. Reusing a running backend does not create another worker. `RISKLENS_BACKEND_PORT` selects an optional local API port, and the frontend is pointed to that same port. The Linux acceptance command below copies storage before exercising a complete report job, API reuse without a duplicate worker, idempotent submission and shutdown of all owned processes:
+
+```bash
+backend/.venv/bin/python scripts/checks/verify_local_startup.py \
+  --storage "$HOME/bankweave-state/storage" \
+  --output artifacts/local-startup/receipt.json
+```
+
+The current VM uses `bankweave-campaign-worker.service`, grouped with frontend/backend under `bankweave-private.target`; use systemctl and its journal for status/restarts. `scripts/runtime/campaign-supervisor.mjs` remains the alternative host-process supervisor, and `start-nohup.sh` refuses an active managed target. Do not start a second worker supervisor over the managed deployment. The worker leases jobs with heartbeat/fencing, resumes checkpoints, and never seeds or migrates on startup. Its regular loop checks only opted-in schedules. No schedule was enabled by the service handoff. The optional schedule timer is an alternative enqueue trigger; duplicate triggers resolve to the same run.
 
 Default runs make at most one template call per selected demo product (maximum three), with optional up to twenty anonymous sample rewrites. Invalid output, unavailable providers or ungrounded claims fall back to labeled local templates. The canonical report contains call/token usage, sent-field metadata, exact source/catalog versions, reason/count reconciliation, and zero customer emails sent. Report publication and assigned inbox notifications commit atomically. Admin review binds the stored report hash and review revision; request changes opens a new campaign revision without rewriting the old report. Consent withdrawal is checked again before report publication and draft display. The release has no customer-delivery API.
 
-Campaign endpoints are actor-scoped and intentionally ignore chat recovery handles. Live UI smoke checks should strip recovery headers and stub session restoration, preserving existing chats. Full write/approval/Research export acceptance belongs on isolated storage. Preserve old immutable reports and the legacy scenario renderer/API during future deployment migrations.
+Campaign endpoints are actor-scoped and intentionally ignore chat recovery handles. Live UI smoke checks should strip recovery headers and stub session restoration, preserving existing chats. Full write/approval/Research export acceptance belongs on isolated storage. Preserve old immutable reports and the legacy scenario renderer/API during future deployment migrations. The later test-email flow above adds explicit Admin delivery to one configured inbox; it does not enable bulk customer outreach.

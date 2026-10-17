@@ -42,7 +42,7 @@ class Query(BaseModel):
 
 class InvestigationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    riskId: Literal["RSK-001", "RSK-002", "RSK-003", "BS-001"]
+    riskId: Literal["RSK-001", "RSK-002", "RSK-003", "RSK-004", "BS-001"]
     scope: Scope = Field(default_factory=Scope)
 
 

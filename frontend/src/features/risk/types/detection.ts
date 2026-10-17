@@ -8,6 +8,9 @@ export interface DetectionRule {
   minIncreasePct: number | null;
   minBaselineCount?: number;
   minRateIncreasePp?: number;
+  minDaysPastDue?: number;
+  minOverdueMinor?: number;
+  recordUnit?: string;
 }
 export interface DetectionCheck {
   id: string;
@@ -23,6 +26,11 @@ export interface DetectionCheck {
   increasePct: number | null;
   rateIncreasePp: number | null;
   threshold: DetectionRule;
+  asOf?: string;
+  overdueMinor?: number;
+  missingLoans?: number;
+  invalidLoans?: number;
+  orphanRecords?: number;
 }
 export interface DetectionRun {
   id: string;

@@ -6,6 +6,7 @@ import { getStaffIdentity, workspaceSessionId } from "@/shared/api/client";
 import type { InvestigationCase } from "@/features/investigations/types/cases";
 import { caseTime, reviewerName } from "@/features/investigations/format";
 import { Badge, Button } from "@/shared/ui/primitives";
+import { CaseReviewAssistant } from "@/features/investigations/components/review-brief";
 export function CaseControls({
   id,
   onRecordChange,
@@ -156,6 +157,19 @@ export function CaseControls({
         </div>
         <Badge>{record?.status ?? "Loading"}</Badge>
       </div>
+      <CaseReviewAssistant
+        key={id}
+        id={id}
+        canPrepare={!locked}
+        canUseDraft={!locked && !conflict && !note.trim()}
+        onUseDraft={(draft) => {
+          setNote(draft);
+          setKind("note");
+          setNotice(
+            "Review draft inserted. Edit it and explicitly save when ready. No case decision was changed."
+          );
+        }}
+      />
       {error && (
         <div className="case-message" role="alert">
           <span>{error}</span>

@@ -3,7 +3,7 @@ test("relationship investigation shows keyboard-accessible observed links and su
   page,
 }) => {
   await page.goto("/#risk-radar");
-  await expect(page.locator(".risk-card")).toHaveCount(3, { timeout: 20000 });
+  await expect(page.locator(".risk-card")).toHaveCount(4, { timeout: 20000 });
   await page
     .locator(".risk-card")
     .filter({ hasText: "Ahmedabad flagged new-device activity" })

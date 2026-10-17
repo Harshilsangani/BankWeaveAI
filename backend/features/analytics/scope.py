@@ -103,6 +103,8 @@ def resolve(query, scope):
         if domain == "loans"
         else "RSK-001"
     )
+    if result["riskId"] == "RSK-004" and result["period"] == "all":
+        result["period"] = meta["periods"][-1]
     validate_scope(result)
     return result
 
@@ -148,8 +150,11 @@ def validate_scope(scope):
         "RSK-001",
         "RSK-002",
         "RSK-003",
+        "RSK-004",
     ):
         raise ValueError("Choose a supported Meridian risk event.")
+    if scope.get("riskId") == "RSK-004" and scope.get("domain") not in (None, "loans"):
+        raise ValueError("Overdue principal review requires the loan scope.")
     if scope.get("domain") == "loans" and scope.get("newDeviceOnly"):
         raise ValueError("A device filter cannot be applied to loan records.")
 

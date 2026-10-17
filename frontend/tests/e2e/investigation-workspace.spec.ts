@@ -3,7 +3,7 @@ import fs from "node:fs";
 
 async function startCase(page: Page, risk = "RSK-001") {
   await page.goto("/#risk-radar");
-  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(3);
+  await expect(page.locator(".risk-grid .risk-card")).toHaveCount(4);
   await page
     .locator(".risk-card")
     .filter({ hasText: risk })

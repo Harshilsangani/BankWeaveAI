@@ -13,6 +13,12 @@ import { setTimeout as sleep } from "node:timers/promises";
 const production = process.argv[2] === "start";
 loadRootEnvironment(!production);
 const python = resolvePython();
+const backendPort = Number(process.env.RISKLENS_BACKEND_PORT || "8000");
+if (!Number.isInteger(backendPort) || backendPort < 1 || backendPort > 65535) {
+  console.error("RISKLENS_BACKEND_PORT must be an integer from 1 to 65535.");
+  process.exit(1);
+}
+const backendUrl = `http://127.0.0.1:${backendPort}`;
 if (!existsSync(python) && !process.env.RISKLENS_PYTHON) {
   console.error(
     "Create backend/.venv and install backend/requirements.lock.txt first. See README.md."
@@ -35,11 +41,8 @@ const run = (cmd, args) =>
 async function health() {
   try {
     return (
-      (
-        await (
-          await fetch("http://127.0.0.1:8000/health", { signal: AbortSignal.timeout(1000) })
-        ).json()
-      ).service === "risklens-fraud"
+      (await (await fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(1000) })).json())
+        .service === "risklens-fraud"
     );
   } catch {
     return false;
@@ -53,7 +56,7 @@ try {
       await run(python, ["-m", "backend.features.datasets.demo_import"]);
     const backend = spawn(
       python,
-      ["-m", "uvicorn", "backend.app:app", "--host", "127.0.0.1", "--port", "8000"],
+      ["-m", "uvicorn", "backend.app:app", "--host", "127.0.0.1", "--port", String(backendPort)],
       { stdio: "inherit", windowsHide: true, cwd: repositoryRoot }
     );
     children.push(backend);
@@ -62,7 +65,26 @@ try {
       process.exit(1);
     });
     for (let i = 0; i < 60 && !(await health()); i++) await sleep(250);
-    if (!(await health())) throw new Error("Fraud backend did not become ready on port 8000.");
+    if (!(await health())) throw new Error(`Backend did not become ready on port ${backendPort}.`);
+    const worker = spawn(
+      process.execPath,
+      [repositoryRoot + "/scripts/runtime/campaign-supervisor.mjs"],
+      {
+        stdio: "inherit",
+        windowsHide: true,
+        cwd: repositoryRoot,
+      }
+    );
+    children.push(worker);
+    worker.on("error", (error) => {
+      console.error("Campaign supervisor could not start:", error.message);
+      for (const child of children) child.kill();
+      process.exit(1);
+    });
+  } else {
+    console.log(
+      `Reusing backend on port ${backendPort}; its existing campaign worker remains separately managed.`
+    );
   }
   if (production) {
     prepareFrontend();
@@ -76,7 +98,7 @@ try {
       stdio: "inherit",
       windowsHide: true,
       cwd: frontendRoot,
-      env: { ...process.env, HOSTNAME: "127.0.0.1" },
+      env: { ...process.env, RISKLENS_BACKEND_URL: backendUrl, HOSTNAME: "127.0.0.1" },
     }
   );
   children.push(next);

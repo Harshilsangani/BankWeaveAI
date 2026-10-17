@@ -1,5 +1,8 @@
 import { request, post } from "@/shared/api/client";
 
+export const getSavedFormReview = (id: string) =>
+  request<import("@/features/forms/types").SavedFormReview>(`forms?id=${encodeURIComponent(id)}`);
+
 export const saveFormCorrection = (
   id: string,
   fields: import("@/features/customers/types").CustomerFields

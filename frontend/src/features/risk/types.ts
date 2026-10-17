@@ -9,9 +9,16 @@ export interface RiskEvent {
     inputHash: string;
     sourceVersion: string;
     sourceCounts: Record<string, number>;
-    threshold: { name: string; minCount: number; minIncreasePct: number | null };
+    threshold: {
+      name: string;
+      minCount: number;
+      minIncreasePct: number | null;
+      minDaysPastDue?: number;
+      minOverdueMinor?: number;
+      recordUnit?: string;
+    };
     currentCount: number;
-    baselineCount: number;
+    baselineCount: number | null;
     observedIncreasePct: number | null;
     executedAt: string;
     scope: QueryContext;

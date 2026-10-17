@@ -2,15 +2,20 @@
 Description=BankWeave durable campaign worker
 After=bankweave-backend.service
 PartOf=bankweave-private.target
+StartLimitIntervalSec=120
+StartLimitBurst=6
 
 [Service]
 Type=simple
 WorkingDirectory=%h/BankWeaveAI
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=%h/.config/bankweave/backend.env
+ExecStartPre=%h/.local/bin/node %h/BankWeaveAI/scripts/runtime/wait-backend.mjs
 ExecStart=/usr/bin/bash %h/BankWeaveAI/scripts/runtime/start-campaign-worker.sh
-Restart=on-failure
-RestartSec=5
+Restart=always
+RestartSec=10
 TimeoutStopSec=120
+KillMode=control-group
 UMask=0077
 
 [Install]

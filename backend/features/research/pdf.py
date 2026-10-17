@@ -122,9 +122,6 @@ class Document:
 
     def new_page(self):
         self.page = self.doc.new_page(width=595, height=842)
-        if self.regular:
-            self.page.insert_font(fontname="regular", fontfile=str(self.regular))
-            self.page.insert_font(fontname="bold", fontfile=str(self.bold))
         self.page.draw_rect(fitz.Rect(0, 0, 595, 6), fill=BLUE, color=None)
         self.put("BANKWEAVE AI  /  RESEARCH", 44, 26, 8, BLUE, True)
         self.page.draw_line(
@@ -134,23 +131,47 @@ class Document:
 
     def put(self, text, x, y, size=10, color=INK, bold=False):
         value = str(text).replace("**", "").replace("`", "")
-        if not self.regular:
-            value = (
-                value.replace("₹", "INR ")
-                .replace("→", "to")
-                .replace("·", " / ")
-                .replace("—", "-")
-                .replace("•", "-")
-            )
-        self.page.insert_text(
+        # TextWriter supplies glyphs missing from the selected system font.
+        writer = fitz.TextWriter(self.page.rect)
+        writer.append(
             fitz.Point(x, y),
             value,
             fontsize=size,
-            color=color,
-            fontname=("bold" if bold else "regular")
-            if self.regular
-            else ("hebo" if bold else "helv"),
+            font=self.bold_font if bold else self.font,
         )
+        writer.write_text(self.page, color=color)
+
+    def restore_ascii_mappings(self):
+        # Some system fonts share glyphs for space/NBSP and hyphen/soft hyphen.
+        # MuPDF's reverse font map can then extract ASCII as the Unicode alias.
+        # Identity-H text uses glyph IDs; prefer the ASCII characters we render.
+        seen = set()
+        for page in self.doc:
+            for xref, _, _, _, _, encoding in page.get_fonts():
+                if xref in seen or encoding != "Identity-H":
+                    continue
+                seen.add(xref)
+                kind, reference = self.doc.xref_get_key(xref, "ToUnicode")
+                if kind != "xref":
+                    continue
+                font = fitz.Font(fontbuffer=self.doc.extract_font(xref)[3])
+                mappings = [
+                    f"<{glyph:04x}> <{ord(character):04x}>"
+                    for character in " -"
+                    if (glyph := font.has_glyph(ord(character)))
+                ]
+                if not mappings:
+                    continue
+                cmap_xref = int(reference.split()[0])
+                cmap = self.doc.xref_stream(cmap_xref)
+                overrides = (
+                    f"{len(mappings)} beginbfchar\n"
+                    + "\n".join(mappings)
+                    + "\nendbfchar\n"
+                ).encode("ascii")
+                self.doc.update_stream(
+                    cmap_xref, cmap.replace(b"endcmap", overrides + b"endcmap")
+                )
 
     def ensure(self, height):
         if self.y + height > 786:
@@ -376,6 +397,7 @@ class Document:
                 creator="BankWeave structured research export",
             )
         )
+        self.restore_ascii_mappings()
         self.doc.subset_fonts()
         data = self.doc.tobytes(garbage=4, deflate=True)
         self.doc.close()

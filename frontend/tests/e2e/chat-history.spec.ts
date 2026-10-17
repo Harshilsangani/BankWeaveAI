@@ -212,6 +212,7 @@ test("mobile history is searchable, scrollable and closes after reopening a chat
   await page.getByRole("button", { name: "Open navigation" }).click();
   await page.getByRole("button", { name: "Search recent chats" }).click();
   await expect(page.getByLabel("Search chats")).toBeInViewport();
+  await expect(page.getByLabel("Search chats")).toBeFocused();
   expect(
     await page.locator(".chat-history-list").evaluate((el) => el.scrollHeight > el.clientHeight)
   ).toBeTruthy();
