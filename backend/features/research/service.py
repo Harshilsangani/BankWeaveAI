@@ -311,7 +311,7 @@ def answer(query, scope):
                 sanitize(query), catalog_for(meta["id"]), context
             )
             scope_mode = "model" if provider.external else "local"
-        except ValueError as error:
+        except ValueError:
             decision = LocalProvider().scope_research(
                 query, catalog_for(meta["id"]), context
             )

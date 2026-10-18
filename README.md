@@ -1,147 +1,157 @@
 # BankWeave AI
 
-**Banking Intelligence & Operations** — Understand your data. Investigate risk. Act with confidence.
+Banking intelligence and reviewed operations, built with Next.js, TypeScript, FastAPI, LangGraph and SQLite. Staff can ask questions, inspect source evidence, investigate risk, review uploaded forms and prepare card campaigns in one workspace.
 
-A local banking intelligence prototype built with Next.js, TypeScript, Tailwind, ECharts, FastAPI, LangGraph and SQLite. The Google-inspired light interface and neutral dark interface combine banking dashboards, an analytical chat workspace, investigations and reviewed data operations.
+**[Open the live demo](https://35.253.137.87)** · [Reviewer walkthrough](docs/judge-demo-guide.md) · [Architecture](docs/architecture.md)
 
-The private GCP VM uses **Gemini 3.5 Flash Lite through Vertex AI** for routing, chat, policy answers, form extraction and grounded fraud/loan explanations. KPI and chart values remain calculated by database tools. Local mode remains available without cloud credentials. Managed persistence and verified public staff sign-in are still pending.
+The hosted demonstration uses synthetic data and server-side Gemini through Vertex AI. Visitors need no login or API key. The role selector simulates Analyst, Admin and Viewer permissions; changes in this shared demo may be visible to other visitors. Real email delivery is disabled. Local installations default to a deterministic provider and require no Google credentials.
 
-## Run locally
+## Features
 
-Requirements: Node.js 20.9+ and Python 3.11+. Developed with Node 24 on Windows.
+| Area                | What reviewers can try                                                                                                                                                                  |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Command Center      | Historical metrics, regional trends, risk queue, saved investigations and assigned campaign reports.                                                                                    |
+| AI Analyst          | Scoped banking questions, follow-ups, charts, tables, evidence and separate saved conversations. Research exports include source and execution receipts.                                |
+| Risk Radar          | Published SQL rules, month/dataset filters, source coverage and dated overdue-principal evidence.                                                                                       |
+| Investigations      | Searchable saved cases, observed relationship maps, notes, conflict handling, required resolution notes and immutable reports. An optional review assistant prepares a brief for staff. |
+| Forms and approvals | PDF/image extraction, corrections, original attachment downloads and explicit Admin decisions. Approval creates a profile pending verification.                                         |
+| Data Workspace      | Linked customer/product records, KYC review, recorded maintenance and validated CSV/Excel imports. Shared banking imports are Admin-only.                                               |
+| Card Campaigns      | Reproducible synthetic inputs, explainable product matches, saved email drafts, background jobs, assigned reports and Admin review.                                                     |
+| Knowledge           | Exact versioned policy sections, ranked search and in-app page guides.                                                                                                                  |
 
-For a **new checkout/database**:
+Analysts analyse data and submit requests. Admins also approve requests, apply shared-data imports, publish policy/product versions and review campaigns. Viewers have read access. The backend enforces permissions; see [roles and approvals](docs/architecture.md#roles-and-approvals).
 
-```powershell
+## Quick start
+
+Use **Node.js 24**, **Python 3.11** and Git. First installation needs internet access for dependencies and the pinned public BankShield sample. Run these commands from the repository root against a **new workspace**.
+
+### Linux / macOS
+
+```bash
 git clone https://github.com/Harshilsangani/BankWeaveAI.git
 cd BankWeaveAI
 npm ci
-python -m venv backend/.venv
-backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.lock.txt
+python3.11 -m venv backend/.venv
+backend/.venv/bin/python -m pip install -r backend/requirements.lock.txt
+cp .env.example .env
 npm run backend:migrate
 npm run backend:seed
 npm run campaigns:generate
 npm run dev
 ```
 
-Open [BankWeave](http://127.0.0.1:3000). When starting a new backend, the launcher also starts its campaign worker so employee reports finish without another terminal. When reusing an existing backend on port 8000, keep its separately managed worker running; do not start another worker over the VM systemd deployment. On macOS/Linux, use `backend/.venv/bin/python` to install Python dependencies. `RISKLENS_PYTHON` can select another environment.
+### Windows PowerShell
 
-**Existing workspace:** use migration and normal startup; do not reseed edited/imported banking records. Back up the application and graph checkpoint databases before upgrades. Runtime data is under ignored `backend/storage/`.
+```powershell
+git clone https://github.com/Harshilsangani/BankWeaveAI.git
+cd BankWeaveAI
+npm ci
+py -3.11 -m venv backend/.venv
+backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.lock.txt
+Copy-Item .env.example .env
+npm run backend:migrate
+npm run backend:seed
+npm run campaigns:generate
+npm run dev
+```
 
-## Features and roles
+Open **http://127.0.0.1:3000** and keep the terminal running. The launcher loads the root `.env` and starts the frontend, API and campaign worker. If it reuses an API already on port 8000, that API's worker must be managed separately.
 
-- Command Center and Risk Radar share database-backed historical metrics and evidence. Command Center is a desk: a nameplate, underlined workspace links, one ruled metric strip, an open fraud chart, region rules, a numbered risk list and a ledger of recent investigations. Campaign reports on that page are ruled rows. Risk Radar keeps the detailed signal cards.
-- Risk Radar has independent dataset/month selection, published v3 demo rules, baseline-support and rate-growth checks, dated overdue-principal detection, searchable severity/category/dismissal filters, and source coverage/run receipts. Every run records matches, non-matches and insufficient data; unchanged inputs reuse their recorded run. Investigations and dismissals retain the selected scope. The new overdue signal reconciles instalments and partial payments at month end, flags loans with at least 14 days past due and INR 1,000 unpaid principal, and carries frozen repayment references and related policy sections into cases/reports. Missing or invalid observations remain explicit coverage gaps. Detection is local SQL/rules with zero model calls; trained anomaly detection and scheduled ingestion remain future work. See the [detection design and next stages](docs/architecture.md#risk-radar-detection-and-review).
-- AI Analyst renders text, KPIs, interactive charts, tables, evidence and actions within one answer. Sidebar history restores separate conversations and their scope. Research mode, or a full/detailed research question, runs a scope agent, parameterized SQL tools, a chart-selection agent and a separate writing agent. Relative month windows apply to the requested transactions/cashflows rather than silently switching to fraud. The report contains detailed findings, charts, reconciled tables, limitations and actual model/tool receipts; Export PDF downloads a document with a scope/indicator overview, clickable contents, PDF bookmarks, short paragraphs, preserved Markdown headings/lists, paginated charts/tables and a binary checksum. Re-exporting an existing answer applies the current layout without changing saved research. Model failures are explicitly labeled verified-data fallbacks.
-- The Analyst keeps Workspace → AI Analyst in its navigation row, with a New chat icon below the navigation. The composer’s + menu contains attachments and dataset selection. New chat appears only on AI Analyst; shared page headers keep navigation and notifications. Chat messages scroll behind its opaque background. Dropdown menus match their input width and the theme; analysis defaults to the full available history, with specific date windows requested in chat. Compact Recent chat titles and the profile remain in the sidebar; the search icon opens chat search. Dark selections use subtle white highlights. Top-customer questions return ranked records; the default basis is recorded transaction value. Tools contains Research and OCR, each with a removable selection chip. OCR shows an upload reminder and blocks message submission until a file is chosen through + → Attachment or OCR is deselected; choosing a file clears its chip and reminder. Process lists use user-facing labels.
-- Knowledge Library has searchable guides for all nine pages, page/resource filters and versioned policies. Policy questions use locally ranked sections, related banking terms and limited typo matching: try **odd transfers** or **know your customer**. Open **View source section** for the exact text and version, then optionally ask the Analyst. Library search makes no model calls; guides remain available when policy loading fails.
-- Shared navigation stays visible while scrolling. Cards and data controls adapt to desktop, tablet and phone sizes; Settings shows the connected AI provider/model. Analyst Tools supports Escape and outside-click dismissal. Dialogs return keyboard focus to the control that opened them, and compact notification headers and stacked phone rows keep titles, report links and remove controls readable. Reports shows empty states only for the selected report category.
-- Investigations has an owned searchable case inbox, saved Overview/Evidence/Review/Activity views, source-change checks, browser-session draft recovery, revision conflicts and required resolution notes. In Review, **Prepare review brief** uses Gemini to prioritize saved observations, untested explanations and human checks from a bounded catalog. Source text and figures stay backend-controlled; the editable note draft is assembled locally and must be explicitly saved. Reopening reuses the saved brief without model calls. Source-linked relationship maps remain observed evidence. New immutable HTML reports retain the exact staff-review revision, notes, monthly/segment tables and source hash; existing cases/reports remain available. See the [investigation workflow](docs/architecture.md#investigation-inbox-evidence-and-review).
-- Card Campaigns replaces Scenario Simulator: validated synthetic inputs, explainable product matches, consent-aware drafts, durable jobs, assigned dashboard reports and notifications. Admin can review report revisions, publish demo catalog versions and enable monthly schedules. After reviewing a report, Admin can send a selected saved draft to the backend-configured test inbox and see its delivery receipt. Synthetic customer addresses are never used for sending; bulk customer outreach remains unavailable.
-- Customer Workspace joins the same identities across accounts, loans, repayments, insurance, declarations and synthetic cashflow.
-- Admin-only CSV/Excel uploads provide worksheet selection, column mapping, validation, provenance and explicit confirmation. Analysts and Viewers can inspect data quality and their accessible history. Executable `.sql` dumps are not accepted.
-- PDF/PNG/JPEG forms render extracted Markdown in chat. Staff correct fields and submit a locked request; an admin reviews and approves/rejects it. Submission creates no customer. Approval creates a pending-verification profile, not KYC approval or account opening. Interrupted submissions check the saved request before permitting a retry; if that check is offline, **Check saved request status** keeps the fields locked until the outcome is known. Admin reviews the full extracted document and field provenance under Data Workspace → Approval requests.
+On Debian/Ubuntu, scanned-image OCR needs `libgl1`, `libglib2.0-0` (`libglib2.0-0t64` on some releases) and fonts such as `fonts-dejavu-core`. Digital PDF extraction does not need the image OCR reader. On Windows without `py`, use your Python 3.11 executable.
 
-| Role    | Access                                                                                                    |
-| ------- | --------------------------------------------------------------------------------------------------------- |
-| Viewer  | Browse records and available results                                                                      |
-| Analyst | Analyse, investigate, prepare campaigns, read assigned drafts and submit requests                         |
-| Admin   | Analyst access plus imports, policy publishing, approvals, campaign administration and record maintenance |
+For a production build locally:
 
-Admin gets **Command Center → Upload new data** and **Data Workspace → Admin tasks** shortcuts for customer approvals, imports, policy documents and campaign review/settings. The [role task matrix](docs/architecture.md#roles-and-approvals) records each role’s responsibilities.
+```bash
+npm run build
+npm start
+```
 
-Settings → Local staff role switches development identities. This is a demo simulator, not sign-in; production rejects these identities until verified authentication is configured.
+**Existing workspace:** never repeat `backend:seed` over edited/imported records. It replaces source dataset rows. Normal startup applies pending migrations without seeding. Back up the application and checkpoint databases together before upgrading. `.env`, credentials, databases and saved chats/reports stay outside Git.
 
-Start with **Why did fraud increase this month?**, follow up **Only Ahmedabad**, then **Compare it to Surat**. Open an investigation, review evidence and create a report. In Card Campaigns, select October 2026 and prepare an assigned employee report. Use Command Center → Manage customer data for records and Approval requests.
+## Configuration
+
+| Setting                                                                  | Default / purpose                                                  |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `RISKLENS_PROVIDER`                                                      | `local`; use `vertex` to opt into Gemini.                          |
+| `RISKLENS_ENABLE_VERTEX`                                                 | `false`; must be `true` for cloud calls.                           |
+| `RISKLENS_GCP_PROJECT`, `RISKLENS_GCP_LOCATION`, `RISKLENS_VERTEX_MODEL` | Explicit Vertex project, location and model.                       |
+| `RISKLENS_STORAGE_DIR`                                                   | `backend/storage`; contains banking records and graph checkpoints. |
+| `RISKLENS_DB`, `RISKLENS_CHECKPOINT_DB`                                  | Optional explicit SQLite paths.                                    |
+| `BANKWEAVE_EMAIL_ENABLED`                                                | `false`; campaign previews/reviews work without SMTP.              |
+
+Copy `.env.example` to a private root `.env`. The npm launchers load it for their child processes; direct Python commands need their environment configured explicitly. The tested hosted model is **`gemini-3.5-flash-lite`** in `global`. Check Settings and each saved response's execution receipt for the actual model/status.
+
+Using your own Vertex project requires billing, API access, suitable IAM permissions and **Application Default Credentials**. The adapter uses `google.genai.Client(vertexai=True, ...)`; an AI Studio API key does not configure it. [Deployment and Vertex setup](docs/deployment.md#vertex-activation-on-the-private-vm) includes the commands. No reviewer needs the owner's credentials.
+
+Optional SMTP delivery is Admin-only, requires a reviewed report and is restricted to the configured test inbox. Keep it disabled for ordinary review. See [test email configuration](docs/deployment.md#campaign-test-email-configuration).
 
 ## Submission walkthrough
 
-Use the current private VM through SSH forwarding for a screen share or recording. A public judge link requires verified staff access; the local role selector is a demo simulator. In Settings, confirm the actual provider/model before presenting AI results. A new local installation defaults to deterministic local mode; Gemini requires the documented Vertex configuration.
-
-1. **Analyze:** in AI Analyst ask “Why did fraud increase this month?”, then “Only Ahmedabad” and “Compare it to Surat”. Figures come from the saved April–September 2026 sources; this is historical synthetic data.
-2. **Investigate:** select Meridian September in Risk Radar, open `RSK-004`, inspect frozen due/payment references and policy excerpts, save a review, and export the report. The optional review brief assists the reviewer; it does not make a credit decision.
-3. **Read and approve a form:** in AI Analyst, upload `frontend/tests/fixtures/meridian-three-page-application.pdf` or the shorter `frontend/public/demo/customer-form.pdf` / `.png`. Review the Markdown and corrected fields, then choose **Submit for admin approval**. Switch the private demo role to Admin and open **Data Workspace → Approval requests → Review request**. Read the extracted source, enter a decision note, confirm the review, and approve/reject. Approval adds a pending-verification profile to Customer directory. Return to the employee chat and choose **Refresh approval status**.
-4. **Prepare a campaign:** open Card Campaigns, prepare the October 2026 employee report, inspect matches/email drafts, and record the Admin review. October uses an explicitly generated completed-source batch, rather than live customer activity. A new checkout needs the explicit `campaigns:generate` setup command above. Email controls use the configured test inbox and daily allowance; the two owner-authorized tests for 17 October have already used today's allowance.
-5. **Check source coverage:** search Knowledge Library for “odd transfers” or “know your customer”, open an exact policy section, and show the source version. Data Workspace includes customer/source browsing, validation/imports, products, KYC and recorded maintenance history.
-
-[Current audit, fixes, acceptance and limits](docs/roadmap.md) are recorded separately from historical release notes. The reviewed source is published on GitHub `main`. A checkout does not include databases, credentials, build output, existing chats, edited customers or saved reports. Those stay in private VM backups.
+1. In **Settings**, inspect the AI connection and simulated staff role.
+2. In **AI Analyst**, ask “Why did fraud increase in September 2026 compared with August 2026?”, then “Only Ahmedabad”. Inspect the chart, table and evidence. Use Research for a detailed report and export its PDF.
+3. In **Risk Radar**, select Meridian / September 2026. Open a signal, inspect evidence and policy references, save a case note and export an investigation report.
+4. As Analyst, upload the [three-page synthetic form](frontend/tests/fixtures/meridian-three-page-application.pdf). Review/correct the extracted fields and submit for approval. Switch to Admin and review it in **Data Workspace → Approval requests**. New uploads retain the original file for workspace-owned download; older uploads without a source show **Original unavailable**.
+5. Prepare an October 2026 **Card Campaigns** report. Inspect eligibility reasons and email drafts, then record the Admin review. The public demo does not send email.
+6. Search **Knowledge** for “odd transfers” or “know your customer” and open an exact source section. Browse customer records and source coverage in Data Workspace.
 
 ## Project structure
 
 ```text
 frontend/
-  src/app/           Next routes, API gateways and global style composition
-  src/features/      Section-owned components, hooks, API calls, types and styles
-  src/shared/        Reusable UI/analytics, transport, scope types and utilities
-  public/            Browser assets and demo upload samples
-  tests/             Unit, browser and isolated mock/design fixtures
+  src/app/           Next routes, same-origin API gateways and global styles
+  src/features/      Section-owned components, hooks, API contracts and styles
+  src/shared/        Reusable UI, analytics, transport and utilities
+  public/            Browser assets and synthetic upload samples
+  tests/             Unit tests, browser tests and test-only fixtures
 backend/
-  app.py             Stable Uvicorn entry point
-  api/               Application composition, request context, schemas and routes
-  features/          Banking domain calculations, persistence and review logic
-  workflows/         LangGraph orchestration, form processing and SSE operations
-  integrations/ai/   Typed provider boundary, local and Vertex implementations
-  core/              Database, security, identity, privacy and generic helpers
-  cli/, evaluation/  Migration CLI and local/live evaluation harnesses
-  tests/             Unit and integration checks
-  migrations/        Original checksummed, append-only migrations
-  storage/           Local records/checkpoints (ignored; never reseed existing data)
+  api/               FastAPI composition, context, schemas and routes
+  features/          Banking calculations, persistence and review workflows
+  workflows/         LangGraph orchestration, form processing and streaming
+  integrations/ai/   Typed local and Vertex provider implementations
+  core/              Database, security, identity and generic helpers
+  migrations/        Append-only, checksummed SQL migrations
+  cli/, evaluation/  Migration and evaluation entry points
+  tests/             Unit and integration tests
 scripts/
-  runtime/           Development, production and worker launchers
+  runtime/           App and worker launchers
   data/              Explicit synthetic generation and fixture export
-  checks/            Structure, integrity, recovery and acceptance checks
-  systemd/           VM service templates
-demo/                Synthetic fixture generator; never imported by the application
-docs/                Architecture, imports, deployment and roadmap
+  checks/            Structure, integrity, recovery and publication checks
+  systemd/           VM service and public gateway templates
+demo/                Deterministic synthetic fixture generator
+docs/                Architecture, data, imports, deployment and review guides
 ```
 
-The root is an npm workspace coordinator; frontend dependencies and Next configuration belong to `frontend/`. Run the existing npm commands from the repository root. Python still starts with `backend.app:app`. Feature code imports its own contracts and API module directly; shared transport handles identity, recovery and error decoding. See the [folder ownership and call flow](docs/architecture.md#source-ownership-and-call-flow) before adding files.
-
-There is one application backend. Mock analytics/report helpers live only in test fixtures; application routes do not fall back to client-supplied report data.
-
-On the current Linux VM, systemd supervises the frontend, backend and campaign worker, with automatic restart and startup enabled. The frontend and backend stay private on localhost ports 3000 and 8000; access port 3000 through VS Code SSH forwarding. Use `systemctl --user status bankweave-private.target` to inspect the group. The browser uses the same-origin Next gateway. See [VM service configuration and recovery checks](docs/deployment.md#independent-frontend-and-backend-services).
+The root npm workspace coordinates the frontend package. Python's stable entry point is `backend.app:app`. Production routes use the FastAPI backend; mocks remain in test fixtures. [Source ownership and call flow](docs/architecture.md#source-ownership-and-call-flow) describes the boundaries.
 
 ## Validation
 
-Browser tests create and edit records. Use copied/disposable storage and a separate `RISKLENS_BROWSER_BASE_URL`; keep them off the working VM ports. Live Gemini acceptance is separately opt-in.
+After a fresh local setup:
 
-```powershell
+```bash
+npm ci
+npm run check:secrets
 npm run check:structure
 npm run typecheck
 npm test
 npm run test:backend
 npm run evaluate
-npm run test:e2e
 npm run build
-npm start
 ```
 
-Opt-in live Gemini acceptance (billable; all test writes use a disposable copy of the existing database):
+Browser tests **write records**. Use disposable storage and separate app ports, then set `RISKLENS_BROWSER_BASE_URL` to that test frontend before running `npm run test:e2e`. On Linux/macOS, install the browser first with `npx playwright install chromium`; Windows uses Edge. Avoid the hosted or working databases. [Deployment checks](docs/deployment.md#validation-and-safe-upgrades) cover recovery and opt-in billable Vertex evaluation.
 
-```bash
-backend/.venv/bin/python -m backend.evaluation.vertex --allow-live \
-  --storage /home/harshilsangani07/bankweave-state/storage \
-  --project ai-builders-cup --location global --model gemini-3.5-flash-lite
-```
-
-See [Vertex activation and browser acceptance](docs/deployment.md#vertex-activation-on-the-private-vm) for the runtime settings and isolated browser checks.
-
-Browser tests use Edge on Windows; elsewhere install Chromium with `npx playwright install chromium`. Run write/approval/import tests against an isolated database copy, not a working directory with records you want to preserve. Generated screenshots and test snapshots stay under ignored `artifacts/`.
-
-Read-only customer integrity: `node scripts/runtime/python.mjs scripts/checks/verify_customer_integrity.py`.
-Three-process approval/restart recovery: `node scripts/runtime/python.mjs scripts/checks/verify_recovery.py`.
+Both npm and Python lockfiles are committed. `backend/requirements.txt` lists direct dependencies; `backend/requirements.lock.txt` pins the complete Python environment. Generated output, local presentation notes and runtime credentials are excluded from publication.
 
 ## Data boundaries and documentation
 
-Meridian contains 10,000 synthetic customers, 120,000 transactions and 8,000 loans, covering April–September 2026. Fraud flags rise 833 → 1,091 and loan default markers 648 → 765. Exposure is flagged transaction value/defaulted-principal proxy, **not confirmed loss**. Products, cashflow observations and scenario assumptions are synthetic. Five-year credit history and verified original debit/credit direction are unavailable.
+Meridian has 10,000 synthetic customers, 120,000 transactions and 8,000 loans covering April–September 2026. Campaign-only observations are generated separately. BankShield is a pinned historical USD synthetic sample with incomplete relationships. Missing joins or unsupported history remain explicit. Risk flags and exposed principal are review evidence, not confirmed losses or automated credit decisions.
 
-BankShield is a separate historical USD synthetic sample with incomplete joins. Missing customers, devices, loans or branches are not invented. See [data sources and audit](docs/data-sources.md).
+Verified individual staff sign-in, managed database/artifact storage, full retention/deletion controls and production cloud deployment remain pending. See the [current state and roadmap](docs/roadmap.md).
 
-- [Architecture, agents, roles and approvals](docs/architecture.md)
-- [Card Campaigns design and worker operations](docs/card-campaigns-plan.md)
-- [Complete GCP migration handoff for the next agent](docs/gcp-handoff.md)
-- [CSV/Excel import guide](docs/imports.md)
-- [Packaging, deployment and Gemini chart design](docs/deployment.md)
-- [Current implementation and remaining GCP tasks](docs/roadmap.md)
+- [Reviewer guide](docs/judge-demo-guide.md)
+- [Architecture, agents, roles and workflows](docs/architecture.md)
+- [Data sources and synthetic generation](docs/data-sources.md)
+- [CSV/Excel imports](docs/imports.md)
+- [Deployment, backups and optional integrations](docs/deployment.md)
 
-The product was renamed from RiskLens. Preserve `RISKLENS_*` environment names, `x-risklens-*` headers, legacy actor/session/storage keys and database/container identifiers. These keep existing records and chats accessible. Historical immutable artifacts keep their original provenance.
+The former RiskLens name remains in `RISKLENS_*`, `x-risklens-*` headers and legacy storage identifiers to preserve saved-work compatibility.

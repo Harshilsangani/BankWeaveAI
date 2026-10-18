@@ -57,7 +57,6 @@ class ProviderTests(unittest.TestCase):
     def test_research_scope_masks_customer_context_and_chart_agent_receives_calculated_points(
         self,
     ):
-        from backend.integrations.ai import ResearchScopeDecision
 
         models = FakeModels(
             dict(

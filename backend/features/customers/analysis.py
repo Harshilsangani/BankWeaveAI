@@ -27,7 +27,7 @@ def directory_answer(query, scope):
             f"SELECT COUNT(*) FROM customers c WHERE {where}", args
         ).fetchone()[0]
         accounts = db.execute(
-            f"SELECT COUNT(*) FROM accounts a WHERE a.dataset=?"
+            "SELECT COUNT(*) FROM accounts a WHERE a.dataset=?"
             + (
                 f" AND EXISTS(SELECT 1 FROM customers c WHERE c.dataset=a.dataset AND c.id=a.customer_id AND {where})"
                 if scope.get("region") or scope.get("customerId")

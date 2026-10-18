@@ -37,7 +37,7 @@ export function Dashboard({
         </div>
         <nav className="desk-actions" aria-label="Workspace shortcuts">
           <button type="button" onClick={onAnalyst}>
-            Open AI Analyst
+            AI Analyst
           </button>
           <button type="button" onClick={onData}>
             Manage customer data
@@ -138,7 +138,7 @@ export function Dashboard({
       <footer className="dashboard-footer">
         <span>
           <span className="status-dot" />
-          Demo workspace · All data is synthetic
+          Banking workspace · Synthetic data
         </span>
         <span>Snapshot: {data.snapshot} · IST</span>
       </footer>

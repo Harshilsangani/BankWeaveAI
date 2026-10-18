@@ -178,6 +178,10 @@ def read_form(content, filename):
                 1,
             ),
         )
+        db.execute(
+            "INSERT INTO form_sources VALUES(?,?,?,?)",
+            (draft_id, content, mime, hashlib.sha256(content).hexdigest()),
+        )
         from backend.core.security import actor
 
         db.execute(
@@ -198,6 +202,7 @@ def read_form(content, filename):
     return dict(
         id=draft_id,
         filename=filename,
+        sourceAvailable=True,
         markdown=markdown,
         fields=fields,
         status="pending",
@@ -207,7 +212,7 @@ def read_form(content, filename):
         warnings=[
             *extracted.warnings,
             "The draft does not perform KYC verification or open a bank account.",
-            "Original upload bytes are discarded after extraction; extracted content is stored for review.",
+            "The original uploaded document is retained for download with this form.",
         ],
     )
 

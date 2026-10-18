@@ -81,7 +81,10 @@ test("complete banking investigation and saved report flow", async ({ page, requ
   await page.waitForTimeout(850); // Let the intentional chart entrance finish before visual capture.
   await page.screenshot({ path: "artifacts/risklens-desktop.png", fullPage: true });
   await expect(page.getByLabel("Ask anything about your banking data")).toHaveCount(0);
-  await page.getByRole("button", { name: "Open AI Analyst", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Workspace shortcuts", exact: true })
+    .getByRole("button", { name: "AI Analyst", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Why did fraud increase this month?", exact: true })
     .click();
@@ -149,14 +152,14 @@ test("risk filtering, dismissal, policy search, header navigation and theme", as
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
-test("tablet dashboard separates risk cards and explains dismissed state", async ({ page }) => {
+test("tablet dashboard separates risk rows and explains dismissed state", async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 1200 });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Command Center", exact: true })).toBeVisible();
-  const cards = page.locator(".dashboard-aside .risk-list .risk-card");
-  await expect(cards).toHaveCount(4);
-  const widths = await cards.evaluateAll((els) =>
-    els.map((el) => getComputedStyle(el).borderTopWidth)
+  const rows = page.locator(".desk-signals ol li");
+  await expect(rows).toHaveCount(4);
+  const widths = await rows.evaluateAll((els) =>
+    els.slice(1).map((el) => getComputedStyle(el).borderTopWidth)
   );
   expect(widths.every((w) => w !== "0px")).toBe(true);
   await page.goto("/#risk-radar");
@@ -180,7 +183,10 @@ test("mobile navigation, readable viewport, and analytical question", async ({ p
   await page.waitForTimeout(850);
   await page.screenshot({ path: "artifacts/risklens-mobile.png", fullPage: true });
   await page.getByRole("button", { name: "Open navigation" }).click();
-  await page.getByRole("button", { name: "AI Analyst", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Main navigation", exact: true })
+    .getByRole("button", { name: "AI Analyst", exact: true })
+    .click();
   await page
     .getByRole("textbox", { name: "Ask anything about your banking data" })
     .fill("Compare default rates by branch");

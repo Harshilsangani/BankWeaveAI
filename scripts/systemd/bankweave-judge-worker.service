@@ -1,0 +1,17 @@
+[Unit]
+Description=BankWeave isolated judge campaign worker
+After=bankweave-judge-backend.service
+PartOf=bankweave-judge.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/bankweave-judge-app
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=%h/.config/bankweave/judge-backend.env
+ExecStartPre=%h/.local/bin/node %h/bankweave-judge-app/scripts/runtime/wait-backend.mjs
+ExecStart=/usr/bin/bash %h/bankweave-judge-app/scripts/runtime/start-campaign-worker.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=120
+KillMode=control-group
+UMask=0077

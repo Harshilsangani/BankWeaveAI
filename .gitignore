@@ -25,3 +25,16 @@ logs/
 
 # Generated test results, screenshots, audit runs and snapshots stay local.
 artifacts/
+
+# Cloud/SMTP credentials must never be published, even when named as JSON.
+application_default_credentials.json
+credentials.json
+service-account.json
+*-service-account.json
+*-credentials.json
+client_secret*.json
+/secrets/
+
+*.env
+judge-access.txt
+staff-grants.json

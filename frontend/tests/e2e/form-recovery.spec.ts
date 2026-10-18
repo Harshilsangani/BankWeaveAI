@@ -15,6 +15,9 @@ async function readSample(page: Page) {
     .getByLabel("Customer Email", { exact: true })
     .fill(`recovery-${Date.now()}@example.test`);
   await page.getByLabel("Customer Mobile number", { exact: true }).fill("");
+  await expect(
+    page.getByRole("button", { name: "Submit for admin approval", exact: true })
+  ).toBeEnabled();
   return name;
 }
 

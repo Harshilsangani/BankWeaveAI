@@ -104,25 +104,37 @@ export function CampaignEmailDelivery({
   }
   return (
     <section className="campaign-email-delivery" aria-label="Test email delivery">
-      <h3>{customerId ? "Send this draft as a test" : "Test email delivery history"}</h3>
+      <h3>{customerId ? "Email preview & delivery" : "Admin email delivery"}</h3>
       {state ? (
         <>
-          <p>
-            {state.recipient
-              ? `Test destination: ${state.recipient}`
-              : "Configure a test destination on the backend."}{" "}
-            Synthetic customer addresses are never used for sending.
-          </p>
-          {!state.enabled && <p>{state.reason}</p>}
-          {!state.reviewed && (
-            <p>Open Employee report, add a review note and choose Mark reviewed before sending.</p>
+          {!state.enabled ? (
+            <div role="status">
+              <p>
+                <strong>Admin-only email sending is supported after report review.</strong>
+              </p>
+              <p>
+                Email delivery is disabled in this public demonstration to prevent misuse. You can
+                still preview saved email drafts and review campaign reports.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p>
+                {state.recipient
+                  ? `Test destination: ${state.recipient}`
+                  : "Configure a test destination on the backend."}{" "}
+                Synthetic customer addresses are never used for sending.
+              </p>
+              {!state.reviewed && (
+                <p>
+                  Open Employee report, add a review note and choose Mark reviewed before sending.
+                </p>
+              )}
+            </>
           )}
           {customerId ? (
             <>
-              <p>
-                A short email with the saved card benefits and fee. The preview below shows the
-                email that will be sent.
-              </p>
+              <p>Preview the saved email, including card benefits, fees and product terms.</p>
               {preview && (
                 <>
                   <strong>{preview.subject}</strong>
@@ -147,23 +159,27 @@ export function CampaignEmailDelivery({
                 }
                 onClick={() => void send()}
               >
-                {busy
-                  ? "Sending test email…"
-                  : latest?.status === "failed"
-                    ? "Retry test email"
-                    : "Send test email"}
+                {!state.enabled
+                  ? "Email sending disabled"
+                  : busy
+                    ? "Sending test email…"
+                    : latest?.status === "failed"
+                      ? "Retry test email"
+                      : "Send test email"}
               </Button>
             </>
-          ) : (
+          ) : state.enabled ? (
             <p>
               Open Email drafts → Read email draft to send one reviewed sample to the configured
               inbox.
             </p>
+          ) : null}
+          {state.enabled && (
+            <p>
+              {state.remaining} test attempts remaining today. SMTP acceptance does not confirm
+              inbox delivery.
+            </p>
           )}
-          <p>
-            {state.remaining} test attempts remaining today. SMTP acceptance does not confirm inbox
-            delivery.
-          </p>
         </>
       ) : (
         !error && <p>Loading email status…</p>

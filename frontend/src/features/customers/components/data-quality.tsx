@@ -53,7 +53,7 @@ export function DataQuality({ onImported }: { onImported: () => void }) {
               setError("");
             }}
           >
-            <option value="meridian">Meridian demo</option>
+            <option value="meridian">Meridian</option>
             <option value="bankshield">BankShield public sample</option>
           </select>
         </label>

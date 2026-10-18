@@ -16,7 +16,7 @@ export const workspaceGuides: WorkspaceGuide[] = [
     steps: [
       "Review the headline metrics and trends to see where recorded activity has changed.",
       "Open a risk signal to investigate its evidence, or go to Risk Radar for the full list.",
-      "Choose Open AI Analyst to explore a question. Use Manage customer data to open the Data Workspace.",
+      "Choose AI Analyst to explore a question. Use Manage customer data to open the Data Workspace.",
     ],
     tip: "Metrics describe the available historical data. They are not a live banking feed.",
   },
@@ -45,7 +45,7 @@ export const workspaceGuides: WorkspaceGuide[] = [
       "Choose Investigate to open the same dataset/month scope. Dismiss reviewed signals; the Dismissed filter and Restore dismissed keep those decisions accessible.",
       "Open Source coverage & run receipt for the input hash, rule version, data limitations and execution time.",
     ],
-    tip: "These are historical demo rules with zero model calls, not live monitoring or trained predictions. Missing comparisons are not a clean bill of health; signals require human review.",
+    tip: "These are historical review rules with zero model calls, not live monitoring or trained predictions. Missing comparisons are not a clean bill of health; signals require human review.",
   },
   {
     page: "Investigations",
@@ -64,10 +64,10 @@ export const workspaceGuides: WorkspaceGuide[] = [
   {
     page: "Card Campaigns",
     title: "Prepare card offers and an employee report",
-    summary: "Screen linked synthetic customer data, match demo products, and review email drafts.",
+    summary: "Screen linked synthetic customer data, match products, and review email drafts.",
     steps: [
       "Choose the dataset. The campaign uses its published source window. Check the cutoff, cohort, and data-readiness note.",
-      "Select products or compare the active demo catalog, then choose Prepare employee report. The saved run continues if you leave the page.",
+      "Select products or compare the active product catalog, then choose Prepare employee report. The saved run continues if you leave the page.",
       "Review prospects, missing-data reasons, contact suppressions, and email drafts. The completed report appears in Command Center, Reports, and your notifications.",
       "Admins can record Reviewed, Request changes, or Reject, and opt into a monthly schedule from Run history.",
     ],

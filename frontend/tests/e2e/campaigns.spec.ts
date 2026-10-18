@@ -127,14 +127,14 @@ test("admin publishes a catalog version while a saved employee report keeps its 
   const selected = products[0];
   await page.addInitScript(() => localStorage.setItem("risklens-role", "admin"));
   await page.goto("/#card-campaigns");
-  await page.getByRole("button", { name: "Manage demo catalog", exact: true }).click();
+  await page.getByRole("button", { name: "Manage product catalog", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   const version = `qa-${Date.now()}`;
-  await page.getByLabel("New demo product version").fill(version);
-  await page.getByLabel("Demo product annual fee").fill("12.34");
-  await page.getByRole("button", { name: "Publish demo product version", exact: true }).click();
+  await page.getByLabel("New product version").fill(version);
+  await page.getByLabel("Product annual fee").fill("12.34");
+  await page.getByRole("button", { name: "Publish product version", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.locator(".campaign-page")).toContainText("New demo product version published");
+  await expect(page.locator(".campaign-page")).toContainText("New product version published");
   const updated = await (await request.get("/api/card-campaigns/products?period=2026-10")).json();
   expect(updated.find((p: { id: string }) => p.id === selected.id)).toMatchObject({
     version,

@@ -401,7 +401,7 @@ export function Radar({
           <div className="radar-section-heading">
             <div>
               <h2 id="radar-method-heading">How this snapshot was checked</h2>
-              <p>Published demo checks: monthly growth and dated overdue-principal review.</p>
+              <p>Published risk checks: monthly growth and dated overdue-principal review.</p>
             </div>
             <Badge>{view.rulesVersion}</Badge>
           </div>
@@ -424,7 +424,7 @@ export function Radar({
                           : "No match"}
                     </Badge>
                   </div>
-                  <p>{check.reason}</p>
+                  <p>{check.reason.replace(/\bdemo /gi, "")}</p>
                   <strong>
                     {check.baselineCount === null ? "No baseline" : count(check.baselineCount)}{" "}
                     <ArrowRight size={14} /> {count(check.currentCount)}{" "}
@@ -458,7 +458,7 @@ export function Radar({
                           " percentage-point rate increase, and " +
                           check.threshold.minBaselineCount +
                           " baseline positives"}
-                      . These are demonstration thresholds.
+                      . These are configured review thresholds.
                     </p>
                   </details>
                 </article>

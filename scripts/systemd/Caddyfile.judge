@@ -1,0 +1,31 @@
+{
+	admin off
+	default_sni {$BANKWEAVE_JUDGE_HOST}
+}
+
+https://{$BANKWEAVE_JUDGE_HOST} {
+	tls {
+		issuer acme {
+			dir https://acme-v02.api.letsencrypt.org/directory
+			profile shortlived
+		}
+	}
+	request_body {
+		max_size 10MB
+	}
+	header {
+		Cache-Control "no-store"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+	route {
+		@send path /api/campaign-reports/*/test-email
+		respond @send `{"error":"Email delivery is disabled for the judge demo. Review the saved draft instead."}` 403 {
+			close
+		}
+		reverse_proxy {$BANKWEAVE_JUDGE_UPSTREAM} {
+			header_up -Authorization
+			flush_interval -1
+		}
+	}
+}

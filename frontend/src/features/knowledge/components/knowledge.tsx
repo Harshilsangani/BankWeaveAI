@@ -212,7 +212,7 @@ export function Knowledge({
                   </h3>
                   <p>{match.text}</p>
                   <small>
-                    {match.documentId} · {match.version}
+                    {match.documentId} · {match.version.replace(/^demo[- ]*/i, "")}
                   </small>
                   <Button onClick={() => setSelectedMatch(match)}>View source section</Button>
                 </article>
@@ -227,7 +227,7 @@ export function Knowledge({
                 <h3>{policy.title}</h3>
                 <p>{policy.summary}</p>
                 <small>
-                  {policy.id} · {policy.version}
+                  {policy.id} · {policy.version.replace(/^demo[- ]*/i, "")}
                 </small>
                 <Button onClick={() => setSelected(policy)}>Read policy</Button>
               </article>
@@ -241,7 +241,7 @@ export function Knowledge({
           )}
           <p className="risk-footnote">
             Policy answers cite document versions and sections. Seed policies are fictional
-            demonstration guidance. Uploaded policies require staff validation.
+            reference guidance. Uploaded policies require staff validation.
           </p>
         </section>
       )}
@@ -366,7 +366,7 @@ export function Knowledge({
         title={
           selectedMatch ? `${selectedMatch.title} · ${selectedMatch.section}` : "Policy source"
         }
-        description={`${selectedMatch?.documentId} · ${selectedMatch?.version}`}
+        description={`${selectedMatch?.documentId} · ${selectedMatch?.version.replace(/^demo[- ]*/i, "")}`}
       >
         <p className="policy-source-text">{selectedMatch?.text}</p>
         <p className="policy-source-reference">Source reference: {selectedMatch?.reference}</p>
@@ -388,7 +388,7 @@ export function Knowledge({
           if (!open) setSelected(undefined);
         }}
         title={selected?.title ?? "Policy"}
-        description={`${selected?.id} · ${selected?.version} · Synthetic demonstration document`}
+        description={`${selected?.id} · ${selected?.version.replace(/^demo[- ]*/i, "")} · Synthetic reference document`}
       >
         <ol className="policy-sections">
           {selected?.sections.map((s) => (

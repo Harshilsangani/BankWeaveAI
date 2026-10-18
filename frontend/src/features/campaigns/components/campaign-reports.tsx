@@ -64,7 +64,7 @@ export function CampaignReports({
             </Badge>
           </div>
           <h3>{report.title}</h3>
-          <p>Data through {report.cutoff} · Synthetic demo</p>
+          <p>Data through {report.cutoff} · Synthetic data</p>
           <div className="campaign-card-counts">
             <span>
               <strong>{report.counts.prospects.toLocaleString("en-IN")}</strong> prospects

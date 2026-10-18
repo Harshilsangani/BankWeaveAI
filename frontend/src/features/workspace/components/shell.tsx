@@ -241,7 +241,7 @@ export function Shell({
               <strong>{signedIn ? "Alex Kumar" : "Signed out"}</strong>
               <small>
                 {signedIn
-                  ? `${role ? role[0].toUpperCase() + role.slice(1) : "Loading permissions"} · Demo profile`
+                  ? `${role ? role[0].toUpperCase() + role.slice(1) : "Loading permissions"} · Staff profile`
                   : "Log in to continue"}
               </small>
             </span>

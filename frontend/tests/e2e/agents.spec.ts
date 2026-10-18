@@ -81,6 +81,15 @@ test("scanned PDF renders Markdown and creates a customer only after admin appro
   await expect(page.getByRole("status").filter({ hasText: "Corrections saved" })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("Customer Full name")).toHaveValue(name);
+  const originalDownload = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download uploaded document: customer-form.pdf", exact: true })
+    .click();
+  const original = await originalDownload;
+  expect(original.suggestedFilename()).toBe("customer-form.pdf");
+  expect(fs.readFileSync((await original.path())!)).toEqual(
+    fs.readFileSync("frontend/public/demo/customer-form.pdf")
+  );
   if (await page.getByLabel("Duplicate decision").isVisible()) {
     await page.getByLabel("Duplicate decision").selectOption("create_separate");
     await page

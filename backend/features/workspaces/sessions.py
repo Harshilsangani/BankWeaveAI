@@ -242,6 +242,18 @@ def load(conversation_id=None):
                         from backend.features.forms.approvals import for_draft
 
                         block["draft"]["approval"] = for_draft(db, row["id"])
+                        from backend.features.forms.sources import source_available
+
+                        available = source_available(db, row["id"])
+                        block["draft"]["sourceAvailable"] = available
+                        if available:
+                            block["draft"]["warnings"] = [
+                                warning
+                                for warning in block["draft"].get("warnings", [])
+                                if not warning.startswith(
+                                    "Original upload bytes are discarded"
+                                )
+                            ]
         return {
             **state,
             "conversations": summaries(db, sid),

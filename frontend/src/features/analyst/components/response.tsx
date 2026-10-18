@@ -1,8 +1,9 @@
 "use client";
 import { processLabel } from "@/shared/lib/process-label";
 import { useState } from "react";
-import { ChevronDown, Download, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronDown, Download, FileText, ShieldCheck, Sparkles } from "lucide-react";
 import { AnalysisDetails } from "@/shared/analytics/analysis-details";
+import { downloadFormSource } from "@/features/forms/api";
 import { FormReview } from "@/features/forms/components/form-review";
 import type { AnalystResponse } from "@/features/analyst/types";
 import type { QueryContext } from "@/shared/types/scope";
@@ -39,7 +40,11 @@ export function AIMessage({
   showTrace?: boolean;
   disabled?: boolean;
 }) {
-  const isForm = response.blocks.some((block) => block.type === "FORM");
+  const uploadedForm = response.blocks.find((block) => block.type === "FORM")?.draft;
+  const isForm = Boolean(uploadedForm);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+  const uploadedFilename = uploadedForm?.filename.split(/[\\/]/).at(-1) || "Uploaded document";
   const [formSaved, setFormSaved] = useState(
     response.blocks.some((b) => b.type === "FORM" && b.draft.status === "saved")
   );
@@ -64,7 +69,51 @@ export function AIMessage({
     <article className="ai-message">
       <div className="user-message">
         <span className="avatar small-avatar">AK</span>
-        <span>{response.question}</span>
+        <div className="user-message-content">
+          <span>{response.question}</span>
+          {uploadedForm && (
+            <button
+              type="button"
+              className="chat-upload-card"
+              aria-label={`Download uploaded document: ${uploadedFilename}`}
+              disabled={downloading || uploadedForm.sourceAvailable === false}
+              onClick={async () => {
+                setDownloadError("");
+                setDownloading(true);
+                try {
+                  await downloadFormSource(uploadedForm.id, uploadedFilename);
+                } catch (error) {
+                  setDownloadError(
+                    error instanceof Error ? error.message : "Download failed. Try again."
+                  );
+                } finally {
+                  setDownloading(false);
+                }
+              }}
+            >
+              <span className="chat-upload-icon">
+                <FileText size={22} aria-hidden="true" />
+              </span>
+              <span className="chat-upload-details">
+                <strong>{uploadedFilename}</strong>
+                <small>
+                  {/\.pdf$/i.test(uploadedFilename) ? "PDF" : "Image"} ·{" "}
+                  {uploadedForm.sourceAvailable === false
+                    ? "Original unavailable"
+                    : downloading
+                      ? "Downloading…"
+                      : "Download original"}
+                </small>
+              </span>
+              <Download size={16} aria-hidden="true" />
+            </button>
+          )}
+          {downloadError && (
+            <p role="alert" className="chat-upload-error">
+              {downloadError}
+            </p>
+          )}
+        </div>
       </div>
       <div className="ai-answer">
         <div className="answer-heading">

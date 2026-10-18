@@ -4,7 +4,7 @@ import calendar
 from datetime import date
 
 from backend.core.database import connect, metadata
-from backend.core.formatting import currency, period_label, previous_period
+from backend.core.formatting import currency, previous_period
 from backend.core.identifiers import identifier
 from backend.features.products.loans import JOINS, REGION, condition
 

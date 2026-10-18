@@ -1,0 +1,26 @@
+[Unit]
+Description=BankWeave protected HTTPS judge gateway for %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+Group=%i
+EnvironmentFile=/home/%i/.config/bankweave/judge-gateway.env
+Environment=XDG_DATA_HOME=/home/%i/bankweave-state/judge-caddy/data
+Environment=XDG_CONFIG_HOME=/home/%i/bankweave-state/judge-caddy/config
+ExecStart=/home/%i/.local/bin/caddy run --config /home/%i/.config/bankweave/judge.Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=5
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/%i/bankweave-state/judge-caddy
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

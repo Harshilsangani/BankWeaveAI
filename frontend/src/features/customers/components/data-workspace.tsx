@@ -616,7 +616,7 @@ export function DataWorkspace({
                         setOffset(0);
                       }}
                     >
-                      <option value="meridian">Meridian demo · INR</option>
+                      <option value="meridian">Meridian · INR</option>
                       <option value="bankshield">BankShield sample · USD</option>
                     </select>
                   </label>

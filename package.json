@@ -21,7 +21,8 @@
     "format": "prettier --write frontend/src frontend/tests frontend/*.ts demo scripts docs *.json *.md",
     "campaigns:generate": "node scripts/runtime/python.mjs scripts/data/generate-campaign-data.py",
     "campaigns:worker": "node scripts/runtime/campaign-supervisor.mjs",
-    "check:structure": "node scripts/checks/verify_structure.mjs && node scripts/runtime/python.mjs scripts/checks/verify_structure.py"
+    "check:structure": "node scripts/checks/verify_structure.mjs && node scripts/runtime/python.mjs scripts/checks/verify_structure.py",
+    "check:secrets": "node scripts/runtime/python.mjs scripts/checks/verify_public_source.py"
   },
   "devDependencies": {
     "tsx": "^4.20.0",

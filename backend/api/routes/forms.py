@@ -41,6 +41,31 @@ def stream_form(request: Request, file: UploadFile = File(...)):
     )
 
 
+@router.get("/forms/{draft_id}/source")
+def original_form_source(draft_id: str):
+    import re
+    from urllib.parse import quote
+
+    from fastapi.responses import Response
+
+    from backend.features.forms.sources import download_source
+
+    if not re.fullmatch(r"FORM-[a-zA-Z0-9]+", draft_id):
+        raise ValueError("Select a saved form.")
+    source = download_source(draft_id)
+    return Response(
+        source["content"],
+        media_type=source["media_type"],
+        headers={
+            "Content-Disposition": "attachment; filename*=UTF-8''"
+            + quote(source["filename"], safe=""),
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "X-Content-SHA256": source["sha256"],
+        },
+    )
+
+
 @router.post("/customers")
 def customer_confirmation(body: CustomerConfirmation):
     from backend.features.forms.approvals import submit_form

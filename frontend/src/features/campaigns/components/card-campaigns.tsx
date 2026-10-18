@@ -86,7 +86,7 @@ export function CardCampaigns({
   const [notice, setNotice] = useState("");
   const [note, setNote] = useState("");
   const [editingProduct, setEditingProduct] = useState<CardProduct>();
-  const [catalogVersion, setCatalogVersion] = useState("demo-v2");
+  const [catalogVersion, setCatalogVersion] = useState("review-v2");
   const submitting = useRef(false);
   const loadSequence = useRef(0);
   const canRun = identity?.permissions.includes("campaign_run") ?? false;
@@ -313,7 +313,7 @@ export function CardCampaigns({
           <p>Find potential card prospects, prepare drafts, and deliver an employee report.</p>
         </div>
         <div className="page-actions">
-          <Badge>Synthetic demo</Badge>
+          <Badge>Synthetic data</Badge>
           {reportId && (
             <Button
               onClick={() => {
@@ -350,16 +350,16 @@ export function CardCampaigns({
           <div className="campaign-section-heading">
             <div>
               <h2>Prepare an employee report</h2>
-              <p>Use a completed data window and reviewed demo products.</p>
+              <p>Use a completed data window and reviewed products.</p>
             </div>
             {canAdmin && products.length > 0 ? (
               <Button
                 onClick={() => {
                   setEditingProduct(products[0]);
-                  setCatalogVersion("demo-v2");
+                  setCatalogVersion("review-v2");
                 }}
               >
-                Manage demo catalog
+                Manage product catalog
               </Button>
             ) : (
               <CreditCard className="campaign-setup-icon" size={25} aria-hidden="true" />
@@ -374,7 +374,7 @@ export function CardCampaigns({
                 onChange={(event) => setDataset(event.target.value)}
                 disabled={busy || !!pending}
               >
-                <option value="meridian">Meridian demo · INR</option>
+                <option value="meridian">Meridian · INR</option>
                 <option value="bankshield">BankShield public sample · USD</option>
               </select>
             </label>
@@ -402,7 +402,7 @@ export function CardCampaigns({
           <fieldset className="campaign-product-grid">
             <legend>
               Products to consider{" "}
-              <small>Leave all unchecked to compare the active demo catalog.</small>
+              <small>Leave all unchecked to compare the active product catalog.</small>
             </legend>
             {products.map((product) => (
               <label className="campaign-product-choice" key={`${product.id}-${product.version}`}>
@@ -426,7 +426,8 @@ export function CardCampaigns({
                 <span>
                   <strong>{product.name}</strong>
                   <small>
-                    Annual fee {campaignMoney(product.annualFeeMinor)} · {product.version}
+                    Annual fee {campaignMoney(product.annualFeeMinor)} ·{" "}
+                    {product.version.replace(/^demo[- ]*/i, "")}
                   </small>
                   <small>{Object.values(product.benefits)[0]}</small>
                 </span>
@@ -436,7 +437,7 @@ export function CardCampaigns({
           <div className="campaign-prepare-row">
             <p>
               {canRun
-                ? "The report is assigned to you and an Admin reviewer in this demo. Drafts stay inside the workspace."
+                ? "The report is assigned to you and an Admin reviewer in this workspace. Drafts stay inside the workspace."
                 : "Viewers can read assigned summaries. An Analyst or Admin prepares campaign reports."}
             </p>
             <Button
@@ -895,11 +896,11 @@ export function CardCampaigns({
                 <dd>{campaignMoney(selectedCandidate.evidence.features.averageIncomeMinor)}</dd>
               </div>
               <div>
-                <dt>Demo credit score</dt>
+                <dt>Credit score</dt>
                 <dd>{selectedCandidate.evidence.features.score ?? "Not supplied"}</dd>
               </div>
               <div>
-                <dt>Demo debt ratio</dt>
+                <dt>Debt ratio</dt>
                 <dd>
                   {selectedCandidate.evidence.features.debtRatioBps == null
                     ? "Incomplete evidence"
@@ -939,7 +940,7 @@ export function CardCampaigns({
         onOpenChange={(open) => {
           if (!open) setEditingProduct(undefined);
         }}
-        title="Publish a demo product version"
+        title="Publish a product version"
         description="Changes create a new immutable fictional catalog version. Existing campaign reports keep their original terms and rules."
       >
         {editingProduct && (
@@ -962,9 +963,7 @@ export function CardCampaigns({
               })
                 .then(() => {
                   setEditingProduct(undefined);
-                  setNotice(
-                    "New demo product version published. Start a revised campaign to use it."
-                  );
+                  setNotice("New product version published. Start a revised campaign to use it.");
                   return load();
                 })
                 .catch((cause) =>
@@ -978,9 +977,9 @@ export function CardCampaigns({
             }}
           >
             <label>
-              Demo product
+              Product
               <select
-                aria-label="Demo catalog product"
+                aria-label="Catalog product"
                 value={editingProduct.id}
                 onChange={(event) =>
                   setEditingProduct(products.find((item) => item.id === event.target.value))
@@ -996,7 +995,7 @@ export function CardCampaigns({
             <label>
               New version
               <input
-                aria-label="New demo product version"
+                aria-label="New product version"
                 value={catalogVersion}
                 required
                 pattern="[a-zA-Z0-9-]+"
@@ -1006,7 +1005,7 @@ export function CardCampaigns({
             <label>
               Annual fee (INR)
               <input
-                aria-label="Demo product annual fee"
+                aria-label="Product annual fee"
                 type="number"
                 min="0"
                 step="0.01"
@@ -1022,7 +1021,7 @@ export function CardCampaigns({
             <label>
               Minimum generated monthly income (INR)
               <input
-                aria-label="Demo product minimum income"
+                aria-label="Product minimum income"
                 type="number"
                 min="0"
                 step="1"
@@ -1039,9 +1038,9 @@ export function CardCampaigns({
               />
             </label>
             <label>
-              Minimum demo score (blank for secured starter)
+              Minimum credit score (blank for secured starter)
               <input
-                aria-label="Demo product minimum score"
+                aria-label="Product minimum score"
                 type="number"
                 min="300"
                 max="900"
@@ -1058,9 +1057,9 @@ export function CardCampaigns({
               />
             </label>
             <label>
-              Maximum demo debt ratio (%)
+              Maximum debt ratio (%)
               <input
-                aria-label="Demo product maximum debt ratio"
+                aria-label="Product maximum debt ratio"
                 type="number"
                 min="0"
                 max="100"
@@ -1080,7 +1079,7 @@ export function CardCampaigns({
             <label>
               Fee conditions
               <textarea
-                aria-label="Demo product fee conditions"
+                aria-label="Product fee conditions"
                 value={editingProduct.feeConditions}
                 onChange={(event) =>
                   setEditingProduct({ ...editingProduct, feeConditions: event.target.value })
@@ -1089,12 +1088,12 @@ export function CardCampaigns({
               />
             </label>
             <p className="campaign-subtle">
-              These are fictional demonstration thresholds. Product benefits and separate customer
+              These are synthetic review thresholds. Product benefits and separate customer
               application/consent requirements remain visible on each draft.
             </p>
             {error && <p role="alert">{error}</p>}
             <Button type="submit" variant="primary" disabled={busy}>
-              Publish demo product version
+              Publish product version
             </Button>
           </form>
         )}

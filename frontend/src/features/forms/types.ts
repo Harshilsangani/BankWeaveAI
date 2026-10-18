@@ -23,6 +23,7 @@ export interface FormDraft {
   customerId?: string;
   id: string;
   filename: string;
+  sourceAvailable?: boolean;
   markdown: string;
   fields: CustomerFields;
   status: string;

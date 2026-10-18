@@ -14,6 +14,8 @@ let verifiedIdentity: StaffIdentity | undefined;
 
 let identityRequest: Promise<StaffIdentity> | undefined;
 
+let changingDevelopmentRole = false;
+
 const memorySessions = new Map<string, string>();
 
 export function workspaceConversationId() {
@@ -34,6 +36,7 @@ export function workspaceConversationId() {
 }
 
 export function setWorkspaceConversationId(id: string) {
+  if (changingDevelopmentRole) return;
   activeConversationId = id;
   conversationWorkspaceId = workspaceSessionId();
   try {
@@ -123,6 +126,8 @@ export function getStaffIdentity() {
 
 export function setDevelopmentRole(role: StaffIdentity["role"]) {
   selectDevelopmentRole(role);
+  // Late responses from this page must not save a chat under the next role.
+  changingDevelopmentRole = true;
   window.location.reload();
 }
 

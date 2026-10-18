@@ -1,4 +1,6 @@
-import { request, post } from "@/shared/api/client";
+import { request, post, getStaffIdentity, workspaceSessionId } from "@/shared/api/client";
+import { developmentRoleHeader } from "@/shared/lib/staff-role";
+import { readBackendJson } from "@/shared/api/errors";
 
 export const getSavedFormReview = (id: string) =>
   request<import("@/features/forms/types").SavedFormReview>(`forms?id=${encodeURIComponent(id)}`);
@@ -62,3 +64,32 @@ export const decideApprovalRequest = (
     duplicateReason?: string;
   }
 ) => post<import("@/features/forms/types/approvals").ApprovalDetail>("approvals", { id, ...body });
+
+export async function downloadFormSource(id: string, filename: string) {
+  await getStaffIdentity();
+  const response = await fetch(`/api/forms/source?id=${encodeURIComponent(id)}`, {
+    headers: {
+      "x-risklens-session": workspaceSessionId(),
+      "x-risklens-role": developmentRoleHeader(),
+    },
+  });
+  if (!response.ok) await readBackendJson(response);
+  const bytes = await response.arrayBuffer();
+  const type = response.headers.get("Content-Type")?.split(";")[0];
+  if (!type || !["application/pdf", "image/png", "image/jpeg"].includes(type))
+    throw new Error("The service did not return an uploaded document.");
+  const expected = response.headers.get("X-Content-SHA256");
+  if (expected && globalThis.crypto?.subtle) {
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const actual = Array.from(new Uint8Array(digest), (value) =>
+      value.toString(16).padStart(2, "0")
+    ).join("");
+    if (actual !== expected) throw new Error("The document changed during download. Try again.");
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

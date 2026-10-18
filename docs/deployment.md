@@ -1,297 +1,156 @@
-# Local packaging and GCP handoff
+# Deployment and operations
 
-Current form-recovery release (18 October): build `-N_f4nbx2y-xYm-ZmUXHi`, unchanged schema `023_campaign_email_presentation`. Interrupted employee submissions recover the saved request before permitting another submission; offline recovery exposes **Check saved request status**. All 188 backend tests and 14 browser flows pass. Working records, saved work, checkpoints and runtime configuration were preserved. Paired backup and prior build: `/home/harshilsangani07/bankweave-state/backups/form-pipeline-20261018-skycqj__`. See [pipeline and acceptance](roadmap.md#form-submission-recovery--18-october-2026).
+Use [README](../README.md) for a new local installation and [architecture](architecture.md) for the request and storage boundaries. Runtime credentials, working databases, browser recovery handles and backups stay outside Git.
 
-Previous UI release (17 October): build `fk8_rwopsIs7eHgNezf01`, unchanged schema `023_campaign_email_presentation`. Notification headers and populated phone rows, dialog focus restoration, report empty states and the mobile campaign header are corrected. All 44 affected browser flows pass, with 16 repeated against the exact release. No cloud configuration, seed or migration changes. Paired backup and prior build: `/home/harshilsangani07/bankweave-state/backups/ui-audit-20261017-ts8qwusb`. See [visual audit and coverage](roadmap.md#visual-ui-audit--17-october-2026).
+## Judge access and public submission
 
-Previous all-feature release (17 October): build `22r2bDXgQgOJ3J0Tf-su9`, unchanged schema `023_campaign_email_presentation`. Settings/Analyst connection recovery, complete local worker startup and the submission walkthrough are deployed. Existing private systemd supervision, Vertex and SMTP configuration remain unchanged. Matched storage backups and prior build: `/home/harshilsangani07/bankweave-state/backups/release-audit-20261017-h3uo53lg`. See [full audit and limits](roadmap.md#full-feature-submission-audit--17-october-2026).
+The public demonstration is **https://35.253.137.87**. It uses a separate checkout under `~/bankweave-judge-app` and synthetic storage under `~/bankweave-state/judge-storage`. The original private app/store remain separate. The public role selector simulates staff identities; verified individual sign-in is pending. Real email delivery is disabled.
 
-Overdue-risk release (17 October): build `dTpm2uC1pZll0dKhLYUw0`, detector rules `snapshot-rules-v3`, unchanged schema `023_campaign_email_presentation`. Dated overdue-principal detection uses existing repayment tables and optional saved-case fields; no migration, reseed, cloud processor or SMTP configuration change is needed. Promotion retained paired database backups, the previous frontend build and private runtime configuration at `/home/harshilsangani07/bankweave-state/backups/overdue-risk-20261017-sqner3fm`. Original financial/detector rows, saved work and checkpoints were verified unchanged at activation. Evidence and test results: ignored `artifacts/overdue-risk/`; [current acceptance](roadmap.md#dated-overdue-risk-and-saved-review-evidence--17-october-2026).
+User services in `scripts/systemd/bankweave-judge*` supervise the public API, frontend and worker. The system gateway template is `scripts/systemd/bankweave-judge-gateway@.service`. `Caddyfile.judge` uses a short-lived Let's Encrypt IP certificate, requires `BANKWEAVE_JUDGE_HOST` and `BANKWEAVE_JUDGE_UPSTREAM`, redirects HTTP to HTTPS and blocks the test-email endpoint. Its private environment/configuration lives under `~/.config/bankweave/`. Certificate renewal requires the host to remain reachable. If the IP changes, update the gateway and published demo URL.
 
-For the receiving agent, read the [complete GCP migration handoff](gcp-handoff.md) first. It records current features, source/state transfer requirements, private-VM restore, authentication/provider blockers and acceptance checks. This document supplies the detailed packaging and future managed-deployment reference.
+```bash
+systemctl --user status bankweave-judge.target bankweave-judge-backend.service bankweave-judge-frontend.service bankweave-judge-worker.service
+sudo systemctl status bankweave-judge-gateway@harshilsangani07.service
+```
+
+The owner has configured the VM tag/firewall for TCP 80/443. Future firewall changes require the owner's Compute administration access. Public visitors need no password or Google credentials. Keep the [reviewer guide](judge-demo-guide.md) consistent with the deployed configuration.
 
 ## Repeatable local setup
 
-Use Node 24 and Python 3.11. Create a fresh virtual environment without `--system-site-packages`. Run `npm ci`, then install `backend/requirements.lock.txt`. Apply `npm run backend:migrate`, then explicitly run `npm run backend:seed`. Start with `npm run dev`. Migration never seeds or clears source records; automatic seeding is disabled unless explicitly enabled in development.
+Use Node 24 and Python 3.11. Create a fresh virtual environment, install `npm ci` and `backend/requirements.lock.txt`, and copy `.env.example` to the root `.env`. For a new workspace, explicitly migrate, seed and generate campaign data as described in README. Normal startup never reseeds existing records.
 
-`schema_migrations` records checksummed SQL files. Add a new migration instead of modifying an applied file. A failed upgrade rolls back its schema changes. Back up both the application database and graph checkpoints before upgrades. `scripts/checks/verify_recovery.py` tests preserved edits, pending admin requests and idempotent approval across three fresh processes.
+The npm launchers load root environment files for frontend, API and worker processes. Direct Python commands need the same variables exported explicitly. Do not place credentials in `NEXT_PUBLIC_*` variables.
 
-The `.env.example` documents disabled cloud defaults. Next reads `.env.local`; export backend settings in the process environment. Never put credentials in browser-exposed `NEXT_PUBLIC_*` variables. The Gen AI SDK is installed for adapter contract tests; installation does not activate cloud requests.
+## Independent frontend and backend services
 
-## Private container demo
+The private VM uses user-level systemd services grouped by `bankweave-private.target`:
 
-The `frontend/Dockerfile` packages Next's standalone output. The backend image runs migrations, then FastAPI under an unprivileged user. Health checks and bounded requests are included. `compose.yaml` binds development services to loopback and mounts `/data` for SQLite/checkpoints. It now includes a separate campaign worker using the backend image and the same store; the VM override applies the same restored bind mount to both. The worker waits for backend health and does not run migrations or seed. YAML/volume checks pass; actual Docker execution remains unverified on this VM because Docker is unavailable.
+| Service                             | Runtime                                                       |
+| ----------------------------------- | ------------------------------------------------------------- |
+| `bankweave-frontend.service`        | Next standalone server, private port 3000.                    |
+| `bankweave-backend.service`         | FastAPI/Uvicorn, one worker, private port 8000.               |
+| `bankweave-campaign-worker.service` | Durable campaign job worker using the same application store. |
 
-Before the first container seed, export the fixture with `node --import tsx scripts/data/export-demo.ts`. After building and starting the backend, copy `backend/storage/meridian.json` into `/data/meridian.json` using `docker compose cp`, then run `docker compose exec backend python -m backend.features.datasets.demo_import`. Subsequent restarts do not seed. BankShield is fetched only by the explicit seed command.
+Templates live in `scripts/systemd/`; installed copies live under `~/.config/systemd/user/`. The private checkout is `$HOME/BankWeaveAI`. User lingering and the enabled target provide supervision beyond an SSH session. Avoid starting a second launcher or worker against the same ports/store.
 
-Docker is not installed on the development machine used for these changes. Image build, Linux OCR libraries, compose startup and Cloud Run ingress/streaming need container validation before release. Production backend images reject development identity headers; do not treat a healthy container as an authenticated public product.
+```bash
+systemctl --user status bankweave-private.target
+systemctl --user restart bankweave-frontend.service
+systemctl --user restart bankweave-backend.service
+systemctl --user restart bankweave-private.target
+journalctl --user -u bankweave-backend.service -u bankweave-campaign-worker.service
+```
 
-## Durable database/checkpoint migration — G04
+Private environment files are `~/.config/bankweave/frontend.env` and `backend.env`. They contain backend URL, storage paths and provider/identity settings. The public services use separate `judge-frontend.env` and `judge-backend.env` files. Host launchers use `BANKWEAVE_STORAGE_DIR` for the selected persistent directory and optionally `BANKWEAVE_LIBRARY_DIR` for locally installed OCR system libraries. Confirm the selected store before restarting.
 
-### Private VM restore and host startup
+The independent npm commands are `npm run frontend:start`, `npm run backend:start` and `npm run campaigns:worker`. `npm start` is the combined local convenience launcher. Building the frontend does not migrate or seed banking records. Promote a tested build with the previous build retained; restart only the components whose code changed.
 
-`compose.vm.yaml` supplies the private VM bind mount. Set `BANKWEAVE_STORAGE_DIR` to the absolute restored directory, then resolve `docker compose -f compose.yaml -f compose.vm.yaml config` before startup. The override replaces the named volume at `/data`, sets both database paths and disables auto-seeding. Missing host directories are not automatically created. Backend container UID 1001 must have access; verify ownership before running containers.
+## Backups, migration and recovery
 
-The current working directory on the VM is `/home/harshilsangani07/bankweave-state/storage`, outside Git and the image context. On 12 October 2026 the owner explicitly selected a fresh synthetic dataset; this directory is now populated and must not be reseeded or overwritten by a later Windows transfer. The initial matched state is backed up under `/home/harshilsangani07/bankweave-state/backups/fresh-initial-20261012`. For a future saved-state restore, transfer consistent SQLite backups, `meridian.json` and the matching BankShield cache into a separate private directory, verify it and plan the cutover deliberately.
+The private store is `~/bankweave-state/storage`. The application and graph checkpoint files form a matched pair. Preserve `meridian.json`, the pinned BankShield cache and original customer IDs alongside them. Do not replace newer state with a synthetic seed or an older transfer.
 
-Run the read-only preflight after transfer:
+Stop the complete app target, including its worker, before taking a matched backup. For a local foreground stack, use Ctrl+C. Use a new private backup directory:
+
+```bash
+mkdir -m 700 bankweave-backup
+sqlite3 backend/storage/risklens.sqlite3 ".backup 'bankweave-backup/risklens.sqlite3'"
+sqlite3 backend/storage/agent-checkpoints.sqlite3 ".backup 'bankweave-backup/agent-checkpoints.sqlite3'"
+sqlite3 -readonly bankweave-backup/risklens.sqlite3 "PRAGMA integrity_check;"
+sqlite3 -readonly bankweave-backup/agent-checkpoints.sqlite3 "PRAGMA integrity_check;"
+```
+
+Replace the default paths with the selected deployed store. SQLite's backup operation includes committed WAL data; copying only a live database file can omit it. Keep backups outside Git. Restore only while all writers are stopped and preserve the current store for rollback.
+
+`npm run backend:migrate` applies pending SQL and verifies checksums in `schema_migrations`. Never edit an applied migration; add a new one. `024_form_sources` retains validated original PDF/image bytes, MIME and SHA-256 for owned downloads. Earlier missing uploads are not reconstructed automatically. Application records, graph checkpoints, original documents, forms, approvals, campaigns and immutable reports must survive upgrades together.
+
+Read-only VM preflight:
 
 ```bash
 backend/.venv/bin/python scripts/checks/verify_vm_state.py \
-  --storage /home/harshilsangani07/bankweave-state/storage
+  --storage "$HOME/bankweave-state/storage"
 ```
 
-It checks both SQLite files, checkpoint tables, applied migration checksums/current schema, stored HTML report hashes, original Meridian IDs/product links and the pinned BankShield cache hashes when that dataset is present. It emits counts/hashes, not customer content. It does not prove that the backups were captured as a consistent pair or restore browser ownership handles. Pending migrations fail preflight; reconcile the source and apply migrations deliberately after backing up, then repeat the check.
+It checks SQLite/schema integrity, migration/source/report hashes and original identities. Pending migrations must be reconciled deliberately before restarting the guarded host launcher. Preflight does not prove two separately captured databases represent the same instant or restore browser ownership handles.
 
-If Docker administration is unavailable, the host-process launcher uses the installed Python environment and built Next standalone server:
+## Private container demo
+
+`frontend/Dockerfile` packages Next's standalone output. The backend image includes OCR libraries, runs migrations and uses an unprivileged user. `compose.yaml` binds frontend/API to loopback and includes a separate campaign worker sharing `/data`; the worker starts after API health and does not migrate or seed.
+
+For a first-time container seed, export the fixture with `node --import tsx scripts/data/export-demo.ts`, copy `backend/storage/meridian.json` into the backend's `/data/meridian.json`, then explicitly run `python -m backend.features.datasets.demo_import` in that container. Generate campaign inputs separately. Never repeat fixture seeding over an existing store.
+
+`compose.vm.yaml` replaces the named storage volume with a restored host directory for both API and worker. Set `BANKWEAVE_STORAGE_DIR` to that absolute path, verify UID 1001 has access, then inspect:
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
-export BANKWEAVE_STORAGE_DIR="$HOME/bankweave-state/storage"
-# Required on the current VM, where OCR libraries were installed under this account:
-export BANKWEAVE_LIBRARY_DIR="$HOME/.local/share/bankweave/system-packages/usr/lib/x86_64-linux-gnu"
-bash scripts/runtime/start-private-vm.sh
+docker compose -f compose.yaml -f compose.vm.yaml config
 ```
 
-This launcher validates restored state first, refuses occupied application ports, disables auto-seeding/Vertex, and binds frontend/backend to `127.0.0.1:3000/8000`. Access is through an SSH tunnel. It is a private development-identity demo and remains a foreground process; service supervision, reboot recovery and Docker image acceptance are not established by this fallback. `npm start` now uses `frontend/.next/standalone/frontend/server.js` and copies public/static assets into the standalone output. Fixture export honors `RISKLENS_STORAGE_DIR` and preserves an existing fixture byte-for-byte.
-
-The original combined user-level `bankweave-private.service` has been disabled and retained as a rollback option. The VM now uses the independent services below, grouped by the enabled `bankweave-private.target`. User lingering remains enabled. Do not start a foreground launcher or the old combined unit while the new services own ports 3000/8000. Actual VM reboot recovery, Docker image acceptance and public authenticated ingress remain untested/pending. These user services do not require Docker or passwordless sudo.
-
-### Independent frontend and backend services
-
-**Email presentation, 17 October 2026:** Current build is `cJW8PTrc0QTkOeibuJiXg` with migration `023_campaign_email_presentation`. Admin previews and sends a short HTML email with a plain-text alternative. One revised test was accepted by Gmail with receipt `MAIL-be0156156612`. The original receipt remains intact. Backup: `/home/harshilsangani07/bankweave-state/backups/email-layout-20261017-kvl9fz9c`. See [presentation acceptance](roadmap.md#concise-html-campaign-email--17-october-2026).
-
-**Campaign test delivery, 17 October 2026:** Current build is `R7s9RZXmGH1eB6HtD1wK4` with additive migration `022_campaign_email_deliveries`. User-authorized live acceptance submitted one saved Gemini draft to the configured test inbox, accepted by Gmail with receipt `MAIL-8c364bed5b2e`. Both application services and the worker retain private systemd supervision and Vertex settings. Matched backups and the previous build are at `/home/harshilsangani07/bankweave-state/backups/campaign-email-20261017-y523eob0`. See [email configuration](#campaign-test-email-configuration) and [acceptance](roadmap.md#reviewed-campaign-test-email--17-october-2026).
-
-**Policy search, verified 17 October 2026:** Current build is `UAfvarJGVSKhR4kUy4d2G`. The ranked policy-section search is live through `/api/policies/search?q=…` and shared with Analyst policy retrieval. Both health paths and plain-language search probes passed. Protected data and Vertex settings were preserved; no migration, seed or search model call was introduced. The previous build and matched database backups are at `/home/harshilsangani07/bankweave-state/backups/policy-search-20261016-1vbzv42g`. Historical build references below describe earlier rollouts. See [acceptance details](roadmap.md#ranked-policy-search--verified-17-october-2026).
-
-**Managed startup and recovery, 16 October 2026:** The frontend, backend and campaign worker now run under user systemd, replacing the detached host processes. `bankweave-private.target` is enabled and user lingering is enabled, so the group is configured to start without an SSH session. Each service restarts after an unexpected exit, including a clean exit, after 10 seconds; startup is limited to six attempts per 120 seconds. An explicit systemctl stop stays stopped. The frontend's normal SIGTERM exit code 143 is accepted. Backend readiness gates frontend and worker startup. The worker refuses a missing application store and never seeds or migrates. Backend preflight refuses pending migrations, and automatic seeding remains disabled. This configures boot startup; an actual VM reboot remains untested.
-
-Matched database backups and the previous host-process environment are retained at `/home/harshilsangani07/bankweave-state/backups/service-handoff-20261016-su8r8yak`. The current frontend build remains `FjKuzQAocsPFOynPfaTDR`. Old `logs/*.pid` files were archived during handoff; systemd owns current PIDs and logs. Do not use the historical PID-based restart instructions below. Recovery evidence is under ignored `artifacts/service-recovery/`; the checks make no model calls.
-
-**Case Review Assistant rollout, 16 October 2026:** Current build `FjKuzQAocsPFOynPfaTDR` includes the saved-case Review action and readable frozen-source references. Backend startup applied additive migration `021_case_review_briefs` (64 tables); no QA cases/briefs were promoted. Existing table counts, customer IDs, checkpoints, fixture hash and prior migration checksums passed preservation checks. Matched backups and the previous frontend build are at `/home/harshilsangani07/bankweave-state/backups/case-review-20261016-ccjzl8uw`. That rollout used component logs/PID files under `logs/`; current supervision uses the journal as described above. Gemini selection uses the existing Vertex profile; refresh/reopen makes no inference call. Keep the new additive table during a code rollback, and preserve any later staff briefs rather than restoring an old database over new activity.
-
-**Current access, 16 October 2026:** Both services listen on localhost: frontend `127.0.0.1:3000`, backend `127.0.0.1:8000`. Use VS Code Remote SSH → Ports → Forward a Port → `3000`, then open its local URL. Development-role frontend startup enforces localhost; the private environment and nohup launcher also select localhost. The public cloud firewall rule remains present, but there is no public frontend listener. The access-only restart preserved the existing frontend build, Vertex backend process and all application table counts. Access-change rollback receipts are under `~/bankweave-state/backups/private-access-20261016-7bioxqni/`. The earlier tested Radar/PDF deployment used build `uTMKYGcFpcXgAOvoKeq9Z`; its previous build and matched database backups are under `~/bankweave-state/backups/regression-fixes-20261016-abrxb1kt/`. Both components retain their private environment settings; the subsequent managed handoff above replaces the host logs/PID files. Whole-machine recovery and verified staff sign-in remain pending.
-
-On 13 October 2026, the owner requested detached `nohup` hosting. The systemd target was stopped and disabled, and `bash scripts/runtime/start-nohup.sh` started the backend on `127.0.0.1:8000` and frontend on `127.0.0.1:3000`, using the existing private environment files and working database. Gemini configuration is preserved. Output appends to `logs/backend.log` and `logs/frontend.log`; PID files are under the same ignored, private directory. Use `tail -f logs/backend.log logs/frontend.log` to follow output. These processes survive SSH disconnects, but do not automatically restart after failure or VM reboot. The owner subsequently configured public ingress for TCP 3000 and requested public frontend binding. That historical setup used `0.0.0.0:3000`; it was replaced by the private access setup described above on 16 October. Backend port 8000 remains loopback-only. This demo has development staff identities without sign-in and can modify stored data or make billable Gemini requests. Public HTTP browsers do not expose `crypto.randomUUID()`; browser workspace/request IDs use a shared secure `getRandomValues()` fallback so datasets, session recovery and operations work on this origin. The compatibility frontend build was produced with `npm run build -- --webpack`, with the previous build retained under ignored `artifacts/frontend-deployment/http-session-fix/previous-next`.
-
-The 16 October handoff stopped all three detached processes before starting the target. `start-nohup.sh` now refuses an active managed target. Do not start a second backend or campaign worker against the working SQLite store.
-
-| Service                             | Runtime                                                                  | Listener         |
-| ----------------------------------- | ------------------------------------------------------------------------ | ---------------- |
-| `bankweave-frontend.service`        | Node frontend launcher → Next standalone production server               | `127.0.0.1:3000` |
-| `bankweave-backend.service`         | Python virtual environment → FastAPI/Uvicorn, one ASGI worker, no reload | `127.0.0.1:8000` |
-| `bankweave-campaign-worker.service` | Python campaign worker, existing private backend environment             | None             |
-
-The services have separate processes, journals and restart policies; the worker shares the private backend environment. Frontend and worker startup wait for backend readiness; restarting any one component leaves the others running. The same-origin browser → Next gateway → FastAPI request boundary remains in place. Port separation itself is not a measured request-speed improvement; independent deployment/restart control is the verified improvement.
-
-Unit templates live in `scripts/systemd/` and are installed under `~/.config/systemd/user/`. They assume the checkout is at `$HOME/BankWeaveAI`. `bash scripts/runtime/install-user-services.sh` validates prerequisites and unit definitions, backs up existing units, installs them and enables the target; it does not start services or rewrite private environment files. A first handoff must stop existing processes before starting the target. The enabled target starts all three services when the user's systemd manager starts; the target's Wants declarations supply their dependencies.
-
-Private runtime configuration is separate from source:
-
-- `~/.config/bankweave/frontend.env`: `HOSTNAME`, `PORT`, `RISKLENS_BACKEND_URL`, `RISKLENS_IDENTITY_ADAPTER`, `NEXT_TELEMETRY_DISABLED`.
-- `~/.config/bankweave/backend.env`: persistent storage/library paths, backend port and backend identity/provider settings. Auto-seeding is disabled by the launcher. Backend credentials/grants belong here or in approved private credential stores, not frontend configuration.
-
-Current settings retain Vertex `gemini-3.5-flash-lite` at `global` and development identity for the private demo. The Node production build and Uvicorn runtime do not establish verified public authentication; configure/test G05 before public ingress. Keep one ASGI worker and one campaign worker for the current SQLite/checkpoint store until persistence/concurrency changes have been evaluated.
-
-```bash
-# Inspect all three services
-systemctl --user status bankweave-backend.service bankweave-frontend.service bankweave-campaign-worker.service
-# Restart just the interface
-systemctl --user restart bankweave-frontend.service
-# Restart just FastAPI
-systemctl --user restart bankweave-backend.service
-# Start/stop/restart the whole group using the explicit target name
-systemctl --user restart bankweave-private.target
-# Inspect a component's logs
-journalctl --user -u bankweave-backend.service
-# Follow all component logs
-journalctl --user -f -u bankweave-backend.service -u bankweave-frontend.service -u bankweave-campaign-worker.service
-```
-
-For a read-only status, health, private-listener and storage verification:
-
-```bash
-python3 scripts/checks/verify_user_services.py --storage "$HOME/bankweave-state/storage"
-```
-
-During an idle maintenance window, add `--exercise-restarts --output artifacts/service-recovery/recovery.json` to terminate each component and verify automatic recovery, then stop/start the complete group. It checks peer PIDs, the unchanged provider profile, every table count, saved-work/customer/checkpoint hashes and fixture bytes. The group check always attempts startup in its cleanup path. This temporarily interrupts access and is not a VM reboot test. It does not enable campaign schedules or make model calls.
-
-The independent npm commands are `npm run frontend:start` and `npm run backend:start` (the backend shell launcher is Linux/VM-specific). For manual use, export the corresponding runtime settings first; avoid launching duplicates of the managed services. `npm run dev` and the combined `npm start` remain local convenience launchers. Only frontend startup copies built public/static assets; it never migrates/seeds banking data. The backend validates the selected persistent store before executing Uvicorn. The port probe permits closed-connection reuse while still rejecting a live listener.
-
-Acceptance on 12 October 2026: restarting each component preserved the other component's PID; backend health and proxied dashboard/customer responses recovered successfully; banking, conversation, form, report and approval row counts were unchanged. The first restart check exposed a closed-socket port-probe bug, which was corrected and the component restart check rerun successfully. No request-latency benchmark or actual VM reboot test was performed.
-
-SQLite is the implemented local driver. Database and checkpoint paths are independently configurable; unsupported drivers fail explicitly. Managed SQL/checkpoint stores are not implemented or tested yet.
-
-Include the `conversations` table introduced by migration `015_conversations`. Preserve its workspace foreign key, per-chat scope/message references and active-conversation state along with `session_artifacts`; test reopening two chats and a reviewed form after migration/redeployment.
-
-Also preserve the submitted snapshots, request ownership, decisions and events in migration `017_admin_approvals`. Verify pending staff-request recovery, cross-tenant rejection, atomic approval and replay after migration. Keep application records and graph checkpoints as a matched set.
-
-At G04 choose one managed relational store, implement its connection/transaction adapter and translate SQLite-specific JSON/date queries. Use a compatible durable LangGraph saver instead of container-local checkpoint files. Export every applied migration's canonical tables with `(dataset, id)` identities and integer monetary units: source records, profiles/form versions, sessions, artifacts/report files, cases/dispositions, policy library, detector runs, import previews/receipts, repayments, insurance, preferences/recommendation runs/reviews, cashflow, KYC cases, maintenance receipts/events and audits. Migrate graph checkpoints as a matched set. Import to a staging schema, reconcile source counts/hashes and recover a pending review before switching traffic. Keep BankShield's incomplete relationships visible.
-
-Do not run the fixture seed over migrated source data. The seed intentionally replaces original banking fixture tables; generated product inserts and reviewed profile edits are preserved, but that is not an import/migration strategy. Back up local databases before any explicit reseed.
-
-For rollback, stop writes, restore the application/checkpoint backups as a matched pair, point a private runtime back to the previous schema and verify that repeated confirmation cannot add a second customer. Do not apply destructive down-migrations to edited banking records. Backup recovery in the actual managed store remains a live G04 acceptance check.
-
-## Verified staff identity — G05 preparation
-
-`backend/core/iap_identity.py` implements opt-in signed IAP assertion verification. It remains disabled in the private demo. Configure the same adapter on frontend and backend only when the actual IAP ingress/audience and approved staff grants are ready:
-
-```dotenv
-RISKLENS_ENV=production
-RISKLENS_IDENTITY_ADAPTER=iap
-RISKLENS_IAP_AUDIENCE=<exact signed-header audience from the protected resource>
-RISKLENS_STAFF_GRANTS_FILE=<absolute private path to staff.json>
-```
-
-The grants file is private server configuration, outside Git/images. Use verified IAP subject IDs and the corresponding emails, not browser headers. An example of its schema (fictional values, not an active grant):
-
-```json
-{
-  "version": 1,
-  "staff": [
-    {
-      "subject": "accounts.google.com:EXAMPLE_ONLY",
-      "email": "staff@example.test",
-      "role": "analyst",
-      "tenant": "meridian-demo"
-    }
-  ]
-}
-```
-
-Only Viewer/Analyst/Admin and the existing `meridian-demo` tenant are supported. An empty staff list denies everyone. Missing/malformed configuration, duplicate subjects, mismatched emails, unsigned headers, incorrect signatures/audiences/issuers/times and unsupported grants fail closed. Staff grant revocation is checked on each request. Google public keys are fetched from a fixed HTTPS endpoint with a five-second timeout and bounded cache; JWT errors returned to clients contain no credentials or claim details. [Google signed-header validation requirements](https://docs.cloud.google.com/iap/docs/signed-headers-howto).
-
-Verified identities receive stable `iap-...` actor IDs and separate browser recovery keys. This intentionally gives no implicit access to legacy local actors' workspaces. Before migration cutover, implement and review an explicit authorized recovery mapping for the actual saved chats/forms/imports/reports; do not relabel historical actors or copy recovery handles into public notes. Multi-tenant banking records, account lifecycle/session revocation, live IAP ingress and deployed end-to-end permission/stream tests remain G05 work. Offline signature/API tests are not evidence that Google sign-in is live.
-
-## Read-only G01 preflight
-
-Run on this VM or from an authorized project-administrator environment:
-
-```bash
-python3 scripts/checks/gcp_preflight.py --project ai-builders-cup \
-  --instance instance-20261012-050751 --zone us-central1-a
-```
-
-This reads enabled services, project metadata, billing linkage and VM configuration. It never enables an API, grants IAM, provisions resources or prints access tokens. The current VM credential returns insufficient OAuth scopes for all four checks. `cloudReadsComplete` means only that these inventory reads succeeded; `g01Complete` remains false until actual credits/expiry/eligible SKUs, budget filters/alerts, runtime IAM and model/location access are verified. A billing-enabled project is not evidence of available credits.
-
-## Activation remains pending
-
-G02 has a verified private-VM Gemini profile; see below. G01 full project/billing inventory; G03 container deployment; G04 managed durability; G05 verified staff identities; G06 private retained artifacts; G07 cloud telemetry/limits; G08 scheduled jobs; G09 verified data handling remain pending. Production currently fails closed for staff requests until identity integration is configured.
+Docker image execution and Cloud Run ingress/streaming remain unverified on this VM. The Compose stack is a private development-identity demonstration. A health response does not establish public authentication.
 
 ## Vertex activation on the private VM
 
-The public analyst supports typed customer-ranking intents (transaction value/count or original loan principal), including spelling variants such as “find the big 5 our coustemers.” Rankings use fixed database queries and name their basis; Gemini never supplies SQL or chart values. Unsupported BankShield loan/device requests show clearly labelled available transaction evidence instead of the old generic local-analyst response. New workspace scope defaults to `period=all`; explicit month selections and existing chats retain their saved scope. All-month loan defaults count distinct loans, while repayment/insurance snapshots use the latest available month end. The compact UI offers dataset/month selectors, selectable banking analysis and OCR actions, and plain process labels without framework/provider implementation details.
+The Vertex adapter uses Application Default Credentials (ADC), not an AI Studio API key. For your own project, enable Vertex AI, arrange billing and appropriate model-use permissions, then authenticate locally if needed:
 
-Validation for this update: 41 feature/provider checks and 18 TypeScript checks passed; production webpack build/typecheck passed. Three isolated browser checks with the active Gemini profile passed for scope persistence, the original top-five question, and OCR selection/extraction. Working customer/account/transaction/loan/form/approval counts were preserved. Test logs are under ignored `logs/analyst-*.log`.
+```bash
+gcloud auth application-default login
+gcloud auth application-default set-quota-project YOUR_PROJECT_ID
+```
 
-Owner-authorized live Gemini work on **13 October 2026** verified `gemini-3.5-flash-lite` in project `ai-builders-cup` using the `global` endpoint and the existing `google-genai==1.29.0` backend environment. No Gemini API key or downloadable service-account key is required. This endpoint choice does not establish a particular processing country; G09 remains open. [Google model documentation](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-5-flash-lite).
-
-The independent backend reads its private user-service environment from `~/.config/bankweave/backend.env`:
+Set the following in the private root `.env` or service environment:
 
 ```dotenv
 RISKLENS_PROVIDER=vertex
 RISKLENS_ENABLE_VERTEX=true
-RISKLENS_GCP_PROJECT=ai-builders-cup
+RISKLENS_GCP_PROJECT=YOUR_PROJECT_ID
 RISKLENS_GCP_LOCATION=global
-RISKLENS_VERTEX_MODEL=gemini-3.5-flash-lite
-RISKLENS_AUTO_SEED=false
+RISKLENS_VERTEX_MODEL=YOUR_AVAILABLE_GEMINI_MODEL
 ```
 
-After changing only these settings, restart `bankweave-backend.service`; the frontend gateway reads live backend responses. The accompanying provider-label UI change uses a separately staged production build: `/api/health` supplies the current provider, the composer/dataset status identifies Gemini or local mode, and each saved answer identifies its own provider/model. Promote the tested build with the previous `.next` retained for rollback, then restart only the frontend. Preserve both SQLite stores, banking IDs and saved work. Use `GET http://127.0.0.1:8000/health` or the same-origin `/api/health` to inspect provider/model/location and dataset readiness. Health does not itself make a model request.
+The tested hosted configuration uses `gemini-3.5-flash-lite` in project `ai-builders-cup` at `global`. Model availability and permission must be checked for a separate project. The `global` endpoint does not establish a processing country. Prefer an attached service account on Google Cloud over a downloadable key. Restart the backend after changing its environment, and inspect `/health`, `/api/health` or Settings. Health checks make no model call.
 
-The repeatable live API evaluator makes billable requests only when explicitly invoked:
+### Gemini and chart responses
 
-```bash
-backend/.venv/bin/python -m backend.evaluation.vertex --allow-live \
-  --storage /home/harshilsangani07/bankweave-state/storage \
-  --project ai-builders-cup --location global --model gemini-3.5-flash-lite
+Database tools compute KPI, table and chart values. Gemini may choose an existing allowed series or chart type and explain verified facts; it does not supply SQL, invent chart values or approve banking actions. Research exports carry the saved result's actual model/tool receipts and disclose local/fallback output. No model-generated code execution is needed for routine charts.
+
+## Verified staff identity — G05 preparation
+
+The opt-in IAP adapter validates signed assertions, audience/issuer/time, approved roles and server-side staff grants. Default demo identities are rejected in production. Before public production access, configure protected ingress and verified staff grants, then test revocation, session ownership and authorized recovery of legacy workspaces.
+
+```dotenv
+RISKLENS_ENV=production
+RISKLENS_IDENTITY_ADAPTER=iap
+RISKLENS_IAP_AUDIENCE=YOUR_PROTECTED_RESOURCE_AUDIENCE
+RISKLENS_STAFF_GRANTS_FILE=/absolute/private/staff-grants.json
 ```
 
-It uses SQLite's backup API to create a disposable application database and a separate QA checkpoint database. The first acceptance run passed **22/22** cases: source-parity fraud/loan KPIs and chart points, scoped follow-ups, general chat, historical/source coverage gaps, supplied policy citations, fictional PDF/image extraction, streaming/replay and Viewer denial before a model call. It used **33 model requests / 16,831 reported total tokens**, including 15,095 input and 1,736 output tokens. Working source counts were preserved. Reports stay under ignored `artifacts/evaluation/vertex-results.json`; scores describe this specific run rather than a guarantee about future requests.
-
-For frontend acceptance, use the current production build with disposable loopback QA services:
-
-```bash
-backend/.venv/bin/python scripts/checks/verify_vertex_browser.py --allow-live \
-  --storage /home/harshilsangani07/bankweave-state/storage \
-  --project ai-builders-cup --location global --model gemini-3.5-flash-lite
-```
-
-This starts QA backend/frontend on ports 8100/3100, checks provider labels, real Gemini replies, SQL charts, regional follow-ups and restored chat history in Chromium, saves private screenshots/results under `artifacts/gemini-validation/`, then stops both QA services. Pass `--frontend-build <absolute staged .next directory>` to validate a staged build before promotion. The verifier uses the VM's installed `~/.config/bankweave/fontconfig.conf` when present; omitting it causes Chromium to crash on this minimal Debian setup. It never promotes QA chats/forms into working storage. The test is excluded from ordinary browser runs unless `RISKLENS_LIVE_VERTEX=true`.
-
-Rollback uses the saved pre-activation environment under `~/bankweave-state/backups/`: restore that environment or explicitly select `RISKLENS_PROVIDER=local` and `RISKLENS_ENABLE_VERTEX=false`, then restart the backend. Revert provider source changes to the reviewed previous source if needed; do not restore/reseed banking databases merely to change the AI provider. The combined fallback launcher still selects local mode intentionally.
-
-### Reviewed file imports in managed storage
-
-Migration `016_structured_imports` adds `file_import_uploads`, `file_import_reviews` and `record_import_sources`. G04 must migrate their contents, ownership and immutable receipt references. G06/G09 must define retention/expiry/deletion for parsed staging rows, reviews and receipts: the original file bytes are discarded, but parsed information remains. G05 must replace development actors and define any cross-staff review handoff; local staged imports are scoped to their originating workspace/actor. Do not deploy an arbitrary SQL-file execution endpoint.
-
-## Gemini and chart responses
-
-Design checked 9 October 2026; exact-fact analytical narration and existing-series area/bar selection were implemented and live-tested on 13 October 2026. Model-generated code-execution chart images remain optional and inactive.
-
-### Can Gemini return a chart?
-
-Yes. Supported models can generate and execute Python, including Matplotlib graphs returned as inline bytes/images. Our application must read those image parts and render them in chat. A chart image is a static artifact, rather than our current interactive Recharts component. Google's cloud documentation lists graph output, a 30-second code-execution limit and token-based billing without a separate charge simply for enabling the tool. Confirm support for the exact model/location selected at deployment. [Google code execution documentation](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/tools/code-execution).
-
-### Recommended approach for this product
-
-Keep the existing interactive charts and rich answer blocks. No separate paid chart service is required. This recommendation is based on BankWeave's current Recharts/SQL architecture and the need for figures that reconcile with evidence.
-
-1. Authenticate staff and enforce the requested dataset, tenant, customer and permissions on the backend.
-2. Gemini proposes a bounded analytical request. Our approved read functions execute parameterized SQL and calculate the figures. Function calling returns a proposed tool name/arguments; our application performs the actual call. Never expose an unrestricted database connection, generated SQL execution or admin-write tools to the model. [Google function calling documentation](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/tools/function-calling).
-3. Give Gemini only the authorized, necessary aggregates and evidence references to explain the result. Use a constrained response schema for explanation and chart selection; validate the returned structure and references again in Python. Structured output helps constrain JSON shape, but does not prove a numerical claim. [Google structured output documentation](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/control-generated-output).
-4. The backend assembles `TEXT` → `KPI` → `CHART` → optional `TABLE`/`EVIDENCE` blocks. Chart points come from the same verified query result as the figures, with currency, period and scope attached. Gemini may choose an allowed chart kind/series reference; it must not invent or replace point values.
-5. React renders the explanation and graph consecutively in the same answer. The Vertex adapter now provides database-grounded fraud/loan narration and chooses an allowed chart kind for existing trend/geography series. Exact source statements replace model-selected placeholders; unverified numerical prose, unknown facts, extra chart fields and repeated series references are rejected. Source KPI values and chart points remain unchanged and reconcile in offline/live acceptance checks.
-
-Use code-execution chart images later for specialist export/one-off plots if useful. They are optional; do not run model-generated JavaScript or Python in our own banking backend to draw routine charts.
-
-### Five-year credit coverage
-
-First define **credit**: loan disbursements, outstanding loan balances at a date, or incoming account credits. These require different queries; balances must not be added together across successive snapshots.
-
-The Meridian transaction fixture covers April–September 2026, and original transactions lack verified debit/credit direction. It cannot provide a five-year credit graph. The local analyst now states the coverage gap without making up points. A future historical dataset needs dated records for every requested year, metric/direction, amount in minor units, currency, branch/customer links, status, source references and completeness. Extend the historical dataset/import contracts as well as the analytical tool; current import periods are intentionally bounded.
-
-### Credit eligibility
-
-Use the Google-hosted Gemini/Vertex route and Cloud Run for the existing backend/frontend when deployment begins. Cloud Run provides pay-per-use execution and a free tier; a dedicated chart hosting service adds no value here. [Cloud Run pricing](https://cloud.google.com/run/pricing).
-
-If the $300 balance is the standard Welcome credit, it expires within 90 days and applies to eligible Google Cloud usage. Google's current terms exclude Gemini API costs in AI Studio and partner-model managed APIs. Do not assume every Gemini endpoint uses the credit. Check the actual credit grant, billing project, eligible SKUs and model access before activation; this project has not inspected the user's billing balance. [Google Cloud Free Program](https://docs.cloud.google.com/free/docs/free-cloud-features).
-
-Verified identity, managed persistence, billing controls and live Gemini evaluation remain the deployment roadmap prerequisites. No cloud resource was provisioned or credit spent during this research.
+Use approved subject IDs and server-side grant files; browser headers cannot establish staff identity. Legacy local workspaces receive no implicit access mapping. The adapter exists but is not active in the public synthetic demo. Multi-tenant isolation beyond the implemented bank tenant remains future work.
 
 ## Campaign test email configuration
 
-Keep SMTP credentials in `~/.config/bankweave/backend.env` with mode 0600. The user service reads this file; a standalone Python backend must receive the same variables in its environment. A project `.env` alone is not automatically loaded by Uvicorn. `.env` is ignored by Git, and `.env.example` contains only blank/default values. Never use frontend `NEXT_PUBLIC_` variables for mail credentials.
-
-Required backend settings are `BANKWEAVE_EMAIL_ENABLED=true`, `BANKWEAVE_EMAIL_TEST_RECIPIENT`, `BANKWEAVE_EMAIL_TEST_DAILY_LIMIT` (1–20), `SMTP_HOST`, `SMTP_PORT=587`, `SMTP_STARTTLS=true`, `SMTP_USERNAME`, `SMTP_FROM` and `SMTP_PASSWORD`. `BANKWEAVE_EMAIL_TEST_NAME` selects the greeting for the fixed test inbox; `BANKWEAVE_EMAIL_SIGNATURE` sets the Kind regards signature. The current VM uses Gmail and an App Password, with a two-submission daily allowance consumed by the original and revised test. Keep secrets out of shell history and screenshots. Changing private settings requires restarting the backend service. Setting `BANKWEAVE_EMAIL_ENABLED=false` disables new sends while preserving receipts.
-
-Admin opens a completed assigned report, records a review note and selects Mark reviewed. In Email drafts, Read email draft exposes the fixed destination and Send test email button. The button submits the saved draft; the server checks review revision, consent and content before SMTP. Email history is separate from the immutable original employee report's delivery counts. Accepted means SMTP acceptance; check the receiving inbox/Spam for arrival. Unknown confirmation requires manual inspection and cannot be automatically retried. A failed receipt allows an explicit retry only within attempt/daily limits. Test deliveries use the configured inbox rather than stored synthetic customer email addresses.
+Matching, drafts, report review and exports work with delivery disabled. Optional test sending requires `BANKWEAVE_EMAIL_ENABLED=true`, private `SMTP_USERNAME`, `SMTP_FROM`, `SMTP_PASSWORD` and fixed `BANKWEAVE_EMAIL_TEST_RECIPIENT` settings. Use the configured SMTP app password where required. Delivery remains Admin-only, reviewed, consent-checked, idempotent and rate-limited. SMTP acceptance is not proof of inbox delivery. Keep delivery disabled in the public demo.
 
 ## Card campaign worker
 
-The campaign release uses additive migrations 018–020 and fourteen new tables. Back up the application/checkpoint pair while writers are stopped, apply `npm run backend:migrate`, then explicitly generate the bounded campaign fixtures. Never run the original banking seed during this upgrade.
+`npm run campaigns:generate` creates bounded campaign-only observations from original Meridian identities; it never reseeds banking tables. Immutable batch/row hashes detect subsequent edits. An unchanged replay reuses the batch. A new campaign month needs an explicitly published completed-source batch.
+
+`npm run campaigns:worker` supervises the host worker. Jobs use leases, heartbeat/fencing and checkpoint recovery. Schedules are opt-in; duplicate triggers resolve to the same run. Do not start a second worker supervisor over an existing deployment. Default drafting is bounded, discloses actual model usage and falls back to labelled local templates when needed. Report publication and assigned notifications commit together; later revisions do not rewrite old reports. Consent is checked again before publication/display.
+
+## Validation and safe upgrades
+
+Run the README validation commands on disposable storage. Browser checks write data, so use copied application/checkpoint files, local AI, disabled SMTP and separate ports. Useful additional checks are:
 
 ```bash
-export RISKLENS_STORAGE_DIR="$HOME/bankweave-state/storage"
-export RISKLENS_DB="$RISKLENS_STORAGE_DIR/risklens.sqlite3"
-export RISKLENS_CHECKPOINT_DB="$RISKLENS_STORAGE_DIR/agent-checkpoints.sqlite3"
-npm run campaigns:generate -- --cohort-size 5000 --seed 2026 --period 2026-10
-npm run campaigns:worker
+node scripts/runtime/python.mjs scripts/checks/verify_customer_integrity.py
+node scripts/runtime/python.mjs scripts/checks/verify_recovery.py
 ```
 
-The generator reuses original Meridian IDs and recorded April–September values; the six additional campaign months and credit/holdings/consent observations remain explicitly synthetic and isolated from original ledgers. Its immutable batch and row hashes detect subsequent edits. Replaying the same unchanged generation reuses the batch. A future campaign month needs an explicitly published completed-source batch; schedules never invent new observations.
-
-For an ordinary new local `npm run dev` or `npm start`, `scripts/runtime/dev.mjs` now starts the worker supervisor after starting its own backend. Reusing a running backend does not create another worker. `RISKLENS_BACKEND_PORT` selects an optional local API port, and the frontend is pointed to that same port. The Linux acceptance command below copies storage before exercising a complete report job, API reuse without a duplicate worker, idempotent submission and shutdown of all owned processes:
+Opt-in Vertex evaluation makes billable requests and copies the selected application store:
 
 ```bash
-backend/.venv/bin/python scripts/checks/verify_local_startup.py \
+backend/.venv/bin/python -m backend.evaluation.vertex --allow-live \
   --storage "$HOME/bankweave-state/storage" \
-  --output artifacts/local-startup/receipt.json
+  --project YOUR_PROJECT_ID --location global --model YOUR_AVAILABLE_GEMINI_MODEL
 ```
 
-The current VM uses `bankweave-campaign-worker.service`, grouped with frontend/backend under `bankweave-private.target`; use systemctl and its journal for status/restarts. `scripts/runtime/campaign-supervisor.mjs` remains the alternative host-process supervisor, and `start-nohup.sh` refuses an active managed target. Do not start a second worker supervisor over the managed deployment. The worker leases jobs with heartbeat/fencing, resumes checkpoints, and never seeds or migrates on startup. Its regular loop checks only opted-in schedules. No schedule was enabled by the service handoff. The optional schedule timer is an alternative enqueue trigger; duplicate triggers resolve to the same run.
+`scripts/checks/verify_vertex_browser.py --help` documents isolated live browser acceptance. These checks do not promote QA state. Keep source/build backups and matched state backups before upgrading; verify protected record counts, IDs and immutable report hashes afterward. Roll back a failed build without reseeding financial data.
 
-Default runs make at most one template call per selected demo product (maximum three), with optional up to twenty anonymous sample rewrites. Invalid output, unavailable providers or ungrounded claims fall back to labeled local templates. The canonical report contains call/token usage, sent-field metadata, exact source/catalog versions, reason/count reconciliation, and zero customer emails sent. Report publication and assigned inbox notifications commit atomically. Admin review binds the stored report hash and review revision; request changes opens a new campaign revision without rewriting the old report. Consent withdrawal is checked again before report publication and draft display. The release has no customer-delivery API.
-
-Campaign endpoints are actor-scoped and intentionally ignore chat recovery handles. Live UI smoke checks should strip recovery headers and stub session restoration, preserving existing chats. Full write/approval/Research export acceptance belongs on isolated storage. Preserve old immutable reports and the legacy scenario renderer/API during future deployment migrations. The later test-email flow above adds explicit Admin delivery to one configured inbox; it does not enable bulk customer outreach.
+`npm run check:secrets` inspects publishable current files, not all Git history. Scan history separately before publication. Credentials belong in private host configuration or a secret manager. GitHub Actions secrets do not automatically configure a cloned app or this VM. The remaining production requirements are listed in [the roadmap](roadmap.md#remaining-production-work).

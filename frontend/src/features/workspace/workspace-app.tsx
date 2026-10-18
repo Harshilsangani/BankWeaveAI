@@ -203,7 +203,7 @@ export default function Home() {
         {!signedIn && (
           <section className="signed-out">
             <h1>Sign in</h1>
-            <p>Log in with the demo staff profile to open this workspace.</p>
+            <p>Log in with your staff profile to open this workspace.</p>
             <Button onClick={() => setSigned(true)}>Log in</Button>
           </section>
         )}
@@ -373,7 +373,7 @@ export default function Home() {
         open={notificationsOpen}
         onOpenChange={setNotificationsOpen}
         title="Workspace notifications"
-        description="Your assigned campaign reports and historical demo risk events."
+        description="Your assigned campaign reports and historical risk events."
         headerAction={
           <button
             className="clear-notifications"

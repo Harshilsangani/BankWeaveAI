@@ -1,0 +1,7 @@
+[Unit]
+Description=BankWeave isolated judge demo
+Wants=bankweave-judge-backend.service bankweave-judge-frontend.service bankweave-judge-worker.service
+After=network-online.target
+
+[Install]
+WantedBy=default.target
