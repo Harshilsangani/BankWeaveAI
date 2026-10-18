@@ -2,7 +2,7 @@
 
 Banking intelligence and reviewed operations, built with Next.js, TypeScript, FastAPI, LangGraph and SQLite. Staff can ask questions, inspect source evidence, investigate risk, review uploaded forms and prepare card campaigns in one workspace.
 
-**[Open the live demo](https://35.253.137.87)** · [Reviewer walkthrough](docs/judge-demo-guide.md) · [Architecture](docs/architecture.md)
+**[Open the live demo](https://35.253.137.87)** · **[Watch the video demo](https://drive.google.com/file/d/1UppIQ4U878ezzQ-83tPhqohnNmrqAW_r/view?usp=sharing)** · [Reviewer walkthrough](docs/judge-demo-guide.md) · [Architecture](docs/architecture.md)
 
 The hosted demonstration uses synthetic data and server-side Gemini through Vertex AI. Visitors need no login or API key. The role selector simulates Analyst, Admin and Viewer permissions; changes in this shared demo may be visible to other visitors. Real email delivery is disabled. Local installations default to a deterministic provider and require no Google credentials.
 
